@@ -1,0 +1,623 @@
+# Beabr Cursor Rules
+
+You are building **Beabr — Prepare Smarter Gifts**, an event gift-preparation registry web app (graduations, celebrations, weddings, and similar occasions).
+
+Beabr is a private utility app, not a social network. It should use premium, modern, social-media-inspired UX patterns such as card feeds, bottom sheets, smooth modals, and mobile-first navigation, but it must not include social features such as likes, comments, follows, public feeds, or reactions.
+
+---
+
+## Product Context
+
+Beabr lets a graduating user create a private registry, add gift items and manual cash pledge funds, share the registry through a code or link, and let invited gift givers reserve or prepare gifts without revealing their identity until a scheduled reveal date/time.
+
+After reveal, the registry owner can see who prepared what or pledged how much. The owner can then send in-app thank-you letters that appear as a pop-up the next time the gift giver opens the app.
+
+---
+
+## Tech Stack
+
+Use:
+
+- React.js frontend
+- Node.js backend
+- Express.js API
+- PostgreSQL database
+- Google OAuth authentication
+- Tailwind CSS for styling
+- Prisma ORM preferred for database access
+- Zod preferred for validation
+
+Do not introduce a different major framework unless explicitly requested.
+
+---
+
+## Core Product Rules
+
+Always preserve these rules:
+
+1. Google OAuth is the required authentication method.
+2. A registry owner creates and manages a registry.
+3. Viewers join a registry by invite code or share link.
+4. Registry owners can add physical gift items and manual cash pledge funds.
+5. Viewers can reserve items, mark items as prepared, and pledge money manually.
+6. The app does not process payments in the MVP.
+7. GCash and bank connections are future placeholders only.
+8. Contributor identities must remain hidden from the registry owner before the reveal date/time.
+9. After reveal, contributor identities and pledged amounts become visible to the owner.
+10. Thank-you letters are in-app only for MVP.
+11. The product must stay focused on registry logging and preparation tracking.
+12. Do not add social networking features.
+
+---
+
+## MVP Feature Scope
+
+Implement or preserve:
+
+- Google OAuth login
+- Registry creation
+- Registry join code
+- Shareable registry link
+- Registry profile page
+- Graduation date
+- Scheduled reveal date/time
+- Owner item management
+- Category-aware item fields
+- Gift reservation
+- Gift preparation confirmation
+- Quantity support
+- Manual money pledges
+- Reveal page
+- Thank-you message creation after reveal
+- Thank-you pop-up for gift givers
+- Mobile-first responsive design
+
+Do not implement unless explicitly asked:
+
+- Real payments
+- GCash API integration
+- Bank API integration
+- Chat
+- Comments
+- Likes
+- Follows
+- Public discovery
+- Push notifications
+- Email notifications
+- Marketplace checkout
+- Shipping tracking
+- AI recommendations
+
+---
+
+## User Roles
+
+### Registry Owner
+
+Can:
+
+- Create registry
+- Edit registry
+- Set reveal date/time
+- Add/edit/archive/reorder items
+- Add/edit/archive cash funds
+- See registry progress
+- See contributor details only after reveal
+- Send thank-you letters after reveal
+
+Cannot before reveal:
+
+- See who reserved an item
+- See who prepared an item
+- See who pledged money
+- See individual pledge details
+- See viewer private notes
+
+### Registry Viewer / Gift Giver
+
+Can:
+
+- Join registry by code or link
+- View registry items
+- Reserve available item quantities
+- Mark reserved items as prepared
+- Pledge money manually
+- Add private preparation notes
+- View thank-you letters sent to them
+
+Cannot:
+
+- Edit registry details
+- Add owner items
+- See other givers before reveal
+- Access registries they have not joined
+
+---
+
+## Data Model Expectations
+
+Use these core entities:
+
+- users
+- registries
+- registry_members
+- registry_items
+- item_attributes
+- item_reservations
+- cash_funds
+- cash_pledges
+- thank_you_messages
+
+Use UUID primary keys.
+
+Important fields:
+
+### users
+
+- id
+- google_id
+- name
+- email
+- avatar_url
+- created_at
+- updated_at
+- last_login_at
+
+### registries
+
+- id
+- owner_id
+- title
+- owner_display_name
+- message
+- cover_image_url
+- join_code
+- event_category
+- graduation_date (optional main event / party date)
+- reveal_datetime
+- show_pledge_total_before_reveal
+- show_considering_items
+- is_revealed
+- created_at
+- updated_at
+- archived_at
+
+### registry_items
+
+- id
+- registry_id
+- title
+- category
+- description
+- quantity_needed
+- owner_status
+- external_link
+- store_name
+- price_reference
+- image_url
+- preferred_option
+- acceptable_alternatives
+- owner_private_note
+- viewer_instruction
+- sort_order
+- created_at
+- updated_at
+- archived_at
+
+### item_reservations
+
+- id
+- registry_id
+- item_id
+- user_id
+- quantity
+- status
+- private_note
+- created_at
+- updated_at
+- prepared_at
+
+Reservation statuses:
+
+- reserved
+- prepared
+- cancelled
+
+### cash_funds
+
+- id
+- registry_id
+- title
+- description
+- target_amount
+- suggested_amount
+- instructions
+- sort_order
+- created_at
+- updated_at
+- archived_at
+
+### cash_pledges
+
+- id
+- registry_id
+- fund_id
+- user_id
+- amount
+- private_note
+- created_at
+- updated_at
+
+### thank_you_messages
+
+- id
+- registry_id
+- owner_id
+- giver_id
+- item_reservation_id
+- cash_pledge_id
+- message
+- status
+- created_at
+- sent_at
+- seen_at
+
+Thank-you statuses:
+
+- draft
+- sent
+- seen
+
+---
+
+## Reveal Logic
+
+The backend is authoritative for reveal state.
+
+A registry is revealed when:
+
+```js
+new Date() >= new Date(registry.reveal_datetime)
+```
+
+Before reveal:
+
+- Hide giver names from the owner.
+- Hide giver user IDs from owner-facing responses.
+- Hide individual pledge amounts from the owner.
+- Hide viewer private notes from the owner.
+
+After reveal:
+
+- Show giver identity.
+- Show prepared item details.
+- Show individual pledge details.
+- Show viewer private notes.
+- Enable thank-you letter creation.
+
+Never rely on frontend-only hiding for privacy-sensitive data.
+
+---
+
+## Item Quantity Logic
+
+For each item:
+
+```txt
+total_reserved = sum(quantity where status = reserved)
+total_prepared = sum(quantity where status = prepared)
+total_claimed = total_reserved + total_prepared
+available_quantity = quantity_needed - total_claimed
+```
+
+Do not allow users to reserve or prepare more than the remaining available quantity.
+
+Display states:
+
+- Available
+- Partially Reserved
+- Reserved
+- Partially Prepared
+- Prepared
+- Closed
+
+---
+
+## Category-Aware Fields
+
+Default categories:
+
+- Dorm / Apartment
+- Tech
+- Clothing
+- Accessories
+- School / Work Supplies
+- Self-Care
+- Food / Groceries
+- Experience
+- Cash Fund
+- Custom
+
+Use flexible item attributes for category-specific fields.
+
+Examples:
+
+- size
+- color
+- brand
+- model
+- material
+- dimensions
+- flavor
+- compatibility
+- preferred_date
+- location
+
+Do not hardcode every possible item field into the main item table unless it is globally useful.
+
+---
+
+## API Design Rules
+
+Use REST-style API routes.
+
+Recommended routes:
+
+```txt
+GET    /api/auth/google
+GET    /api/auth/google/callback
+GET    /api/auth/me
+POST   /api/auth/logout
+
+POST   /api/registries
+GET    /api/registries
+GET    /api/registries/:registryId
+PATCH  /api/registries/:registryId
+POST   /api/registries/join
+
+POST   /api/registries/:registryId/items
+PATCH  /api/items/:itemId
+DELETE /api/items/:itemId
+PATCH  /api/items/:itemId/reorder
+
+POST   /api/items/:itemId/reserve
+POST   /api/reservations/:reservationId/prepare
+POST   /api/reservations/:reservationId/cancel
+
+POST   /api/registries/:registryId/cash-funds
+PATCH  /api/cash-funds/:fundId
+DELETE /api/cash-funds/:fundId
+POST   /api/cash-funds/:fundId/pledge
+
+GET    /api/registries/:registryId/reveal
+
+POST   /api/thank-you
+GET    /api/thank-you/inbox
+PATCH  /api/thank-you/:messageId/seen
+```
+
+Validate all request bodies with Zod or equivalent.
+
+---
+
+## Security Rules
+
+Always enforce authorization on the backend.
+
+Rules:
+
+- All write actions require authentication.
+- Registry edits require owner role.
+- Viewer actions require registry membership.
+- Reveal details require owner role and revealed state.
+- Thank-you messages can only be created by the registry owner after reveal.
+- Thank-you messages can only be read by the intended giver or the registry owner.
+- Never expose hidden contributor information before reveal.
+- Never trust user IDs from the client when session user is available.
+
+---
+
+## Frontend UX Rules
+
+The app should feel premium, modern, and mobile-first.
+
+Use social-media-inspired UX patterns without social features:
+
+- Card-based item feeds
+- Large tap targets
+- Sticky headers when useful
+- Bottom navigation on mobile
+- Floating action button for owner actions
+- Bottom sheets for quick actions
+- Smooth modals
+- Skeleton loading states
+- Friendly empty states
+- Minimal page clutter
+
+Do not add:
+
+- likes
+- comments
+- reactions
+- follows
+- social activity feeds
+- public user profiles
+
+---
+
+## Design System
+
+Use this brand identity:
+
+- Product name: Beabr
+- Tagline: Prepare Smarter Gifts
+- Mascot: Beaver
+- Primary color: green
+- Mascot accent: warm brown
+
+### Color Tokens
+
+```css
+:root {
+  --color-primary-50: #F4F8EB;
+  --color-primary-100: #E8F0D5;
+  --color-primary-200: #DCE8C4;
+  --color-primary-300: #C5D99A;
+  --color-primary-400: #AFC97E;
+  --color-primary-500: #81A03F;
+  --color-primary-600: #6F8D34;
+  --color-primary-700: #5F7A2A;
+  --color-primary-800: #4B611F;
+  --color-primary-900: #344516;
+
+  --color-white: #FFFFFF;
+  --color-neutral-50: #FAFBF7;
+  --color-neutral-100: #F7F9F4;
+  --color-neutral-200: #EEF2E8;
+  --color-neutral-300: #DDE5D2;
+  --color-neutral-400: #B9C4AA;
+  --color-neutral-500: #89927C;
+  --color-neutral-600: #68705E;
+  --color-neutral-700: #4B5243;
+  --color-neutral-800: #30362C;
+  --color-neutral-900: #1D211A;
+
+  --color-beaver-50: #FAF3EA;
+  --color-beaver-100: #F3E9DC;
+  --color-beaver-200: #E3CCB3;
+  --color-beaver-300: #CFA985;
+  --color-beaver-400: #B9855E;
+  --color-beaver-500: #8B5E3C;
+  --color-beaver-600: #754C2F;
+  --color-beaver-700: #5E3B25;
+  --color-beaver-800: #43291A;
+  --color-beaver-900: #2B1A10;
+
+  --surface-page: #FAFBF7;
+  --surface-card: #FFFFFF;
+  --surface-card-soft: #F7F9F4;
+  --surface-overlay: rgba(29, 33, 26, 0.48);
+
+  --text-primary: #1D211A;
+  --text-secondary: #4B5243;
+  --text-muted: #68705E;
+  --text-placeholder: #89927C;
+  --text-inverse: #FFFFFF;
+
+  --border-subtle: #EEF2E8;
+  --border-default: #DDE5D2;
+  --border-strong: #B9C4AA;
+
+  --success-bg: #E8F0D5;
+  --success-text: #4B611F;
+  --warning-bg: #FFF4D6;
+  --warning-text: #8A6200;
+  --danger-bg: #FDE8E8;
+  --danger-text: #9B1C1C;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-pill: 999px;
+
+  --shadow-xs: 0 1px 2px rgba(29, 33, 26, 0.04);
+  --shadow-sm: 0 4px 12px rgba(29, 33, 26, 0.06);
+  --shadow-md: 0 8px 24px rgba(29, 33, 26, 0.08);
+  --shadow-lg: 0 16px 40px rgba(29, 33, 26, 0.12);
+}
+```
+
+---
+
+## UI Component Rules
+
+### Cards
+
+Use rounded white cards with soft borders and shadows.
+
+### Buttons
+
+Primary buttons:
+
+- green background
+- white text
+- rounded/pill shape
+
+Secondary buttons:
+
+- soft green background
+- dark green text
+
+### Inputs
+
+Inputs should be:
+
+- clearly labeled
+- rounded
+- spacious
+- accessible
+- visibly focused on keyboard navigation
+
+### Status Badges
+
+Use text + color. Never rely on color alone.
+
+Statuses:
+
+- Available
+- Reserved
+- Partially Reserved
+- Prepared
+- Partially Prepared
+- Closed
+
+---
+
+## Copywriting Rules
+
+Use clear, calm, functional copy.
+
+Prefer:
+
+- Reserve this gift
+- Mark as prepared
+- Pledge amount
+- Reveal contributors
+- Send thank-you note
+
+Avoid overly playful or childish copy.
+
+Do not overuse beaver puns.
+
+---
+
+## Code Quality Rules
+
+- Keep components small and focused.
+- Separate API services from UI components.
+- Use clear naming.
+- Use TypeScript if the project is already configured for it; otherwise use clean JavaScript.
+- Validate forms on the frontend and backend.
+- Handle loading, empty, success, and error states.
+- Keep privacy-sensitive logic on the backend.
+- Avoid premature abstractions.
+- Do not add features outside the defined MVP unless explicitly requested.
+
+---
+
+## Accessibility Rules
+
+- Use semantic HTML.
+- Use labels for inputs.
+- Provide alt text for meaningful images.
+- Ensure keyboard accessibility.
+- Ensure visible focus states.
+- Do not communicate status using color alone.
+- Use sufficient contrast for text and buttons.
+
+---
+
+## Final Instruction
+
+When generating code, prioritize the defined Beabr MVP. Preserve privacy rules, reveal logic, and the gift-preparation-only scope. Keep the app modern, premium, mobile-first, and simple.

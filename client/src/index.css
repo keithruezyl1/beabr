@@ -1,0 +1,200 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-primary-50: #f4f8eb;
+  --color-primary-100: #e8f0d5;
+  --color-primary-200: #dce8c4;
+  --color-primary-300: #c5d99a;
+  --color-primary-400: #afc97e;
+  --color-primary-500: #81a03f;
+  --color-primary-600: #6f8d34;
+  --color-primary-700: #5f7a2a;
+  --color-primary-800: #4b611f;
+  --color-primary-900: #344516;
+
+  --color-white: #ffffff;
+  --color-neutral-50: #fafbf7;
+  --color-neutral-100: #f7f9f4;
+  --color-neutral-200: #eef2e8;
+  --color-neutral-300: #dde5d2;
+  --color-neutral-400: #b9c4aa;
+  --color-neutral-500: #89927c;
+  --color-neutral-600: #68705e;
+  --color-neutral-700: #4b5243;
+  --color-neutral-800: #30362c;
+  --color-neutral-900: #1d211a;
+
+  --color-beaver-50: #faf3ea;
+  --color-beaver-100: #f3e9dc;
+  --color-beaver-200: #e3ccb3;
+  --color-beaver-300: #cfa985;
+  --color-beaver-400: #b9855e;
+  --color-beaver-500: #8b5e3c;
+  --color-beaver-600: #754c2f;
+  --color-beaver-700: #5e3b25;
+  --color-beaver-800: #43291a;
+  --color-beaver-900: #2b1a10;
+
+  --surface-page: #fafbf7;
+  --surface-card: #ffffff;
+  --surface-card-soft: #f7f9f4;
+  --surface-overlay: rgba(29, 33, 26, 0.48);
+
+  --text-primary: #1d211a;
+  --text-secondary: #4b5243;
+  --text-muted: #68705e;
+  --text-inverse: #ffffff;
+
+  --border-subtle: #eef2e8;
+  --border-default: #dde5d2;
+  --border-strong: #b9c4aa;
+
+  --success-bg: #e8f0d5;
+  --success-text: #4b611f;
+  --warning-bg: #fff4d6;
+  --warning-text: #8a6200;
+  --danger-bg: #fde8e8;
+  --danger-text: #9b1c1c;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-pill: 999px;
+
+  --shadow-xs: 0 1px 2px rgba(29, 33, 26, 0.04);
+  --shadow-sm: 0 4px 12px rgba(29, 33, 26, 0.06);
+  --shadow-md: 0 8px 24px rgba(29, 33, 26, 0.08);
+  --shadow-lg: 0 16px 40px rgba(29, 33, 26, 0.12);
+
+  --motion-fast: 120ms;
+  --motion-base: 180ms;
+  --motion-slow: 280ms;
+  --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  --skeleton-base: var(--color-neutral-200);
+  --skeleton-highlight: rgba(255, 255, 255, 0.72);
+
+  /* App page hero (PageHeader): soft greens → white, diagonal — see DESIGN_GUIDELINES §16.4 */
+  --gradient-page-header: linear-gradient(
+    to bottom right,
+    var(--color-primary-100) 0%,
+    var(--color-primary-50) 42%,
+    var(--color-neutral-50) 78%,
+    var(--color-white) 100%
+  );
+}
+
+@keyframes beabr-skeleton-shimmer {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(120%);
+  }
+}
+
+.beabr-skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--skeleton-base);
+}
+
+.beabr-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-120%);
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    transparent 38%,
+    var(--skeleton-highlight) 50%,
+    transparent 62%,
+    transparent 100%
+  );
+  animation: beabr-skeleton-shimmer 1.35s var(--ease-standard) infinite;
+  animation-delay: var(--beabr-skeleton-delay, 0ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .beabr-skeleton::after {
+    animation: none;
+  }
+
+  .beabr-skeleton {
+    background: var(--color-neutral-300);
+  }
+}
+
+/* Toast / notification chips — DESIGN_GUIDELINES §17.6 */
+@keyframes beabr-toast-enter {
+  from {
+    transform: translateX(calc(100% + var(--space-4, 16px)));
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.beabr-toast-chip {
+  animation: beabr-toast-enter var(--motion-slow) var(--ease-standard) forwards;
+}
+
+.beabr-toast-chip--exit {
+  animation: none;
+  opacity: 0;
+  transform: translateX(0);
+  transition: opacity var(--motion-slow) var(--ease-standard);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .beabr-toast-chip {
+    animation: none;
+    opacity: 1;
+  }
+
+  .beabr-toast-chip--exit {
+    transition: opacity var(--motion-fast) var(--ease-standard);
+  }
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--surface-page);
+  color: var(--text-primary);
+}
+
+/* Form controls: enforce Beabr green accent for native checkboxes/radios. */
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--color-primary-600);
+}
+
+/* Dashboard / settings / etc. — PageChrome hero band */
+.beabr-page-header-gradient {
+  background-image: var(--gradient-page-header);
+}
+
+/* Landing page texture utility (subtle, lightweight, no extra assets). */
+.beabr-texture {
+  background-color: var(--surface-page);
+  background-image:
+    radial-gradient(900px 520px at 18% 20%, rgba(129, 160, 63, 0.16), rgba(250, 251, 247, 0) 60%),
+    radial-gradient(820px 520px at 78% 18%, rgba(139, 94, 60, 0.10), rgba(250, 251, 247, 0) 58%),
+    linear-gradient(180deg, rgba(250, 251, 247, 1), rgba(250, 251, 247, 0.86)),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='280' viewBox='0 0 280 280'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.22 0'/%3E%3C/filter%3E%3Crect width='280' height='280' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+  background-size: cover, cover, cover, 280px 280px;
+  background-repeat: no-repeat, no-repeat, no-repeat, repeat;
+  background-blend-mode: normal, normal, normal, multiply;
+}

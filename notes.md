@@ -1,0 +1,4 @@
+- set up notifications
+- test end to end
+- create exportable cards
+- deployment + domain

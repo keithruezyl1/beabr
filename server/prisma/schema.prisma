@@ -1,0 +1,315 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                  String               @id @default(uuid()) @db.Uuid
+  supabaseId          String               @unique
+  googleId            String?              @unique
+  name                String
+  email               String               @unique
+  avatarUrl           String?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  lastLoginAt         DateTime?
+  cashPledges         CashPledge[]
+  itemReservations    ItemReservation[]
+  notifications       Notification[]
+  pledgeContributions PledgeContribution[] @relation("PledgeContributor")
+  pledgeInitiations   PledgeInitiation[]   @relation("PledgeInitiator")
+  ownedRegistries     Registry[]           @relation("RegistryOwner")
+  registryMembership  RegistryMember[]
+  thankYouReceived    ThankYouMessage[]    @relation("ThankYouGiver")
+  thankYouSent        ThankYouMessage[]    @relation("ThankYouOwner")
+
+  @@map("users")
+}
+
+model Registry {
+  id                          String               @id @default(uuid()) @db.Uuid
+  ownerId                     String               @db.Uuid
+  title                       String
+  ownerDisplayName            String
+  message                     String?
+  coverImageUrl               String?
+  joinCode                    String               @unique
+  /// Occasion type (Celebration, Graduation, Wedding, …)—see REGISTRY_EVENT_CATEGORIES.
+  eventCategory               String               @default("Graduation") @map("event_category") @db.VarChar(48)
+  graduationDate              DateTime?
+  /// Owner-marked completion state. Finished registries remain viewable anytime.
+  finishedAt                  DateTime?            @map("finished_at")
+  revealDatetime              DateTime
+  showPledgeTotalBeforeReveal Boolean              @default(true)
+  showConsideringItems        Boolean              @default(false)
+  isRevealed                  Boolean              @default(false)
+  createdAt                   DateTime             @default(now())
+  updatedAt                   DateTime             @updatedAt
+  archivedAt                  DateTime?
+  funds                       CashFund[]
+  pledges                     CashPledge[]
+  reservations                ItemReservation[]
+  pledgeContributions         PledgeContribution[]
+  pledgeInitiations           PledgeInitiation[]
+  owner                       User                 @relation("RegistryOwner", fields: [ownerId], references: [id])
+  items                       RegistryItem[]
+  members                     RegistryMember[]
+  thankYous                   ThankYouMessage[]
+
+  @@index([ownerId])
+  @@map("registries")
+}
+
+model RegistryMember {
+  id                String             @id @default(uuid()) @db.Uuid
+  registryId      String             @db.Uuid
+  userId          String             @db.Uuid
+  role            RegistryMemberRole
+  joinedAt        DateTime           @default(now())
+  /// Optional nickname for this registry; falls back to account name when null.
+  publicDisplayName String?          @map("public_display_name") @db.VarChar(80)
+  /// When true, roster shows initials only (no profile photo), including for anonymous-style names.
+  hideAvatar      Boolean            @default(false) @map("hide_avatar")
+  registry        Registry           @relation(fields: [registryId], references: [id])
+  user            User               @relation(fields: [userId], references: [id])
+
+  @@unique([registryId, userId])
+  @@index([userId])
+  @@map("registry_members")
+}
+
+model RegistryItem {
+  id                     String                  @id @default(uuid()) @db.Uuid
+  registryId             String                  @db.Uuid
+  title                  String
+  category               String
+  description            String?
+  quantityNeeded         Int                     @default(1)
+  ownerStatus            RegistryItemOwnerStatus @default(confirmed)
+  externalLink           String?
+  storeName              String?
+  priceReference         Decimal?                @db.Decimal(12, 2)
+  imageUrl               String?
+  /// @deprecated Legacy single path; prefer `imagePaths`. Kept for reads until fully migrated.
+  imagePath              String?
+  /// Up to 3 Supabase storage paths, ordered (first = primary).
+  imagePaths             String[]                @default([])
+  preferredOption        String?
+  acceptableAlternatives String?
+  ownerPrivateNote       String?
+  viewerInstruction      String?
+  sortOrder              Int                     @default(0)
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  archivedAt             DateTime?
+  attributes             ItemAttribute[]
+  reservations           ItemReservation[]
+  pledgeContributions    PledgeContribution[]
+  pledgeInitiation       PledgeInitiation?
+  registry               Registry                @relation(fields: [registryId], references: [id])
+
+  @@index([registryId, sortOrder])
+  @@map("registry_items")
+}
+
+model ItemAttribute {
+  id             String       @id @default(uuid()) @db.Uuid
+  itemId         String       @db.Uuid
+  attributeKey   String
+  attributeValue String
+  createdAt      DateTime     @default(now())
+  item           RegistryItem @relation(fields: [itemId], references: [id])
+
+  @@unique([itemId, attributeKey])
+  @@index([attributeKey])
+  @@map("item_attributes")
+}
+
+model ItemReservation {
+  id          String                @id @default(uuid()) @db.Uuid
+  registryId  String                @db.Uuid
+  itemId      String                @db.Uuid
+  userId      String                @db.Uuid
+  quantity    Int
+  status      ItemReservationStatus @default(reserved)
+  privateNote String?
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+  preparedAt  DateTime?
+  item        RegistryItem          @relation(fields: [itemId], references: [id])
+  registry    Registry              @relation(fields: [registryId], references: [id])
+  user        User                  @relation(fields: [userId], references: [id])
+  thankYous   ThankYouMessage[]
+
+  @@index([registryId])
+  @@index([itemId])
+  @@index([userId])
+  @@map("item_reservations")
+}
+
+model CashFund {
+  id                  String               @id @default(uuid()) @db.Uuid
+  registryId          String               @db.Uuid
+  title               String
+  description         String?
+  imagePath           String?
+  targetAmount        Decimal?             @db.Decimal(12, 2)
+  suggestedAmount     Decimal?             @db.Decimal(12, 2)
+  instructions        String?
+  sortOrder           Int                  @default(0)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  archivedAt          DateTime?
+  registry            Registry             @relation(fields: [registryId], references: [id])
+  pledges             CashPledge[]
+
+  @@index([registryId, sortOrder])
+  @@map("cash_funds")
+}
+
+model CashPledge {
+  id          String            @id @default(uuid()) @db.Uuid
+  registryId  String            @db.Uuid
+  fundId      String            @db.Uuid
+  userId      String            @db.Uuid
+  amount      Decimal           @db.Decimal(12, 2)
+  privateNote String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  fund        CashFund          @relation(fields: [fundId], references: [id])
+  registry    Registry          @relation(fields: [registryId], references: [id])
+  user        User              @relation(fields: [userId], references: [id])
+  thankYous   ThankYouMessage[]
+
+  @@index([registryId])
+  @@index([fundId])
+  @@index([userId])
+  @@map("cash_pledges")
+}
+
+model PledgeInitiation {
+  id                String               @id @default(uuid()) @db.Uuid
+  registryId        String               @db.Uuid
+  itemId            String               @unique @db.Uuid
+  initiatorUserId   String               @db.Uuid
+  payoutMethod      PledgePayoutMethod
+  payoutName        String?
+  payoutAccount     String?
+  payoutInstitution String?
+  payoutNotes       String?
+  qrImagePath       String?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  contributions     PledgeContribution[]
+  item              RegistryItem         @relation(fields: [itemId], references: [id])
+  initiator         User                 @relation("PledgeInitiator", fields: [initiatorUserId], references: [id])
+  registry          Registry             @relation(fields: [registryId], references: [id])
+
+  @@index([registryId])
+  @@index([initiatorUserId])
+  @@map("pledge_initiations")
+}
+
+model PledgeContribution {
+  id                String                   @id @default(uuid()) @db.Uuid
+  registryId        String                   @db.Uuid
+  itemId            String                   @db.Uuid
+  initiationId      String                   @db.Uuid
+  contributorUserId String                   @db.Uuid
+  amount            Decimal                  @db.Decimal(12, 2)
+  status            PledgeContributionStatus @default(pending_receipt)
+  receiptImagePath  String?
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime                 @updatedAt
+  contributor       User                     @relation("PledgeContributor", fields: [contributorUserId], references: [id])
+  item              RegistryItem             @relation(fields: [itemId], references: [id])
+  initiation        PledgeInitiation         @relation(fields: [initiationId], references: [id])
+  registry          Registry                 @relation(fields: [registryId], references: [id])
+
+  @@index([registryId])
+  @@index([itemId])
+  @@index([initiationId])
+  @@index([contributorUserId])
+  @@map("pledge_contributions")
+}
+
+model Notification {
+  id          String           @id @default(uuid()) @db.Uuid
+  userId      String           @db.Uuid
+  type        NotificationType
+  payloadJson Json
+  createdAt   DateTime         @default(now())
+  seenAt      DateTime?
+  user        User             @relation(fields: [userId], references: [id])
+
+  @@index([userId, seenAt])
+  @@map("notifications")
+}
+
+model ThankYouMessage {
+  id                String           @id @default(uuid()) @db.Uuid
+  registryId        String           @db.Uuid
+  ownerId           String           @db.Uuid
+  giverId           String           @db.Uuid
+  itemReservationId String?          @db.Uuid
+  cashPledgeId      String?          @db.Uuid
+  message           String
+  status            ThankYouStatus   @default(draft)
+  createdAt         DateTime         @default(now())
+  sentAt            DateTime?
+  seenAt            DateTime?
+  cashPledge        CashPledge?      @relation(fields: [cashPledgeId], references: [id])
+  giver             User             @relation("ThankYouGiver", fields: [giverId], references: [id])
+  itemReservation   ItemReservation? @relation(fields: [itemReservationId], references: [id])
+  owner             User             @relation("ThankYouOwner", fields: [ownerId], references: [id])
+  registry          Registry         @relation(fields: [registryId], references: [id])
+
+  @@index([registryId])
+  @@index([giverId])
+  @@index([ownerId])
+  @@map("thank_you_messages")
+}
+
+enum RegistryMemberRole {
+  owner
+  viewer
+}
+
+enum RegistryItemOwnerStatus {
+  confirmed
+  considering
+  removed
+}
+
+enum ItemReservationStatus {
+  reserved
+  prepared
+  cancelled
+}
+
+enum ThankYouStatus {
+  draft
+  sent
+  seen
+}
+
+enum PledgePayoutMethod {
+  bank
+  gcash
+  other
+}
+
+enum PledgeContributionStatus {
+  pending_receipt
+  receipt_uploaded
+  confirmed
+}
+
+enum NotificationType {
+  pledge_receipt_uploaded
+  pledge_goal_not_reached
+}
