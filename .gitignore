@@ -6,3 +6,11 @@ node_modules/
 /dist/
 /build/
 /prisma/dev.db
+
+# Build outputs (workspace packages)
+**/dist/
+**/build/
+
+# Local-only env variants
+**/.env.local
+**/.env.*.local
