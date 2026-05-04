@@ -5,9 +5,12 @@
   - an authenticated cookie in BEABR_COOKIE (value of `beabr_token=...`)
 
   Example (PowerShell):
-    $env:SERVER_URL="http://localhost:5000"
+    $env:SERVER_URL="https://beabr.onrender.com"
     $env:BEABR_COOKIE="beabr_token=..."
     node scripts/privacy-smoke.js <registryId>
+
+  Local API example:
+    $env:SERVER_URL="http://localhost:5000"
 */
 
 const registryId = process.argv[2];
@@ -17,7 +20,7 @@ if (!registryId) {
   process.exit(1);
 }
 
-const base = process.env.SERVER_URL || "http://localhost:5000";
+const base = process.env.SERVER_URL || "https://beabr.onrender.com";
 const cookie = process.env.BEABR_COOKIE || "";
 
 async function req(path) {

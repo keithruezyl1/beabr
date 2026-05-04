@@ -25,7 +25,8 @@ Use your password manager or secure wiki; do not paste live secrets into this fi
 2. Apply data migrations using your approved pipeline.  
 3. Deploy the application service; smoke-test health if you expose it.  
 4. Deploy the web client; clear caches if a CDN sits in front.  
-5. Smoke-test: sign-in, open a registry, exercise a sensitive read path (for example pledge media) with a non-production account when possible.  
+5. Confirm **URL alignment** across hosts: service **`CLIENT_URL`** matches the public SPA origin (CORS and server-built share links); **`SERVER_URL`** matches the public API base; client **`VITE_API_URL`** (and optional **`VITE_APP_ORIGIN`** for canonical invite links) match those same hosts; **Supabase Auth** Site URL and redirect allowlist include the SPA origin.  
+6. Smoke-test: sign-in, open a registry, exercise a sensitive read path (for example pledge media) with a non-production account when possible.  
 
 ## 4. Rollback
 

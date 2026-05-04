@@ -4,11 +4,13 @@ const { config } = require("./config");
 const app = createApp();
 
 const port = (() => {
+  const fromEnv = Number(process.env.PORT);
+  if (Number.isFinite(fromEnv) && fromEnv > 0) return fromEnv;
   try {
     const u = new URL(config.serverUrl);
     return Number(u.port) || 5000;
   } catch {
-    return Number(process.env.PORT) || 5000;
+    return 5000;
   }
 })();
 

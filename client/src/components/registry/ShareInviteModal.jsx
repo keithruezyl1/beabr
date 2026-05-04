@@ -4,6 +4,8 @@ import { BottomSheet } from "../ui/BottomSheet.jsx";
 import { Button } from "../ui/Button.jsx";
 
 function inviteLinkOrigin() {
+  const fromEnv = String(import.meta.env.VITE_APP_ORIGIN || "").trim().replace(/\/$/, "");
+  if (fromEnv) return fromEnv;
   if (typeof window === "undefined") return "";
   return window.location.origin;
 }

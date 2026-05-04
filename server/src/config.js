@@ -11,7 +11,7 @@ function normalizeOrigin(url) {
 
 /** Dev-only CORS allowlist so we do not reflect arbitrary Origins while using credentials (see docs/security remediation). */
 function buildDevelopmentCorsOrigins(clientUrl) {
-  const base = normalizeOrigin(clientUrl || "http://localhost:5173");
+  const base = normalizeOrigin(clientUrl || "https://beabr.vercel.app");
   /** @type {Set<string>} */
   const origins = new Set([
     base,
@@ -31,7 +31,7 @@ function buildDevelopmentCorsOrigins(clientUrl) {
   return [...origins];
 }
 
-const rawClientUrl = mustGetEnv("CLIENT_URL") || "http://localhost:5173";
+const rawClientUrl = mustGetEnv("CLIENT_URL") || "https://beabr.vercel.app";
 
 const config = {
   env: mustGetEnv("NODE_ENV") || "development",
@@ -42,7 +42,7 @@ const config = {
   clientUrl: rawClientUrl,
   /** Canonical web origin without trailing slash (share links and CORS in production). */
   publicClientOrigin: normalizeOrigin(rawClientUrl),
-  serverUrl: mustGetEnv("SERVER_URL") || "http://localhost:5000",
+  serverUrl: mustGetEnv("SERVER_URL") || "https://beabr.onrender.com",
   supabaseUrl: mustGetEnv("SUPABASE_URL"),
   supabaseServiceRoleKey: mustGetEnv("SUPABASE_SERVICE_ROLE_KEY"),
   supabaseStorageBucket: mustGetEnv("SUPABASE_STORAGE_BUCKET") || "beabr-pledges",

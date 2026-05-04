@@ -13,7 +13,7 @@ Beabr ships as:
 - **Durable storage** for registry records and related activity  
 - **Controlled file handling** for user uploads such as gift images or pledge-related attachments  
 
-Hosting choices vary by deployment.
+Hosting choices vary by deployment. A common pattern is to serve the **web client** and the **application service** on different public origins; invite links, authentication return URLs, and browser **CORS** rules must all treat one **canonical web origin** consistently, or members will see failed sign-in, broken deep links, or blocked API calls.
 
 ---
 

@@ -7,6 +7,7 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": {
+        // Local Node API only — not the hosted Render URL.
         target: "http://localhost:5000",
         changeOrigin: true,
       },
