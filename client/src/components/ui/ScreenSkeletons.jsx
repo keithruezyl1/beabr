@@ -52,14 +52,17 @@ export function LoginScreenSkeleton() {
 export function DashboardScreenSkeleton() {
   return (
     <div className="space-y-6">
-      <div className="flex flex-col items-start justify-between gap-3 md:flex-row md:items-center">
-        <div className="space-y-2">
-          <Skeleton className="h-4 w-20 rounded-md" />
-          <Skeleton className="h-8 w-56 max-w-full rounded-[14px]" delayMs={40} />
-        </div>
-        <div className="flex w-full gap-2 md:w-auto">
-          <Skeleton className="h-11 flex-1 rounded-[999px] md:w-40 md:flex-none" delayMs={60} />
-          <Skeleton className="h-11 flex-1 rounded-[999px] md:w-40 md:flex-none" delayMs={90} />
+      <div className="beabr-page-header-gradient relative overflow-hidden rounded-[var(--radius-xl)] border border-[var(--border-subtle)] px-5 py-5 shadow-[var(--shadow-xs)] sm:px-6 sm:py-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div className="min-w-0 flex-1 space-y-2">
+            <Skeleton className="h-3 w-14 rounded-md" />
+            <Skeleton className="h-9 w-[min(100%,14rem)] max-w-full rounded-[14px] sm:h-10" delayMs={40} />
+            <Skeleton className="h-4 w-full max-w-md rounded-md" delayMs={60} />
+          </div>
+          <div className="flex w-full shrink-0 flex-col gap-2 sm:flex-row sm:justify-end md:w-auto">
+            <Skeleton className="h-11 w-full min-h-[44px] rounded-[999px] sm:w-[min(100%,12rem)] sm:flex-none" delayMs={80} />
+            <Skeleton className="h-11 w-full min-h-[44px] rounded-[999px] sm:w-[min(100%,12rem)] sm:flex-none" delayMs={100} />
+          </div>
         </div>
       </div>
       <DashboardRegistriesSkeleton />
@@ -125,12 +128,15 @@ export function DashboardRegistriesSkeleton() {
 
 export function CreateRegistryScreenSkeleton() {
   return (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <Skeleton className="h-8 w-56 rounded-[14px]" />
-        <Skeleton className="h-4 w-full max-w-md rounded-md" delayMs={40} />
+    <div className="space-y-6">
+      <div className="beabr-page-header-gradient relative overflow-hidden rounded-[var(--radius-xl)] border border-[var(--border-subtle)] px-5 py-5 shadow-[var(--shadow-xs)] sm:px-6 sm:py-6">
+        <div className="min-w-0 space-y-2">
+          <Skeleton className="h-3 w-28 rounded-md" />
+          <Skeleton className="h-9 w-52 max-w-full rounded-[14px] sm:h-10" delayMs={30} />
+          <Skeleton className="h-4 w-full max-w-lg rounded-md" delayMs={50} />
+        </div>
       </div>
-      <ShimmerCard className="p-5">
+      <ShimmerCard className="p-5 sm:p-6">
         <div className="space-y-4">
           {[0, 1, 2, 3].map((i) => (
             <div key={i}>
@@ -157,9 +163,15 @@ export function CreateRegistryScreenSkeleton() {
 
 export function JoinRegistryScreenSkeleton() {
   return (
-    <div className="space-y-4">
-      <Skeleton className="h-8 w-48 rounded-[14px]" />
-      <ShimmerCard className="p-5">
+    <div className="space-y-6">
+      <div className="beabr-page-header-gradient relative overflow-hidden rounded-[var(--radius-xl)] border border-[var(--border-subtle)] px-5 py-5 shadow-[var(--shadow-xs)] sm:px-6 sm:py-6">
+        <div className="min-w-0 space-y-2">
+          <Skeleton className="h-3 w-24 rounded-md" />
+          <Skeleton className="h-9 w-48 max-w-full rounded-[14px] sm:h-10" delayMs={25} />
+          <Skeleton className="h-4 w-full max-w-md rounded-md" delayMs={45} />
+        </div>
+      </div>
+      <ShimmerCard className="p-5 sm:p-6">
         <div className="space-y-3">
           <div>
             <Skeleton className="h-3 w-16 rounded-md" />
@@ -175,35 +187,41 @@ export function JoinRegistryScreenSkeleton() {
 export function RegistryScreenSkeleton() {
   return (
     <div className="space-y-6">
-      <ShimmerCard className="p-6">
-        <div className="flex flex-col items-start justify-between gap-3 md:flex-row md:items-center">
-          <div className="min-w-0 flex-1 space-y-2">
-            <Skeleton className="h-8 w-3/4 max-w-md rounded-[14px]" />
-            <Skeleton className="h-4 w-40 rounded-md" delayMs={40} />
-          </div>
-          <div className="flex w-full gap-2 md:w-auto">
-            <Skeleton className="h-11 flex-1 rounded-[999px] md:w-28 md:flex-none" delayMs={60} />
-            <Skeleton className="h-11 flex-1 rounded-[999px] md:w-28 md:flex-none" delayMs={80} />
-            <Skeleton className="h-11 flex-1 rounded-[999px] md:w-28 md:flex-none" delayMs={100} />
+      <ShimmerCard className="overflow-hidden p-0">
+        <div className="border-b border-[rgba(255,255,255,0.18)] bg-[linear-gradient(135deg,var(--color-primary-800)_0%,var(--color-primary-700)_38%,var(--color-primary-600)_72%,var(--color-primary-500)_100%)] px-5 py-5 sm:px-6 sm:py-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div className="min-w-0 flex-1 space-y-3">
+              <Skeleton className="h-5 w-36 max-w-full rounded-full opacity-90" />
+              <Skeleton className="h-8 w-full max-w-md rounded-[14px] opacity-90" delayMs={30} />
+            </div>
+            <div className="flex w-full min-w-0 flex-nowrap gap-2 md:w-auto md:justify-end">
+              <Skeleton className="h-11 min-h-[44px] min-w-0 flex-1 rounded-[999px] opacity-90 md:h-11 md:w-28 md:flex-none" delayMs={50} />
+              <Skeleton className="h-11 min-h-[44px] min-w-0 flex-1 rounded-[999px] opacity-90 md:h-11 md:w-28 md:flex-none" delayMs={70} />
+              <Skeleton className="h-11 min-h-[44px] min-w-0 flex-1 rounded-[999px] opacity-90 md:h-11 md:w-28 md:flex-none" delayMs={90} />
+            </div>
           </div>
         </div>
-        <div className="mt-4 space-y-2">
-          <Skeleton className="h-3 w-full max-w-prose rounded-md" delayMs={50} />
-          <Skeleton className="h-3 w-5/6 max-w-prose rounded-md" delayMs={70} />
+        <div className="space-y-5 px-5 py-5 sm:px-6 sm:py-6">
+          <div className="space-y-2">
+            <Skeleton className="h-3 w-24 rounded-md" delayMs={40} />
+            <Skeleton className="h-3 w-full max-w-prose rounded-md" delayMs={55} />
+            <Skeleton className="h-3 w-5/6 max-w-prose rounded-md" delayMs={70} />
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Skeleton className="h-[4.25rem] w-full rounded-[var(--radius-lg)]" delayMs={85} />
+            <Skeleton className="h-[4.25rem] w-full rounded-[var(--radius-lg)]" delayMs={100} />
+            <Skeleton className="h-[4.25rem] w-full rounded-[var(--radius-lg)] sm:col-span-2" delayMs={115} />
+          </div>
         </div>
-        <Skeleton className="mt-4 h-3 w-52 rounded-md" delayMs={90} />
       </ShimmerCard>
 
       <div className="space-y-3">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <Skeleton className="h-8 w-8 rounded-[12px]" />
-            <Skeleton className="h-4 w-16 rounded-md" delayMs={20} />
+        <div className="flex w-full min-w-0 items-center justify-between gap-3">
+          <div className="flex shrink-0 items-center gap-2">
+            <Skeleton className="h-8 w-8 shrink-0 rounded-[var(--radius-md)]" />
+            <Skeleton className="h-4 w-14 rounded-md" delayMs={20} />
           </div>
-          <div className="flex w-[min(100%,26rem)] items-center justify-end gap-2">
-            <Skeleton className="h-11 w-40 rounded-[14px]" delayMs={40} />
-            <Skeleton className="h-11 w-40 rounded-[14px]" delayMs={60} />
-          </div>
+          <Skeleton className="h-11 w-11 shrink-0 rounded-[var(--radius-md)]" delayMs={35} />
         </div>
 
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -240,14 +258,17 @@ export function RegistryScreenSkeleton() {
 export function RevealScreenSkeleton() {
   return (
     <div className="space-y-6">
-      {/* PageHeader */}
-      <div className="flex flex-col items-start justify-between gap-3 md:flex-row md:items-center">
-        <div className="space-y-2">
-          <Skeleton className="h-4 w-16 rounded-md" />
-          <Skeleton className="h-9 w-48 max-w-full rounded-[14px]" delayMs={30} />
-          <Skeleton className="h-4 w-full max-w-[34rem] rounded-md" delayMs={55} />
+      <div className="beabr-page-header-gradient relative overflow-hidden rounded-[var(--radius-xl)] border border-[var(--border-subtle)] px-5 py-5 shadow-[var(--shadow-xs)] sm:px-6 sm:py-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div className="min-w-0 flex-1 space-y-2">
+            <Skeleton className="h-3 w-20 rounded-md" />
+            <Skeleton className="h-9 w-40 max-w-full rounded-[14px] sm:h-10" delayMs={30} />
+            <Skeleton className="h-4 w-full max-w-[34rem] rounded-md" delayMs={55} />
+          </div>
+          <div className="flex w-full shrink-0 flex-col gap-2 sm:flex-row sm:justify-end md:w-auto">
+            <Skeleton className="h-11 w-full min-h-[44px] rounded-[999px] sm:w-52 sm:flex-none" delayMs={70} />
+          </div>
         </div>
-        <Skeleton className="h-11 w-full rounded-[999px] md:w-44" delayMs={70} />
       </div>
 
       {/* Registry title card */}
@@ -292,41 +313,33 @@ export function RevealScreenSkeleton() {
 
 export function NotificationsScreenSkeleton() {
   return (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <Skeleton className="h-8 w-56 rounded-[14px]" />
-        <Skeleton className="h-4 w-72 max-w-full rounded-md" delayMs={40} />
+    <div className="space-y-6">
+      <div className="beabr-page-header-gradient relative overflow-hidden rounded-[var(--radius-xl)] border border-[var(--border-subtle)] px-5 py-5 shadow-[var(--shadow-xs)] sm:px-6 sm:py-6">
+        <div className="min-w-0 space-y-2">
+          <Skeleton className="h-3 w-16 rounded-md" />
+          <Skeleton className="h-9 w-52 max-w-full rounded-[14px] sm:h-10" delayMs={35} />
+          <Skeleton className="h-4 w-full max-w-lg rounded-md" delayMs={55} />
+        </div>
       </div>
       <div className="space-y-3">
-        <Skeleton className="h-4 w-44 rounded-md" />
-        {[0, 1].map((i) => (
+        {[0, 1, 2, 3].map((i) => (
           <ShimmerCard key={i} className="p-4">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0 flex-1 space-y-2">
-                <Skeleton className="h-4 w-2/3 rounded-md" delayMs={i * 50} />
-                <Skeleton className="h-3 w-1/2 rounded-md" delayMs={i * 50 + 20} />
+            <div className="relative z-[1] flex items-start gap-3">
+              <Skeleton className="h-10 w-10 shrink-0 rounded-[var(--radius-md)]" delayMs={i * 40} />
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-col gap-2 min-[380px]:flex-row min-[380px]:items-start min-[380px]:justify-between min-[380px]:gap-3">
+                  <div className="min-w-0 space-y-2">
+                    <Skeleton className="h-4 w-full max-w-[min(100%,20rem)] rounded-md" delayMs={i * 40 + 10} />
+                    <Skeleton className="h-3 w-4/5 max-w-xs rounded-md" delayMs={i * 40 + 22} />
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2 self-start min-[380px]:self-start">
+                    <Skeleton className="h-3 w-16 rounded-md" delayMs={i * 40 + 18} />
+                    {i < 2 ? (
+                      <Skeleton className="h-2.5 w-2.5 shrink-0 rounded-full" delayMs={i * 40 + 25} />
+                    ) : null}
+                  </div>
+                </div>
               </div>
-              <Skeleton className="h-6 w-14 shrink-0 rounded-full" delayMs={i * 50 + 10} />
-            </div>
-            <Skeleton className="mt-2 h-12 w-full rounded-[14px]" delayMs={i * 50 + 30} />
-            <Skeleton className="mt-3 h-10 w-full rounded-[999px]" delayMs={i * 50 + 45} />
-          </ShimmerCard>
-        ))}
-      </div>
-      <div className="space-y-3">
-        <Skeleton className="h-4 w-20 rounded-md" />
-        {[0, 1, 2].map((i) => (
-          <ShimmerCard key={i} className="p-4">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0 flex-1 space-y-2">
-                <Skeleton className="h-4 w-4/5 rounded-md" delayMs={i * 45} />
-                <Skeleton className="h-3 w-40 rounded-md" delayMs={i * 45 + 15} />
-              </div>
-              <Skeleton className="h-6 w-14 shrink-0 rounded-full" delayMs={i * 45 + 10} />
-            </div>
-            <div className="mt-3 flex gap-2">
-              <Skeleton className="h-10 flex-1 rounded-[999px]" delayMs={i * 45 + 30} />
-              <Skeleton className="h-10 flex-1 rounded-[999px]" delayMs={i * 45 + 40} />
             </div>
           </ShimmerCard>
         ))}
@@ -338,19 +351,33 @@ export function NotificationsScreenSkeleton() {
 export function SettingsScreenSkeleton() {
   return (
     <div className="space-y-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="space-y-2">
-          <Skeleton className="h-8 w-32 rounded-[14px]" />
-          <Skeleton className="h-4 w-64 max-w-full rounded-md" delayMs={40} />
+      <ShimmerCard className="overflow-hidden p-0">
+        <div className="beabr-page-header-gradient border-b border-[var(--border-subtle)] px-5 py-5 sm:px-6 sm:py-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div className="min-w-0 flex-1 space-y-2">
+              <Skeleton className="h-3 w-16 rounded-md" />
+              <Skeleton className="h-8 w-40 max-w-full rounded-[14px] sm:h-9" delayMs={25} />
+              <Skeleton className="h-4 w-full max-w-md rounded-md" delayMs={45} />
+            </div>
+            <div className="flex w-full flex-col gap-2 md:w-auto md:items-end">
+              <Skeleton className="h-11 w-full min-h-[44px] rounded-[999px] md:w-44" delayMs={55} />
+              <Skeleton className="h-11 w-full min-h-[44px] rounded-[999px] md:w-36" delayMs={75} />
+            </div>
+          </div>
         </div>
-        <Skeleton className="h-10 w-16 rounded-[999px]" delayMs={50} />
-      </div>
-      <ShimmerCard className="p-5">
-        <div className="flex items-center gap-3">
-          <Skeleton className="h-12 w-12 shrink-0 rounded-full" />
-          <div className="min-w-0 flex-1 space-y-2">
-            <Skeleton className="h-4 w-40 rounded-md" delayMs={30} />
-            <Skeleton className="h-3 w-56 max-w-full rounded-md" delayMs={50} />
+        <div className="border-b border-[var(--border-subtle)] bg-[var(--surface-card-soft)] px-5 py-4 sm:px-6">
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-16 w-16 shrink-0 rounded-full" delayMs={40} />
+            <div className="flex min-w-0 flex-1 items-start justify-between gap-3">
+              <div className="min-w-0 space-y-2">
+                <Skeleton className="h-4 w-36 max-w-full rounded-md" delayMs={50} />
+                <Skeleton className="h-3 w-48 max-w-full rounded-md" delayMs={65} />
+              </div>
+              <div className="shrink-0 space-y-1 text-right sm:max-w-[min(100%,12.5rem)]">
+                <Skeleton className="ml-auto h-3 w-20 rounded-md" delayMs={55} />
+                <Skeleton className="h-3 w-24 rounded-md" delayMs={70} />
+              </div>
+            </div>
           </div>
         </div>
       </ShimmerCard>
