@@ -180,7 +180,7 @@ export function LandingPage() {
                   <div className="pointer-events-auto absolute left-[-4%] top-[4%] z-10 sm:left-[-3%] sm:top-[5%]">
                     <StepChip
                       step="1"
-                      title="Create a registry"
+                      title="Create"
                       body="Set main event + reveal date/time."
                       tone="darkGreen"
                       className="w-[238px] -rotate-[2deg] px-4 py-3 shadow-[var(--shadow-md)] sm:w-[260px] sm:px-5 sm:py-4"
@@ -190,8 +190,8 @@ export function LandingPage() {
                   <div className="pointer-events-auto absolute right-[-2%] top-[13%] z-10 sm:right-[-1%] sm:top-[14%]">
                     <StepChip
                       step="2"
-                      title="Share a code/link"
-                      body="Invite givers privately."
+                      title="Add"
+                      body="Gift items, links, and details."
                       tone="lightGreen"
                       className="w-[230px] rotate-[2.5deg] px-4 py-3 shadow-[var(--shadow-md)] sm:w-[252px] sm:px-5 sm:py-4"
                     />
@@ -200,8 +200,8 @@ export function LandingPage() {
                   <div className="pointer-events-auto absolute left-[-3%] top-[58%] z-10 sm:left-[-2%] sm:top-[59%]">
                     <StepChip
                       step="3"
-                      title="They reserve/prepare"
-                      body="Names stay hidden pre‑reveal."
+                      title="Invite"
+                      body="Join code or link for givers."
                       tone="lighterGreen"
                       className="w-[250px] rotate-[1.5deg] px-4 py-3 shadow-[var(--shadow-md)] sm:w-[276px] sm:px-5 sm:py-4"
                     />
@@ -210,8 +210,8 @@ export function LandingPage() {
                   <div className="pointer-events-auto absolute right-[-3%] top-[74%] z-10 sm:right-[-2%] sm:top-[75%]">
                     <StepChip
                       step="4"
-                      title="Reveal + thank‑you"
-                      body="See contributors, then send notes."
+                      title="Reveal"
+                      body="See who prepared & pledged—thank-you notes follow."
                       tone="lightestGreen"
                       className="w-[238px] -rotate-[2deg] px-4 py-3 shadow-[var(--shadow-md)] sm:w-[268px] sm:px-5 sm:py-4"
                     />
@@ -221,9 +221,9 @@ export function LandingPage() {
 
               <div className="mt-5 grid w-full max-w-full grid-cols-2 gap-3 md:hidden">
                 <StepChip step="1" title="Create" body="Set reveal date/time." tone="darkGreen" />
-                <StepChip step="2" title="Share" body="Code or invite link." tone="lightGreen" />
-                <StepChip step="3" title="Prepare" body="Private until reveal." tone="lighterGreen" />
-                <StepChip step="4" title="Reveal" body="Then send thank‑you." tone="lightestGreen" />
+                <StepChip step="2" title="Add" body="Gifts, links, details." tone="lightGreen" />
+                <StepChip step="3" title="Invite" body="Code or invite link." tone="lighterGreen" />
+                <StepChip step="4" title="Reveal" body="Who helped unlocks—then thanks." tone="lightestGreen" />
               </div>
             </div>
           </div>

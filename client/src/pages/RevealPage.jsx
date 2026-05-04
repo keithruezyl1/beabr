@@ -117,9 +117,9 @@ export function RevealPage() {
         description={
           revealed
             ? registry.role === "owner"
-              ? "Contributor names and pledge details are visible to you as the owner."
-              : "The registry owner can see who helped—thank-you notes may follow."
-            : "Gift givers stay private until the scheduled reveal date and time."
+              ? "Prepared-by names, notes, and pledges are visible to you. Send thank-you notes from each card—they open when that giver returns to Beabr."
+              : "The registry owner can see who helped. They may send thank-you notes you'll see the next time you open Beabr."
+            : "Gift givers stay private until the reveal date and time below—then attribution unlocks for the registry owner."
         }
         actions={
           <Link to={`/registry/${registryId}`} className="w-full md:w-auto">
@@ -144,7 +144,8 @@ export function RevealPage() {
               Before reveal
             </div>
             <p className="mt-2 max-w-prose text-sm text-[var(--text-secondary)]">
-              Contributors stay private until the reveal date and time below.
+              Contributor identities stay hidden until the moment below—then the owner’s reveal view updates with names and
+              pledge details.
             </p>
           </div>
           <div className="space-y-5 p-5 sm:p-6">
@@ -205,7 +206,8 @@ export function RevealPage() {
             Revealed
           </div>
           <p className="mt-2 text-sm leading-relaxed text-[var(--text-secondary)]">
-            The owner can now see contributor details and send thank-you notes in Beabr.
+            The registry owner can see who prepared gifts and who pledged. They may send thank-you notes you'll see when
+            you open Beabr again.
           </p>
         </Card>
       ) : (
@@ -216,8 +218,9 @@ export function RevealPage() {
               Reveal is ready
             </div>
             <p className="mt-2 text-sm leading-relaxed text-[var(--text-secondary)]">
-              See who prepared each gift and who pledged. Thank-you notes appear as a pop-up the next time each gift giver
-              opens Beabr.
+              See who marked each gift prepared and who pledged, including any private notes they left. Use{" "}
+              <span className="font-semibold text-[var(--text-primary)]">Send thank-you note</span> on a card to message
+              someone—notes open for them the next time they open Beabr.
             </p>
           </Card>
 
