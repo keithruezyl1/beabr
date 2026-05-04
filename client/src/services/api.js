@@ -1,4 +1,28 @@
-const API_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
+/** Public API origin for production builds when env is missing or still points at dev (see Vercel env `VITE_API_URL`). */
+const DEFAULT_PROD_API_ORIGIN = "https://beabr.onrender.com";
+
+function resolveApiOrigin() {
+  const raw = String(import.meta.env.VITE_API_URL || "")
+    .trim()
+    .replace(/\/$/, "");
+  if (!raw) {
+    return import.meta.env.PROD ? DEFAULT_PROD_API_ORIGIN : "";
+  }
+  if (import.meta.env.PROD) {
+    try {
+      const host = new URL(raw).hostname;
+      if (host === "localhost" || host === "127.0.0.1") {
+        return DEFAULT_PROD_API_ORIGIN;
+      }
+      return raw;
+    } catch {
+      return DEFAULT_PROD_API_ORIGIN;
+    }
+  }
+  return raw;
+}
+
+const API_URL = resolveApiOrigin();
 
 /**
  * Cached access token, updated by AuthProvider via setAccessToken() whenever
