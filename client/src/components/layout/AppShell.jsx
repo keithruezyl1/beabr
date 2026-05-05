@@ -191,9 +191,7 @@ export function AppShell({ children }) {
       const subtitle =
         n.type === "pledge_goal_not_reached"
           ? `${formatPesoDots(payload.gatheredAmount ?? 0, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} of ${formatPesoDots(payload.goalAmount ?? 0, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} gathered`
-          : payload.registryId
-            ? "Open registry to review"
-            : null;
+          : null;
       const link = payload.registryId ? `/registry/${payload.registryId}` : "/dashboard";
       items.push({
         kind: "update",
@@ -427,7 +425,7 @@ export function AppShell({ children }) {
                               </span>
                               <span className="min-w-0 flex-1">
                                 <span className="flex items-start justify-between gap-2">
-                                  <span className="min-w-0 truncate text-sm font-semibold text-[var(--text-primary)]">
+                                  <span className="min-w-0 line-clamp-2 text-sm font-semibold text-[var(--text-primary)]">
                                     {it.title}
                                   </span>
                                   <span className="shrink-0 text-[11px] font-medium tabular-nums text-[var(--text-muted)]">
@@ -566,7 +564,7 @@ export function AppShell({ children }) {
                                 </span>
                                 <span className="min-w-0 flex-1">
                                   <span className="flex items-start justify-between gap-2">
-                                    <span className="min-w-0 truncate text-sm font-semibold text-[var(--text-primary)]">
+                                    <span className="min-w-0 line-clamp-2 text-sm font-semibold text-[var(--text-primary)]">
                                       {it.title}
                                     </span>
                                     <span className="shrink-0 text-xs font-medium tabular-nums text-[var(--text-muted)]">

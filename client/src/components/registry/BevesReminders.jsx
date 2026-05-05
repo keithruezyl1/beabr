@@ -31,7 +31,7 @@ export function BevesReminders({ variant, hintId, termsAccepted, onTermsAccepted
       className="relative overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[#F8F9F7] px-4 pt-4 pb-4 shadow-none"
       aria-labelledby={headingId}
     >
-      <div id={headingId} className="text-[11px] font-bold uppercase leading-none tracking-[0.06em] text-[#4A4A4A]">
+      <div id={headingId} className="text-sm font-semibold leading-none text-[#4A4A4A]">
         Beve’s reminders
       </div>
 

@@ -1,4 +1,4 @@
-import { Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom";
+import { Navigate, Outlet, Route, Routes, useLocation, useParams } from "react-router-dom";
 import { AppShell } from "./components/layout/AppShell.jsx";
 import { AuthRouteSkeleton } from "./components/ui/ScreenSkeletons.jsx";
 import { useAuth } from "./state/AuthProvider.jsx";
@@ -10,7 +10,6 @@ import { ForgotPasswordPage } from "./pages/ForgotPasswordPage.jsx";
 import { DashboardPage } from "./pages/DashboardPage.jsx";
 import { CreateRegistryPage } from "./pages/CreateRegistryPage.jsx";
 import { EditRegistryPage } from "./pages/EditRegistryPage.jsx";
-import { JoinRegistryPage } from "./pages/JoinRegistryPage.jsx";
 import { RegistryPage } from "./pages/RegistryPage.jsx";
 import { RevealPage } from "./pages/RevealPage.jsx";
 import { SettingsPage } from "./pages/SettingsPage.jsx";
@@ -42,6 +41,19 @@ function PublicOnly({ children }) {
     return <Navigate to="/dashboard" replace />;
   }
   return children;
+}
+
+function JoinInviteRedirect() {
+  const { user, loading } = useAuth();
+  const { joinCode } = useParams();
+  if (loading) return <AuthRouteSkeleton />;
+  if (!user) return <Navigate to="/" replace />;
+
+  const normalizedCode = String(joinCode || "").trim().toUpperCase();
+  const target = normalizedCode
+    ? `/dashboard?joinCode=${encodeURIComponent(normalizedCode)}`
+    : "/dashboard?join=1";
+  return <Navigate to={target} replace />;
 }
 
 function ShellLayout() {
@@ -100,19 +112,11 @@ export default function App() {
         />
         <Route
           path="/registry/join"
-          element={
-            <Protected>
-              <JoinRegistryPage />
-            </Protected>
-          }
+          element={<JoinInviteRedirect />}
         />
         <Route
           path="/registry/join/:joinCode"
-          element={
-            <Protected>
-              <JoinRegistryPage />
-            </Protected>
-          }
+          element={<JoinInviteRedirect />}
         />
         <Route
           path="/registry/:registryId/edit"
@@ -157,11 +161,7 @@ export default function App() {
         />
         <Route
           path="/documentation/*"
-          element={
-            <Protected>
-              <DocumentationPage />
-            </Protected>
-          }
+          element={<DocumentationPage />}
         />
         <Route path="/users/*" element={<NotFoundPage />} />
       </Route>

@@ -5,6 +5,7 @@ import { Card } from "../components/ui/Card.jsx";
 import { DocumentationArticleSkeleton } from "../documentation/DocumentationArticleSkeleton.jsx";
 import { DocumentationLegalReaderIntro } from "../documentation/DocumentationLegalReaderIntro.jsx";
 import { DocumentationMarkdown } from "../documentation/DocumentationMarkdown.jsx";
+import { useAuth } from "../state/AuthProvider.jsx";
 import {
   clearDocMarkdownCache,
   DEFAULT_DOC_ROUTE_ID,
@@ -68,6 +69,7 @@ function IconChevronClose({ className }) {
 const CUSTOMER_SIDEBAR_SECTION_IDS = new Set(["legal", "help-center"]);
 
 export function DocumentationPage() {
+  const { user } = useAuth();
   const params = useParams();
   /** @type {string|undefined} */
   const splatRaw = params["*"];
@@ -167,6 +169,7 @@ export function DocumentationPage() {
   }
   const renderedMdLoaded =
     loaded && doc ? prepareMarkdownForDocumentationViewer(doc.content, doc.routeId) : "";
+  const showProfileBackLink = Boolean(user);
 
   async function retryLoad() {
     if (!routeId) return;
@@ -245,7 +248,7 @@ export function DocumentationPage() {
     </div>
   );
 
-  const profileBackLink = (
+  const profileBackLink = showProfileBackLink ? (
     <Link
       to="/settings"
       className="inline-flex min-h-[44px] min-w-0 items-center text-sm font-semibold text-[var(--color-primary-700)] hover:text-[var(--color-primary-900)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(129,160,63,0.35)]"
@@ -255,12 +258,12 @@ export function DocumentationPage() {
       </span>
       <span className="truncate">Go back to Profile</span>
     </Link>
-  );
+  ) : null;
 
   const mainAriaLabelledBy = loaded ? "documentation-title" : "documentation-skeleton-heading";
 
   return (
-    <div>
+    <div className={showProfileBackLink ? "" : "pt-4 sm:pt-6 lg:pt-8"}>
       <div className="relative mx-auto w-full max-w-[min(88rem,calc(100vw-1rem))] px-4 sm:px-6 lg:px-8">
         <div className="mb-3 flex min-w-0 items-center gap-3 lg:hidden">
           <button
@@ -273,14 +276,24 @@ export function DocumentationPage() {
           >
             <IconSearchOrb className="h-5 w-5" />
           </button>
-          <div className="min-w-0 flex-1">{profileBackLink}</div>
+          {profileBackLink ? <div className="min-w-0 flex-1">{profileBackLink}</div> : null}
         </div>
 
-        <div className="mt-0 flex min-w-0 flex-col gap-6 sm:mt-0 lg:mt-2 lg:flex-row lg:items-start lg:justify-center lg:gap-10">
-          <div className="relative flex w-full shrink-0 flex-col lg:sticky lg:top-24 lg:self-start lg:w-max lg:min-w-[17.5rem] lg:max-w-[min(30rem,calc(100vw-28rem))] lg:pt-[3.5rem]">
-            <div className="hidden shrink-0 text-left lg:absolute lg:left-0 lg:top-0 lg:block lg:w-max lg:max-w-full lg:pt-0">
-              {profileBackLink}
-            </div>
+        <div
+          className={`mt-0 flex min-w-0 flex-col gap-6 sm:mt-0 lg:flex-row lg:items-start lg:justify-center lg:gap-10 ${
+            showProfileBackLink ? "lg:mt-2" : "lg:mt-0"
+          }`}
+        >
+          <div
+            className={`relative flex w-full shrink-0 flex-col lg:sticky lg:self-start lg:w-max lg:min-w-[17.5rem] lg:max-w-[min(30rem,calc(100vw-28rem))] ${
+              showProfileBackLink ? "lg:top-24 lg:pt-[3.5rem]" : "lg:top-8"
+            }`}
+          >
+            {profileBackLink ? (
+              <div className="hidden shrink-0 text-left lg:absolute lg:left-0 lg:top-0 lg:block lg:w-max lg:max-w-full lg:pt-0">
+                {profileBackLink}
+              </div>
+            ) : null}
             <aside
               id="documentation-nav-panel"
               className={`fixed inset-y-0 left-0 z-50 flex w-[min(22rem,calc(100vw-40px))] flex-col bg-[var(--surface-page)] p-4 shadow-[var(--shadow-lg)] ring-1 ring-[var(--border-subtle)] transition-transform duration-[var(--motion-base)] ease-[var(--ease-standard)] lg:static lg:z-auto lg:mt-0 lg:h-auto lg:w-full lg:min-w-0 lg:max-w-none lg:shrink-0 lg:transform-none lg:bg-transparent lg:p-0 lg:shadow-none lg:ring-0 lg:transition-none ${
@@ -308,7 +321,9 @@ export function DocumentationPage() {
 
           <section
             id="documentation-main"
-            className="mx-auto min-w-0 w-full max-w-[min(40rem,calc(100vw-2rem))] flex-1 lg:mx-0 lg:max-w-4xl lg:pt-[3.5rem]"
+            className={`mx-auto min-w-0 w-full max-w-[min(40rem,calc(100vw-2rem))] flex-1 lg:mx-0 lg:max-w-4xl ${
+              showProfileBackLink ? "lg:pt-[3.5rem]" : "lg:pt-0"
+            }`}
             aria-labelledby={mainAriaLabelledBy}
             aria-busy={!loaded && busy}
           >

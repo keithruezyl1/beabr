@@ -92,9 +92,7 @@ export function NotificationsPage() {
       const subtitle =
         n.type === "pledge_goal_not_reached"
           ? `${formatPesoDots(payload.gatheredAmount ?? 0, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} of ${formatPesoDots(payload.goalAmount ?? 0, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} gathered`
-          : payload.registryId
-            ? "Open registry to review"
-            : null;
+          : null;
       const link = payload.registryId ? `/registry/${payload.registryId}` : "/dashboard";
       items.push({
         kind: "update",
@@ -169,7 +167,7 @@ export function NotificationsPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <div className="truncate text-sm font-semibold text-[var(--text-primary)]">{it.title}</div>
+                        <div className="line-clamp-2 text-sm font-semibold text-[var(--text-primary)]">{it.title}</div>
                         {it.subtitle ? (
                           <div className="mt-0.5 line-clamp-2 text-xs text-[var(--text-muted)]">{it.subtitle}</div>
                         ) : null}

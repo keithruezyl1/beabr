@@ -41,15 +41,16 @@ function decodeQrFromImageFile(file) {
   });
 }
 
-export function JoinRegistryModal({ open, onClose }) {
+export function JoinRegistryModal({ open, onClose, initialCode = "" }) {
   const nav = useNavigate();
   const hintId = useId();
   const fileInputRef = useRef(null);
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const rafRef = useRef(null);
+  const normalizedInitialCode = String(initialCode || "").trim().toUpperCase();
 
-  const [code, setCode] = useState("");
+  const [code, setCode] = useState(() => normalizedInitialCode);
   const [nickname, setNickname] = useState("");
   const [hideAvatar, setHideAvatar] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -76,6 +77,12 @@ export function JoinRegistryModal({ open, onClose }) {
   useEffect(() => {
     if (!open) stopCamera();
   }, [open, stopCamera]);
+
+  useEffect(() => {
+    if (!open) return;
+    setCode(normalizedInitialCode);
+    setErr(null);
+  }, [open, normalizedInitialCode]);
 
   useEffect(() => {
     if (!open) setTermsAccepted(false);
@@ -229,7 +236,7 @@ export function JoinRegistryModal({ open, onClose }) {
         <div className="space-y-3">
           <p
             id={`${hintId}-join-heading`}
-            className="text-[11px] font-semibold uppercase tracking-wide text-[var(--text-muted)]"
+            className="text-sm font-medium text-[var(--text-secondary)]"
           >
             Enter a registry code or scan a QR code to join
           </p>
@@ -304,7 +311,7 @@ export function JoinRegistryModal({ open, onClose }) {
             How you appear <span className="font-normal text-[var(--text-muted)]">(optional)</span>
           </h3>
           <p className="mt-2 text-xs leading-relaxed text-[var(--text-muted)]">
-            Only other gift givers may see a small roster hint. The registry owner still cannot tell who you are before reveal.
+            Your nickname may appear to other gift givers. The registry owner cannot identify you before reveal.
           </p>
           <label className="mt-4 block text-left">
             <span className="text-xs font-semibold text-[var(--text-secondary)]">Nickname</span>
@@ -317,10 +324,10 @@ export function JoinRegistryModal({ open, onClose }) {
               autoComplete="off"
             />
           </label>
-          <label className="mt-3 flex min-h-[44px] cursor-pointer items-start gap-3 text-left">
+          <label className="mt-3 flex min-h-[44px] cursor-pointer items-center gap-3 text-left">
             <input
               type="checkbox"
-              className="mt-1 h-4 w-4 shrink-0 rounded border-[var(--border-default)] text-[var(--color-primary-600)] focus:ring-[var(--color-primary-500)]"
+              className="h-4 w-4 shrink-0 rounded border-[var(--border-default)] text-[var(--color-primary-600)] focus:ring-[var(--color-primary-500)]"
               checked={hideAvatar}
               onChange={(e) => setHideAvatar(e.target.checked)}
             />

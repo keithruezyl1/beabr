@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { apiFetch } from "../services/api";
 import { Card } from "../components/ui/Card.jsx";
 import { Button } from "../components/ui/Button.jsx";
@@ -215,10 +215,13 @@ function RegistryCard({ registry }) {
 
 export function DashboardPage() {
   const { user } = useAuth();
+  const location = useLocation();
+  const nav = useNavigate();
   const [registries, setRegistries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
   const [joinModalOpen, setJoinModalOpen] = useState(false);
+  const [joinModalInitialCode, setJoinModalInitialCode] = useState("");
   /** Bump when opening join modal so it remounts with fresh form state (avoids reset effects). */
   const [joinModalSession, setJoinModalSession] = useState(0);
   const [sessionGreeting, setSessionGreeting] = useState("Hello");
@@ -251,6 +254,22 @@ export function DashboardPage() {
     run();
   }, []);
 
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const joinCode = params.get("joinCode");
+    const shouldOpenJoin = params.get("join") === "1";
+    if (!joinCode && !shouldOpenJoin) return;
+
+    setJoinModalInitialCode(joinCode ? joinCode.trim().toUpperCase() : "");
+    setJoinModalSession((s) => s + 1);
+    setJoinModalOpen(true);
+
+    params.delete("joinCode");
+    params.delete("join");
+    const nextSearch = params.toString();
+    nav(`${location.pathname}${nextSearch ? `?${nextSearch}` : ""}`, { replace: true });
+  }, [location.pathname, location.search, nav]);
+
   const yourRegistries = registries.filter((r) => r.role === "owner" && !r.finished);
   const joinedRegistries = registries.filter((r) => r.role !== "owner");
 
@@ -281,6 +300,7 @@ export function DashboardPage() {
               variant="secondary"
               className="w-full gap-2 sm:w-auto"
               onClick={() => {
+                setJoinModalInitialCode("");
                 setJoinModalSession((s) => s + 1);
                 setJoinModalOpen(true);
               }}
@@ -342,6 +362,7 @@ export function DashboardPage() {
                     variant="secondary"
                     className="gap-2"
                     onClick={() => {
+                      setJoinModalInitialCode("");
                       setJoinModalSession((s) => s + 1);
                       setJoinModalOpen(true);
                     }}
@@ -367,7 +388,11 @@ export function DashboardPage() {
       <JoinRegistryModal
         key={joinModalSession}
         open={joinModalOpen}
-        onClose={() => setJoinModalOpen(false)}
+        initialCode={joinModalInitialCode}
+        onClose={() => {
+          setJoinModalOpen(false);
+          setJoinModalInitialCode("");
+        }}
       />
     </div>
   );

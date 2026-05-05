@@ -17,11 +17,38 @@ function IconCopy({ className }) {
   );
 }
 
+function IconLink({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" width="1em" height="1em" fill="none" aria-hidden>
+      <path
+        d="M10 13a5 5 0 0 0 7.1.1l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M14 11a5 5 0 0 0-7.1-.1l-2 2a5 5 0 0 0 7.1 7.1l1.1-1.1"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function IconHash({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" width="1em" height="1em" fill="none" aria-hidden>
+      <path d="M4 9h16M4 15h16M10 3 8 21M16 3l-2 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 function inviteLinkOrigin() {
   const fromEnv = String(import.meta.env.VITE_APP_ORIGIN || "").trim().replace(/\/$/, "");
-  if (fromEnv) return fromEnv;
-  if (typeof window === "undefined") return "";
-  return window.location.origin;
+  return fromEnv || "https://beabr.vercel.app";
 }
 
 export function ShareInviteModal({ open, onClose, joinCode }) {
@@ -50,59 +77,68 @@ export function ShareInviteModal({ open, onClose, joinCode }) {
 
   return (
     <BottomSheet open={open} onClose={onClose} title="Invite gift givers" variant="modal">
-      <div className="space-y-5">
+      <div className="space-y-4">
         <p className="text-sm leading-relaxed text-[var(--text-secondary)]">
-          Scan the QR code or share the link. Signed-in guests open the registry directly; others sign in first, then join
-          with this code or link.
+          Share the QR code, link, or join code to invite guests.
         </p>
 
         <BrandedQrCode
           value={inviteUrl}
-          size={176}
+          size={196}
           fgColor="var(--text-primary)"
-          frameBorderColor="var(--border-default)"
           qrName={qrName}
         />
 
-        <div>
-          <div className="text-[11px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">Invite link</div>
-          <div className="mt-2">
+        <div className="flex items-center gap-3 text-[11px] font-semibold uppercase tracking-wide text-[var(--text-muted)]" aria-hidden>
+          <span className="h-px flex-1 bg-[var(--border-subtle)]" />
+          <span>or</span>
+          <span className="h-px flex-1 bg-[var(--border-subtle)]" />
+        </div>
+
+        <div className="space-y-3">
+          <section className="rounded-[var(--radius-lg)] bg-[var(--surface-card-soft)] p-3 ring-1 ring-[var(--border-subtle)]">
+            <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">
+              <IconLink className="h-4 w-4 text-[var(--color-primary-700)]" />
+              <span>Invite link</span>
+            </div>
             <div className="relative">
-              <p className="min-w-0 break-all rounded-[var(--radius-md)] bg-[var(--surface-card-soft)] px-3 py-2 pr-12 text-xs leading-snug text-[var(--text-primary)] ring-1 ring-[var(--border-subtle)]">
-              {inviteUrl}
+              <p className="flex min-h-[44px] min-w-0 items-center overflow-x-auto whitespace-nowrap rounded-[var(--radius-md)] bg-white px-3 py-2.5 pr-12 text-xs leading-none text-[var(--text-primary)] ring-1 ring-[var(--border-subtle)]">
+                {inviteUrl}
               </p>
+              <span className="pointer-events-none absolute inset-y-px right-px z-[1] w-16 rounded-r-[var(--radius-md)] bg-gradient-to-l from-white via-white to-transparent" aria-hidden />
               <button
                 type="button"
                 onClick={() => copyText("link", inviteUrl)}
-                className="absolute right-1.5 top-1/2 inline-flex min-h-[44px] min-w-[44px] -translate-y-1/2 items-center justify-center rounded-full text-[var(--text-muted)] transition-colors hover:bg-white hover:text-[var(--text-secondary)] active:bg-[var(--color-neutral-200)]"
+                className="absolute right-1.5 top-1/2 z-[2] inline-flex min-h-[40px] min-w-[40px] -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-[var(--text-muted)] shadow-[var(--shadow-xs)] transition-colors hover:bg-[var(--color-primary-50)] hover:text-[var(--color-primary-700)] active:bg-[var(--color-primary-100)]"
                 aria-label={copied === "link" ? "Copied invite link" : "Copy invite link"}
               >
-                <IconCopy className="h-5 w-5" aria-hidden />
+                <IconCopy className="h-5 w-5" />
               </button>
             </div>
-          </div>
-        </div>
+          </section>
 
-        <div>
-          <div className="text-[11px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">Join code</div>
-          <div className="mt-2">
+          <section className="rounded-[var(--radius-lg)] bg-[var(--surface-card-soft)] p-3 ring-1 ring-[var(--border-subtle)]">
+            <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">
+              <IconHash className="h-4 w-4 text-[var(--color-primary-700)]" />
+              <span>Join code</span>
+            </div>
             <div className="relative">
-            <p
-              className="flex min-h-[44px] items-center justify-center rounded-[var(--radius-md)] bg-[var(--surface-card-soft)] px-3 py-2 pr-12 text-center font-mono text-xl font-bold tracking-[0.35em] text-[var(--text-primary)] ring-1 ring-[var(--border-subtle)] sm:tracking-[0.4em]"
-              aria-live="polite"
-            >
-              {code}
-            </p>
+              <p
+                className="flex min-h-[44px] items-center justify-center rounded-[var(--radius-md)] bg-white px-3 py-2.5 pr-12 text-center font-mono text-xl font-bold tracking-[0.35em] text-[var(--color-primary-800)] ring-1 ring-[var(--border-subtle)] sm:tracking-[0.4em]"
+                aria-live="polite"
+              >
+                {code}
+              </p>
               <button
                 type="button"
                 onClick={() => copyText("code", code)}
-                className="absolute right-1.5 top-1/2 inline-flex min-h-[44px] min-w-[44px] -translate-y-1/2 items-center justify-center rounded-full text-[var(--text-muted)] transition-colors hover:bg-white hover:text-[var(--text-secondary)] active:bg-[var(--color-neutral-200)]"
+                className="absolute right-1.5 top-1/2 inline-flex min-h-[40px] min-w-[40px] -translate-y-1/2 items-center justify-center rounded-full text-[var(--text-muted)] transition-colors hover:bg-[var(--color-primary-50)] hover:text-[var(--color-primary-700)] active:bg-[var(--color-primary-100)]"
                 aria-label={copied === "code" ? "Copied join code" : "Copy join code"}
               >
-                <IconCopy className="h-5 w-5" aria-hidden />
+                <IconCopy className="h-5 w-5" />
               </button>
             </div>
-          </div>
+          </section>
         </div>
       </div>
     </BottomSheet>
