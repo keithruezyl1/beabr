@@ -19,6 +19,10 @@ function isRevealed(registry) {
   return new Date() >= new Date(registry.revealDatetime);
 }
 
+function attributionVisible(registry) {
+  return registry?.visibilityMode === "open_coordination" || isRevealed(registry);
+}
+
 /** Align `registries.isRevealed` with `revealDatetime` vs wall clock so the stored flag is not stale after DB edits outside the API. */
 async function reconcileRegistryRevealFlag(registry) {
   const expected = new Date() >= new Date(registry.revealDatetime);
@@ -34,5 +38,6 @@ module.exports = {
   requireMembership,
   requireOwner,
   isRevealed,
+  attributionVisible,
   reconcileRegistryRevealFlag,
 };

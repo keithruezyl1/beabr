@@ -84,6 +84,7 @@ export function RevealPage() {
   }, [registryId]);
 
   const revealed = registry?.revealed;
+  const attributionVisible = Boolean(registry?.attributionVisible);
 
   useEffect(() => {
     if (!registry?.revealDatetime || revealed) return undefined;
@@ -118,9 +119,11 @@ export function RevealPage() {
         description={
           revealed
             ? registry.role === "owner"
-              ? "Prepared-by names, notes, and pledges are visible to you. Send thank-you notes from each card—they open when that giver returns to Beabr."
+              ? "Prepared-by names, notes, and pledges are visible. Send thank-you notes from each card when you are ready."
               : "The registry owner can see who helped. They may send thank-you notes you'll see the next time you open Beabr."
-            : "Gift givers stay private until the reveal date and time below—then attribution unlocks for the registry owner."
+            : attributionVisible
+              ? "This registry uses open coordination, so loved ones can already see who is helping. The date below still marks the reveal moment."
+              : "Loved ones coordinate quietly until the reveal date and time below, then attribution unlocks for the registry owner."
         }
         actions={
           <Link to={`/registry/${registryId}`} className="w-full md:w-auto">
@@ -142,11 +145,12 @@ export function RevealPage() {
           <div className="border-b border-[var(--border-subtle)] bg-[linear-gradient(135deg,var(--color-primary-50)_0%,rgba(250,251,247,0.95)_50%,var(--color-beaver-50)_100%)] px-5 py-5 sm:px-6">
             <div className="flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">
               <IconSparkles className="h-5 w-5 text-[var(--color-primary-600)]" aria-hidden />
-              Before reveal
+              {attributionVisible ? "Open coordination" : "Before reveal"}
             </div>
             <p className="mt-2 max-w-prose text-sm text-[var(--text-secondary)]">
-              Contributor identities stay hidden until the moment below—then the owner’s reveal view updates with names and
-              pledge details.
+              {attributionVisible
+                ? "Names are already visible so everyone can coordinate thoughtful gifts. The countdown still marks the reveal moment."
+                : "Contributor identities stay hidden until the moment below, then the owner's reveal view updates with names and pledge details."}
             </p>
           </div>
           <div className="space-y-5 p-5 sm:p-6">
@@ -207,7 +211,7 @@ export function RevealPage() {
             Revealed
           </div>
           <p className="mt-2 text-sm leading-relaxed text-[var(--text-secondary)]">
-            The registry owner can see who prepared gifts and who pledged. They may send thank-you notes you'll see when
+            The registry owner can see who helped with gifts and pledges. They may send thank-you notes you'll see when
             you open Beabr again.
           </p>
         </Card>
@@ -219,7 +223,7 @@ export function RevealPage() {
               Reveal is ready
             </div>
             <p className="mt-2 text-sm leading-relaxed text-[var(--text-secondary)]">
-              See who marked each gift prepared and who pledged, including any private notes they left. Use{" "}
+              See who prepared each gift and who pledged, including any private notes they left. Use{" "}
               <span className="font-semibold text-[var(--text-primary)]">Send thank-you note</span> on a card to message
               someone—notes open for them the next time they open Beabr.
             </p>

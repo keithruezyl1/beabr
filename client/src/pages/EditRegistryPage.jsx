@@ -4,7 +4,7 @@ import { apiFetch } from "../services/api";
 import { Button } from "../components/ui/Button.jsx";
 import { Card } from "../components/ui/Card.jsx";
 import { PageHeader } from "../components/ui/PageChrome.jsx";
-import { IconCalendar, IconClock } from "../components/ui/PageIcons.jsx";
+import { IconCalendar, IconClock, IconGift, IconUsers } from "../components/ui/PageIcons.jsx";
 import { useToast } from "../components/ui/ToastProvider.jsx";
 import { REGISTRY_EVENT_CATEGORIES } from "../constants/registryEventCategories.js";
 import talkingMascot from "../assets/talking_2_cropped.png";
@@ -46,6 +46,7 @@ export function EditRegistryPage() {
   const [revealDatetime, setRevealDatetime] = useState("");
   const [showPledgeTotalBeforeReveal, setShowPledgeTotalBeforeReveal] = useState(true);
   const [showConsideringItems, setShowConsideringItems] = useState(false);
+  const [visibilityMode, setVisibilityMode] = useState("private_until_reveal");
 
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState(null);
@@ -76,6 +77,7 @@ export function EditRegistryPage() {
         setRevealDatetime(isoToDatetimeLocalValue(r.revealDatetime));
         setShowPledgeTotalBeforeReveal(Boolean(r.showPledgeTotalBeforeReveal));
         setShowConsideringItems(Boolean(r.showConsideringItems));
+        setVisibilityMode(r.visibilityMode || "private_until_reveal");
       } catch (e) {
         if (!cancelled) setLoadErr(e);
       } finally {
@@ -153,7 +155,7 @@ export function EditRegistryPage() {
       <PageHeader
         eyebrow="Registry"
         title="Edit details"
-        description="Update your message, dates, and viewer-facing name. Join code and share link stay the same."
+        description="Keep gift guidance clear so loved ones can choose with confidence. Join code and share link stay the same."
         illustrationSrc={talkingMascot}
         illustrationOnTop
         textFullWidth
@@ -251,6 +253,27 @@ export function EditRegistryPage() {
 
           <div className="space-y-3 rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-card-soft)] p-4">
             <div className="text-xs font-semibold text-[var(--text-secondary)]">Viewer experience</div>
+            <div className="rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-white p-3">
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-primary-100)] text-[var(--color-primary-700)]">
+                  {visibilityMode === "open_coordination" ? (
+                    <IconUsers className="h-4 w-4" aria-hidden />
+                  ) : (
+                    <IconGift className="h-4 w-4" aria-hidden />
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <div className="text-sm font-semibold text-[var(--text-primary)]">
+                    {visibilityMode === "open_coordination" ? "Open coordination" : "Private surprise"}
+                  </div>
+                  <p className="mt-1 text-xs leading-relaxed text-[var(--text-secondary)]">
+                    {visibilityMode === "open_coordination"
+                      ? "Loved ones can see who reserved or contributed. This was chosen during setup and cannot be changed."
+                      : "Loved ones coordinate quietly until names unlock at reveal. This was chosen during setup and cannot be changed."}
+                  </p>
+                </div>
+              </div>
+            </div>
             <label className="flex cursor-pointer items-start gap-3 text-left">
               <input
                 type="checkbox"

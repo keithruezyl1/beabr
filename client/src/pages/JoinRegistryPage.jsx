@@ -16,7 +16,7 @@ export function JoinRegistryPage() {
   const [routeJoining, setRouteJoining] = useState(() => Boolean(joinCodeParam));
   /** Optional nickname shown to other gift givers on the dashboard (falls back to your account name if empty). */
   const [nickname, setNickname] = useState("");
-  /** When true, roster shows initials only—no profile photo (recommended if using a nickname). */
+  /** When true, roster shows initials only, no profile photo. */
   const [hideAvatar, setHideAvatar] = useState(false);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState(null);
@@ -87,10 +87,10 @@ export function JoinRegistryPage() {
         <PageHeader
           eyebrow="Invite"
           title="Join registry"
-          description="Opening your invite link—we’ll add you to the registry when this finishes."
+          description="Opening your invite link. We will add you to the registry when this finishes."
         />
         <Card className="flex min-h-[200px] items-center justify-center p-8 shadow-[var(--shadow-md)] ring-1 ring-[var(--border-subtle)]">
-          <p className="text-sm font-medium text-[var(--text-secondary)]">Joining registry…</p>
+          <p className="text-sm font-medium text-[var(--text-secondary)]">Joining registry...</p>
         </Card>
       </div>
     );
@@ -110,7 +110,7 @@ export function JoinRegistryPage() {
             <IconKeyRound className="h-5 w-5" aria-hidden />
           </div>
           <div className="min-w-0 text-sm leading-relaxed text-[var(--text-secondary)]">
-            After joining, you can reserve gifts and mark them prepared—your name stays private until reveal.
+            After joining, you can reserve gifts, mark them prepared, or contribute to gifts for someone you care about.
           </div>
         </div>
 
@@ -153,7 +153,7 @@ export function JoinRegistryPage() {
                 onChange={(e) => setHideAvatar(e.target.checked)}
               />
               <span className="text-sm leading-snug text-[var(--text-secondary)]">
-                Don’t show my profile photo—use initials instead (recommended for anonymous-style names)
+                Show initials instead of my profile photo
               </span>
             </label>
           </div>
@@ -171,7 +171,7 @@ export function JoinRegistryPage() {
             </div>
           ) : null}
           <Button type="submit" className="w-full" disabled={loading || !code.trim() || !termsAccepted}>
-            {loading ? "Joining…" : "Join registry"}
+            {loading ? "Joining..." : "Join registry"}
           </Button>
         </form>
       </Card>

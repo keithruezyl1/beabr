@@ -1,19 +1,19 @@
+import { Link } from "react-router-dom";
 import talkingJoin from "../../assets/talking_1_cropped.png";
 import talkingCreate from "../../assets/talking_2_cropped.png";
-import { Link } from "react-router-dom";
 
 const LIST_PR = "pr-[5.85rem] sm:pr-[6.65rem]";
 const TERMS_LINK_CLASS =
   "font-semibold text-[var(--color-primary-700)] underline underline-offset-2 decoration-[rgba(129,160,63,0.55)] hover:text-[var(--color-primary-800)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(129,160,63,0.35)] rounded-[6px]";
 
 const JOIN_BULLETS = [
-  "After you join, you can view added items, see which one you want to prepare, and even start a pledge for a specific item.",
+  "After you join, you can view gift ideas, reserve what you can prepare, or start a pledge for a specific item.",
   "Joining does not obligate you to give a gift. It is only a way to see the list and coordinate with others if you want to participate.",
 ];
 
 const CREATE_BULLETS = [
-  "Share your invite code or link only with people you trust—anyone with it can join.",
-  "Gift givers stay anonymous until reveal, and Beabr never moves money for you.",
+  "Share your invite code or link only with people you trust; anyone with it can join.",
+  "Choose the visibility style that best fits how your loved ones should coordinate gifts.",
 ];
 
 /**
@@ -32,7 +32,7 @@ export function BevesReminders({ variant, hintId, termsAccepted, onTermsAccepted
       aria-labelledby={headingId}
     >
       <div id={headingId} className="text-sm font-semibold leading-none text-[#4A4A4A]">
-        Beve’s reminders
+        Beve's reminders
       </div>
 
       <ul
@@ -73,7 +73,6 @@ export function BevesReminders({ variant, hintId, termsAccepted, onTermsAccepted
         </span>
       </label>
 
-      {/* Bottom-aligned to the aside so feet sit on the lower edge of this card */}
       <img
         src={mascotSrc}
         alt=""

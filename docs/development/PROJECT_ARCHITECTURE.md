@@ -61,9 +61,13 @@ Claimed quantity is the sum of active reserved and prepared units. Available qua
 
 ## 4. Reveal and privacy (conceptual)
 
-When the present time is **on or after** the registry’s reveal time, the registry is treated as **revealed** for permission checks (exact mechanics follow implementation).
+When the present time is **on or after** the registry's reveal time, the registry is treated as **revealed** for permission checks (exact mechanics follow implementation).
 
-**Before reveal (protected categories):** Registry Owners may see progress summaries per settings but typically not who reserved each line, granular pledge attribution, or every participant private note.
+Registries also have an immutable setup-time gift visibility mode.
+
+**Private surprise before reveal:** Registry Owners may see progress summaries per settings but not who reserved each line, granular pledge attribution, or participant private notes.
+
+**Open coordination before reveal:** safe attribution may be visible so loved ones can coordinate gifts clearly. Private notes, pledge receipts, payout fields, encrypted fields, and storage paths stay protected by their dedicated flows.
 
 **After reveal:** Registry Owners may see contributor attribution needed for thanks, consistent with implementation.
 

@@ -60,8 +60,8 @@ function rosterAriaSnippet(registry) {
   if (!vr) return "";
   if (vr.viewerCount === 0) return "No gift givers yet.";
   if (vr.identityHidden)
-    return `${vr.viewerCount} gift givers joined; identities hidden until reveal.`;
-  return `${vr.viewerCount} ${vr.viewerCount === 1 ? "person" : "people"} in this registry.`;
+    return `${vr.viewerCount} gift givers joined; names are private until reveal.`;
+  return `${vr.viewerCount} ${vr.viewerCount === 1 ? "loved one" : "loved ones"} in this registry.`;
 }
 
 /** Full-card navigation without wrapping interactive children in `<a>` (invalid HTML; breaks share control). */

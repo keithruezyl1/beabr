@@ -1,18 +1,18 @@
 # User protection
 
-Simplier guide to rights, safety, and support expectations in Beabr. Not legal advice.
+Simpler guide to rights, safety, and support expectations in Beabr. Not legal advice.
 
 ---
 
 ## What this page is for
 
-Beabr is built for private gift preparation. This page explains what you can expect from the product, how it protects people, and what to do when something feels wrong.
+Beabr is built for thoughtful gift preparation. This page explains what you can expect from the product, how it protects people, and what to do when something feels wrong.
 
 Use it together with:
 
-- **[Terms of use](terms-of-service.md)**  
-- **[Privacy overview](privacy-policy.md)**  
-- **[Security practices](security-practices.md)**  
+- **[Terms of use](terms-of-service.md)**
+- **[Privacy overview](privacy-policy.md)**
+- **[Security practices](security-practices.md)**
 
 ---
 
@@ -20,11 +20,11 @@ Use it together with:
 
 No matter your role:
 
-- You can use the app without harassment, threats, or coercion from other members.  
-- You should not be pressured to send money or share sensitive personal details.  
-- You can report suspected fraud, impersonation, or unsafe behavior to the developer at **keith_tagarao01@yahoo.com.ph**.  
-- Your registry activity should follow reveal rules so surprises stay protected.  
-- You can expect the product to avoid exposing contributor identity to a Registry Owner before reveal, where reveal rules apply.  
+- You can use the app without harassment, threats, or coercion from other members.
+- You should not be pressured to send money or share sensitive personal details.
+- You can report suspected fraud, impersonation, or unsafe behavior to the developer at **keith_tagarao01@yahoo.com.ph**.
+- Your registry activity should follow the registry's visibility mode and reveal rules.
+- You can expect the product to avoid exposing protected attribution where private surprise rules apply.
 
 If you feel unsafe, stop using the app for that situation and seek support through trusted real world channels.
 
@@ -36,58 +36,62 @@ If you feel unsafe, stop using the app for that situation and seek support throu
 
 You can:
 
-- Create and manage your registry.  
-- Choose a reveal date and time.  
-- See contribution attribution after reveal for protected categories.  
-- Send thank you notes inside the app after reveal.  
+- Create and manage your registry.
+- Choose a reveal date and time.
+- Choose gift visibility during setup: **Private surprise** or **Open coordination**.
+- See contribution attribution according to that visibility mode and reveal timing.
+- Send thank-you notes inside the app after reveal.
 
 Protections you should expect:
 
-- Before reveal, the product hides contributor identity for protected actions so you cannot tell who reserved or prepared a gift, or who contributed to pooled money, until reveal.  
+- The setup-time visibility mode cannot be changed after creation.
+- Private surprise protects contributor identity for reservations, prepared status, and pooled pledge participation until reveal.
+- Open coordination may show attribution earlier, but sensitive payment materials and private notes stay controlled by their own flows.
 
 What we expect from you:
 
-- Use contributor information for gratitude and coordination only.  
-- Do not pressure Registry Participants to bypass privacy or reveal protections.  
-- Treat payout related screenshots and receipts as sensitive. Do not repost them publicly.  
+- Use contributor information for gratitude and gift coordination only.
+- Do not pressure **Registry Participants** to bypass privacy or reveal protections.
+- Treat payout-related screenshots and receipts as sensitive. Do not repost them publicly.
 
 ### Registry Participants
 
 You can:
 
-- Join a registry by code or link.  
-- Reserve gifts and mark them prepared.  
-- Keep your identity hidden from the Registry Owner until reveal for protected actions.  
+- Join a registry by code or link.
+- Reserve gifts and mark them prepared.
+- Understand whether the registry is private surprise or open coordination.
+- Control how you appear to other **Registry Participants** where the product offers a nickname or initials option.
 
 Protections you should expect:
 
-- Before reveal, other members see only what the product shows them by design.  
-- You can control how you appear to other Registry Participants where the product offers a nickname or initials option.  
+- In private surprise registries, protected attribution stays hidden from the **Registry Owner** until reveal.
+- In open coordination registries, your gift coordination actions may be visible to invited members so the group can avoid duplicates.
 
 What we expect from you:
 
-- Do not impersonate other people or post false payout instructions.  
-- Do not harass the Registry Owner or other Registry Participants.  
-- Do not upload more sensitive information than necessary.  
+- Do not impersonate other people or post false payout instructions.
+- Do not harass the **Registry Owner** or other **Registry Participants**.
+- Do not upload more sensitive information than necessary.
 
 ### Pledge Initiators
 
 You can:
 
-- Start a pooled pledge on an eligible item, where enabled.  
-- Share payout instructions so others can send money outside the app.  
-- Review proof material shared for coordination inside the product.  
+- Start a pooled pledge on an eligible item, where enabled.
+- Share payout instructions so others can send money outside the app.
+- Review proof material shared for coordination inside the product.
 
 Protections you should expect:
 
-- Only eligible members can access pledge flows.  
-- Receipts and payout details are treated as sensitive and should be shown only through normal authenticated product screens.  
+- Only eligible members can access pledge flows.
+- Receipts and payout details are treated as sensitive and should be shown only through normal authenticated product screens.
 
 What we expect from you:
 
-- Once you start a pooled pledge, it **cannot be cancelled** in Beabr. It is **your responsibility** to follow through on the pledge you initiated (keep payout instructions accurate, reconcile receipts/contributions, and close the loop with contributors through normal channels if anything changes).  
-- Post accurate payout instructions for accounts you are authorized to use.  
-- Handle receipts carefully. Do not pressure contributors for more proof than needed.  
+- Once you start a pooled pledge, it **cannot be cancelled** in Beabr. It is **your responsibility** to follow through on the pledge you initiated.
+- Post accurate payout instructions for accounts you are authorized to use.
+- Handle receipts carefully. Do not pressure contributors for more proof than needed.
 
 ---
 
@@ -107,10 +111,10 @@ You may contact the developer at **keith_tagarao01@yahoo.com.ph**.
 
 Report:
 
-- Phishing sites copying Beabr visuals  
-- Impersonation or fraud attempts  
-- Harassment, threats, or coercion  
-- Unexpected privacy leaks before reveal  
+- Phishing sites copying Beabr visuals
+- Impersonation or fraud attempts
+- Harassment, threats, or coercion
+- Unexpected privacy leaks where private surprise rules apply
 
 Include the time, the screen you were on, and any error message you saw.
 
@@ -121,5 +125,4 @@ _End of User protection_
 ---
 
 **Effective date:** May 3, 2026  
-**Last updated:** May 3, 2026  
-
+**Last updated:** May 5, 2026

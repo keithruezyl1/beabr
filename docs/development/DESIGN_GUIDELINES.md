@@ -747,6 +747,8 @@ Beabr copy should be:
 - concise
 - helpful
 - calm
+- love-focused
+- oriented around helping people choose thoughtful gifts for someone they care about
 
 Avoid:
 
@@ -754,6 +756,7 @@ Avoid:
 - overly emotional copy
 - childish mascot language
 - corporate-sounding text
+- ego-centered framing that makes the registry sound like a demand list
 
 Examples:
 
@@ -763,12 +766,29 @@ Good:
 - Mark as prepared
 - Reveal contributors
 - Send thank-you note
+- Help loved ones choose thoughtful gifts
+- Add a gift idea so loved ones know what would be meaningful
 
 Avoid:
 
 - Snag this gift!
 - Be the ultimate gift hero!
 - Blast your registry!
+- What do you want?
+
+## 23.1 Gift Visibility Copy
+
+Registries use an immutable setup-time visibility mode:
+
+- **Private surprise:** loved ones coordinate quietly; names unlock at reveal.
+- **Open coordination:** loved ones can see who reserved or contributed so gifts are easier to coordinate.
+
+Guidelines:
+
+- Present visibility as a required creation choice.
+- On edit screens, show it as read-only with copy that it was chosen during setup and cannot be changed.
+- Explain the benefit as love-focused coordination and duplicate prevention, not surveillance.
+- Open coordination may reveal attribution, but UI must not expose private notes, pledge receipt images, payout fields, encrypted fields, storage paths, or other sensitive payment materials as general registry details.
 
 ---
 

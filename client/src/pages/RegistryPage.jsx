@@ -284,6 +284,19 @@ function parsePriceReferenceInput(raw) {
   return n;
 }
 
+function parseOptionalItemUrl(raw) {
+  const t = String(raw ?? "").trim();
+  if (!t) return null;
+  const candidate = /^[a-z][a-z0-9+.-]*:\/\//i.test(t) ? t : t.includes(".") ? `https://${t}` : t;
+  try {
+    const url = new URL(candidate);
+    if (url.protocol !== "http:" && url.protocol !== "https:") throw new Error("Unsupported URL protocol.");
+    return url.toString();
+  } catch {
+    throw new Error("Enter a valid item link starting with https://, or leave the link blank.");
+  }
+}
+
 /** Display price on item cards / sheet (API may return Decimal as string). */
 function formatItemPriceReference(value) {
   if (value == null || value === "") return null;
@@ -299,6 +312,66 @@ function formatReservationDateTime(iso) {
   const date = d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" });
   const time = d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
   return `${date} · ${time}`;
+}
+
+function attributionName(person) {
+  return String(person?.name || "Loved one").trim() || "Loved one";
+}
+
+function attributionInitial(person) {
+  return attributionName(person).slice(0, 1).toUpperCase();
+}
+
+function AttributionAvatar({ person }) {
+  if (person?.avatarUrl) {
+    return (
+      <img
+        src={person.avatarUrl}
+        alt=""
+        className="h-8 w-8 shrink-0 rounded-full object-cover ring-1 ring-[var(--border-subtle)]"
+      />
+    );
+  }
+  return (
+    <span
+      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary-100)] text-xs font-bold text-[var(--color-primary-800)] ring-1 ring-[var(--border-subtle)]"
+      aria-hidden
+    >
+      {attributionInitial(person)}
+    </span>
+  );
+}
+
+function AttributionRows({ title, rows }) {
+  if (!rows || rows.length === 0) return null;
+  return (
+    <section className="rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--surface-card-soft)] p-3">
+      <div className="text-xs font-semibold text-[var(--text-secondary)]">{title}</div>
+      <ul className="mt-2 space-y-2">
+        {rows.map((row) => {
+          const person = row.giver || row.contributor || row.initiator;
+          const amount =
+            row.amount != null
+              ? formatPesoDots(row.amount, { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+              : null;
+          const detail =
+            row.detail ||
+            (amount
+              ? `${amount} · ${formatStatusLabel(row.status)}`
+              : `${formatStatusLabel(row.status)} · Qty ${row.quantity}`);
+          return (
+            <li key={row.id} className="flex items-center gap-2 rounded-[var(--radius-md)] bg-white px-3 py-2 ring-1 ring-[var(--border-subtle)]">
+              <AttributionAvatar person={person} />
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-semibold text-[var(--text-primary)]">{attributionName(person)}</div>
+                <div className="mt-0.5 text-xs text-[var(--text-muted)]">{detail}</div>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
 }
 
 /** Numeric estimate for filtering; invalid / missing → null */
@@ -905,7 +978,7 @@ function PledgeInitiateForm({ draft, setDraft, errors, actionBusy, actionErr, on
   return (
     <div className="space-y-3">
       <div className="text-sm text-[var(--text-secondary)]">
-        Add your payout details so contributors can send money to you.        
+        Add payout details so loved ones can chip in toward this gift.
       </div>
 
       <div>
@@ -1227,6 +1300,8 @@ export function RegistryPage() {
         myReservation: next.myReservation,
         hasPledge: next.hasPledge,
         groupPledge: next.groupPledge,
+        attributionVisible: next.attributionVisible,
+        attribution: next.attribution,
         attributes: next.attributes,
       };
     });
@@ -1621,13 +1696,14 @@ export function RegistryPage() {
     const title = draftItem.title.trim();
     if (!title) {
       setActionErr(
-        new Error('Add a short name in “What do you want?” — that’s the gift title (separate from brand or model below).')
+        new Error("Add a short gift name so loved ones know what this is.")
       );
       return;
     }
     setActionBusy(true);
     setActionErr(null);
     try {
+      const externalLink = parseOptionalItemUrl(draftItem.externalLink);
       const created = await apiFetch(`/api/registries/${registryId}/items`, {
         method: "POST",
         body: JSON.stringify({
@@ -1636,7 +1712,7 @@ export function RegistryPage() {
           description: draftItem.description || null,
           quantityNeeded: parseIntegerInput(draftItem.quantityNeeded) || 1,
           viewerInstruction: draftItem.viewerInstruction || null,
-          externalLink: draftItem.externalLink?.trim() ? draftItem.externalLink.trim() : null,
+          externalLink,
           storeName: null,
           priceReference: parsePriceReferenceInput(draftItem.priceReference),
           ownerStatus: draftItem.considering ? "considering" : "confirmed",
@@ -1728,6 +1804,7 @@ export function RegistryPage() {
     setActionBusy(true);
     setActionErr(null);
     try {
+      const externalLink = parseOptionalItemUrl(editItem.externalLink);
       await apiFetch(`/api/items/${editItem.id}`, {
         method: "PATCH",
         body: JSON.stringify({
@@ -1736,13 +1813,29 @@ export function RegistryPage() {
           quantityNeeded: parseIntegerInput(editItem.quantityNeeded) || 1,
           viewerInstruction: editItem.viewerInstruction || null,
           description: editItem.description || null,
-          externalLink: editItem.externalLink?.trim() ? editItem.externalLink.trim() : null,
+          externalLink,
           storeName: null,
           priceReference: parsePriceReferenceInput(editItem.priceReference),
           ownerStatus: editItem.considering ? "considering" : "confirmed",
         }),
       });
 
+      setActiveItem(null);
+      setEditItem(null);
+      await refresh();
+    } catch (e) {
+      setActionErr(e);
+    } finally {
+      setActionBusy(false);
+    }
+  }
+
+  async function archiveActiveItem() {
+    if (!activeItem?.id) return;
+    setActionBusy(true);
+    setActionErr(null);
+    try {
+      await apiFetch(`/api/items/${activeItem.id}`, { method: "DELETE" });
       setActiveItem(null);
       setEditItem(null);
       await refresh();
@@ -2304,7 +2397,7 @@ export function RegistryPage() {
                     <div className="text-sm font-semibold text-[var(--text-primary)]">No gifts yet</div>
                     <div className="mt-1 text-sm text-[var(--text-secondary)]">
                       {role === "owner"
-                        ? "Add your first gift item so givers know what to prepare."
+                        ? "Add a gift idea so loved ones know what would be meaningful."
                         : "This registry doesn’t have any visible items yet."}
                     </div>
                   </div>
@@ -2888,6 +2981,27 @@ export function RegistryPage() {
               </div>
             ) : null}
 
+            {activeItem.attributionVisible && activeItem.attribution ? (
+              <div className="space-y-3">
+                <AttributionRows title="Reserved and prepared by" rows={activeItem.attribution.reservations || []} />
+                <AttributionRows
+                  title="Group pledge initiated by"
+                  rows={
+                    activeItem.attribution.pledgeInitiator
+                      ? [
+                          {
+                            id: `pledge-initiator-${activeItem.id}`,
+                            initiator: activeItem.attribution.pledgeInitiator,
+                            detail: "Started the group pledge",
+                          },
+                        ]
+                      : []
+                  }
+                />
+                <AttributionRows title="Pledge contributors" rows={activeItem.attribution.pledgeContributors || []} />
+              </div>
+            ) : null}
+
             {role === "owner" && editItem ? (
               <Card className="p-4">
                 <div className="text-sm font-semibold">Edit item</div>
@@ -3023,7 +3137,7 @@ export function RegistryPage() {
                     </div>
                   </div>
                   <label className="block">
-                    <div className="text-xs font-semibold text-[var(--text-secondary)]">What do you want?</div>
+                    <div className="text-xs font-semibold text-[var(--text-secondary)]">Gift name</div>
                     <input
                       className="mt-1 w-full rounded-[14px] border border-[var(--border-default)] bg-white px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-[rgba(129,160,63,0.18)]"
                       value={editItem.title}
@@ -3101,13 +3215,22 @@ export function RegistryPage() {
                       onChange={(e) => setEditItem((s) => ({ ...s, considering: e.target.checked }))}
                     />
                     <span className="text-sm text-[var(--text-secondary)]">
-                      I am still considering this.
+                      Keep this as a maybe gift idea.
                     </span>
                   </label>
                   {actionErr ? <div className="text-sm text-[var(--danger-text)]">{actionErr.message}</div> : null}
                   <Button className="w-full" onClick={saveItemEdits} disabled={actionBusy}>
                     Save
                   </Button>
+                  {(activeItem.totals?.claimed ?? 0) === 0 && !activeItem.hasPledge ? (
+                    <Button className="w-full" variant="danger" onClick={archiveActiveItem} disabled={actionBusy}>
+                      Archive gift
+                    </Button>
+                  ) : (
+                    <div className="rounded-[var(--radius-md)] bg-[var(--surface-card-soft)] px-3 py-2 text-center text-xs leading-relaxed text-[var(--text-muted)] ring-1 ring-[var(--border-subtle)]">
+                      Archive before any reservation, prep, or pledge.
+                    </div>
+                  )}
                 </div>
               </Card>
             ) : null}
@@ -3750,7 +3873,7 @@ export function RegistryPage() {
           </div>
           <label className="block">
             <div className="text-xs font-semibold text-[var(--text-secondary)]">
-              What do you want?
+              Gift name
             </div>
             <input
               className="mt-1 w-full rounded-[14px] border border-[var(--border-default)] bg-white px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-[rgba(129,160,63,0.18)]"
@@ -3869,7 +3992,7 @@ export function RegistryPage() {
               onChange={(e) => setDraftItem((s) => ({ ...s, considering: e.target.checked }))}
             />
             <span className="text-sm text-[var(--text-secondary)]">
-              I am still considering this.
+              Keep this as a maybe gift idea.
             </span>
           </label>
           {actionErr ? <div className="text-sm text-[var(--danger-text)]">{actionErr.message}</div> : null}
@@ -3978,4 +4101,3 @@ export function RegistryPage() {
     </div>
   );
 }
-

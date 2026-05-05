@@ -26,7 +26,7 @@ See **[Terms of use](../legal/terms-of-service.md)** (**Registry Participants**:
 
 ### Registry Owner
 
-The **Registry Owner** configures the registry and timing. **Default technical rules** reserve pledge initiation flows for **Registry Participant** roles (**not** **Registry Owners**). **Registry Owner** visibility of **who** chipped in aligns with reveal rules. You may see pooled progress metrics earlier depending on configurations.
+The **Registry Owner** configures the registry, reveal timing, and setup-time gift visibility mode. **Default technical rules** reserve pledge initiation flows for **Registry Participant** roles (**not** **Registry Owners**). In **private surprise** registries, owner visibility of **who** chipped in follows reveal rules. In **open coordination** registries, attribution may be visible earlier so loved ones can coordinate. You may see pooled progress metrics earlier depending on configurations.
 
 Always trust your live UI and authoritative legal disclosures over any example.
 
@@ -117,7 +117,9 @@ Beabr retains pledge initiation and contribution records needed to run pooled fl
 
 **Pledge Initiators** often can see **who contributed** and **receipt material** for reconciliation. This is feature intended but **high stakes**: legal terms warn you.
 
-**Registry Owners** gain insight consistent with **reveal** policy. See **[Privacy before and after reveal](HC-030-privacy-reveal-summary.md)**.
+**Registry Owners** gain attribution consistent with the registry's gift visibility mode and reveal policy. Open coordination may show names earlier, but payout fields, QR images, receipt images, storage paths, and private notes remain sensitive and should not be treated as general registry details.
+
+See **[Privacy before and after reveal](HC-030-privacy-reveal-summary.md)**.
 
 ---
 

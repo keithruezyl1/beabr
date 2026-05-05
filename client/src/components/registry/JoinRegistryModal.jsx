@@ -59,6 +59,8 @@ export function JoinRegistryModal({ open, onClose, initialCode = "" }) {
   const [cameraErr, setCameraErr] = useState(null);
   const [scanCamera, setScanCamera] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [registryPreview, setRegistryPreview] = useState(null);
+  const openCoordination = registryPreview?.visibilityMode === "open_coordination";
 
   const stopCamera = useCallback(() => {
     if (rafRef.current != null) {
@@ -82,11 +84,39 @@ export function JoinRegistryModal({ open, onClose, initialCode = "" }) {
     if (!open) return;
     setCode(normalizedInitialCode);
     setErr(null);
+    setRegistryPreview(null);
   }, [open, normalizedInitialCode]);
 
   useEffect(() => {
     if (!open) setTermsAccepted(false);
   }, [open]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const normalized = code.trim().replace(/\s+/g, "").toUpperCase();
+    if (normalized.length < 3) {
+      setRegistryPreview(null);
+      return undefined;
+    }
+
+    let cancelled = false;
+    const timeout = window.setTimeout(async () => {
+      try {
+        const data = await apiFetch("/api/registries/join/preview", {
+          method: "POST",
+          body: JSON.stringify({ joinCode: normalized }),
+        });
+        if (!cancelled) setRegistryPreview(data.registry || null);
+      } catch {
+        if (!cancelled) setRegistryPreview(null);
+      }
+    }, 250);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeout);
+    };
+  }, [code, open]);
 
   useEffect(() => {
     if (!open || !scanCamera) {
@@ -187,10 +217,10 @@ export function JoinRegistryModal({ open, onClose, initialCode = "" }) {
     try {
       const body = {
         joinCode: code.trim().toUpperCase(),
-        hideAvatar,
+        hideAvatar: openCoordination ? false : hideAvatar,
       };
       const trimmed = nickname.trim();
-      if (trimmed.length > 0) body.publicDisplayName = trimmed;
+      if (!openCoordination && trimmed.length > 0) body.publicDisplayName = trimmed;
 
       const data = await apiFetch("/api/registries/join", {
         method: "POST",
@@ -303,39 +333,41 @@ export function JoinRegistryModal({ open, onClose, initialCode = "" }) {
           </div>
         ) : null}
 
-        <section
-          className="rounded-[var(--radius-lg)] bg-white p-4 shadow-[var(--shadow-xs)] ring-1 ring-[var(--border-subtle)]"
-          aria-labelledby={`${hintId}-appear-title`}
-        >
-          <h3 id={`${hintId}-appear-title`} className="text-xs font-semibold text-[var(--text-secondary)]">
-            How you appear <span className="font-normal text-[var(--text-muted)]">(optional)</span>
-          </h3>
-          <p className="mt-2 text-xs leading-relaxed text-[var(--text-muted)]">
-            Your nickname may appear to other gift givers. The registry owner cannot identify you before reveal.
-          </p>
-          <label className="mt-4 block text-left">
-            <span className="text-xs font-semibold text-[var(--text-secondary)]">Nickname</span>
-            <input
-              className="mt-1 min-h-[40px] w-full rounded-[14px] border border-[var(--border-default)] bg-[var(--surface-card-soft)] px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[rgba(129,160,63,0.18)]"
-              value={nickname}
-              onChange={(e) => setNickname(e.target.value)}
-              placeholder="Defaults to your account name"
-              maxLength={80}
-              autoComplete="off"
-            />
-          </label>
-          <label className="mt-3 flex min-h-[44px] cursor-pointer items-center gap-3 text-left">
-            <input
-              type="checkbox"
-              className="h-4 w-4 shrink-0 rounded border-[var(--border-default)] text-[var(--color-primary-600)] focus:ring-[var(--color-primary-500)]"
-              checked={hideAvatar}
-              onChange={(e) => setHideAvatar(e.target.checked)}
-            />
-            <span className="text-sm leading-snug text-[var(--text-secondary)]">
-              Show initials instead of my profile photo
-            </span>
-          </label>
-        </section>
+        {!openCoordination ? (
+          <section
+            className="rounded-[var(--radius-lg)] bg-white p-4 shadow-[var(--shadow-xs)] ring-1 ring-[var(--border-subtle)]"
+            aria-labelledby={`${hintId}-appear-title`}
+          >
+            <h3 id={`${hintId}-appear-title`} className="text-xs font-semibold text-[var(--text-secondary)]">
+              How you appear <span className="font-normal text-[var(--text-muted)]">(optional)</span>
+            </h3>
+            <p className="mt-2 text-xs leading-relaxed text-[var(--text-muted)]">
+              Your nickname may appear to other participants. The registry owner cannot identify you before reveal.
+            </p>
+            <label className="mt-4 block text-left">
+              <span className="text-xs font-semibold text-[var(--text-secondary)]">Nickname</span>
+              <input
+                className="mt-1 min-h-[40px] w-full rounded-[14px] border border-[var(--border-default)] bg-[var(--surface-card-soft)] px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[rgba(129,160,63,0.18)]"
+                value={nickname}
+                onChange={(e) => setNickname(e.target.value)}
+                placeholder="Defaults to your account name"
+                maxLength={80}
+                autoComplete="off"
+              />
+            </label>
+            <label className="mt-3 flex min-h-[44px] cursor-pointer items-center gap-3 text-left">
+              <input
+                type="checkbox"
+                className="h-4 w-4 shrink-0 rounded border-[var(--border-default)] text-[var(--color-primary-600)] focus:ring-[var(--color-primary-500)]"
+                checked={hideAvatar}
+                onChange={(e) => setHideAvatar(e.target.checked)}
+              />
+              <span className="text-sm leading-snug text-[var(--text-secondary)]">
+                Show initials instead of my profile photo
+              </span>
+            </label>
+          </section>
+        ) : null}
 
         <BevesReminders
           variant="join"

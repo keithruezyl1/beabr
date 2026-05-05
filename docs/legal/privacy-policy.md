@@ -12,9 +12,9 @@ This page describes the Beabr web experience: sign-in, the registry application 
 
 ## What we process
 
-**Sign-in.** You sign in with the methods the developer enabled for this instance, such as Google sign-in or an email **one time code**. We keep identifiers and profile fields the product needs to run your account, such as name, email, optional avatar image, and timestamps.
+**Sign-in.** You sign in with the methods the developer enabled for this instance, such as Google sign-in or an email one time code. We keep identifiers and profile fields the product needs to run your account, such as name, email, optional avatar image, and timestamps.
 
-**Registry data.** Content members add: items, reservations, pledge records, reveal settings, messages, and uploads (including optional payment-related images when those features exist).
+**Registry data.** Content members add: items, reservations, pledge records, reveal settings, gift visibility mode, messages, and uploads including optional payment-related images when those features exist.
 
 **Technical data.** Internet address where available, browser or app identifiers in a standard form, and structured logs used for security and reliability. Public-facing error messages are written to avoid unnecessary internal detail.
 
@@ -24,21 +24,23 @@ Sensitive pledge facilitator content and payment reference images can receive ad
 
 ## Why we process it
 
-To operate authentication, enforce membership and reveal rules, prevent abuse, diagnose failures, comply with narrowly scoped lawful requests when applicable, and keep the service reliable without building standalone marketing dossiers for sale.
+To operate authentication, enforce membership and visibility rules, prevent abuse, diagnose failures, comply with narrowly scoped lawful requests when applicable, and keep the service reliable without building standalone marketing dossiers for sale.
 
 ---
 
 ## Who can see it
 
-What you see depends on what you do in the product and what role you have in a registry.
+What you see depends on what you do in the product, what role you have in a registry, and the registry's setup-time gift visibility mode.
 
-- **Registry Owners** can see and manage registry details. Some contributor details stay hidden until reveal.  
-- **Registry Participants** can see items and their own actions. Some information about other people is limited before reveal.  
-- **Pledge Initiators** and other pledge participants can see pledge-related details needed to coordinate pooled contributions, where that feature is enabled.  
+- **Registry Owners** can see and manage registry details. In private surprise registries, some contributor details stay hidden until reveal. In open coordination registries, attribution may be visible earlier so loved ones can avoid duplicates and coordinate gifts.
+- **Registry Participants** can see items, their own actions, and the coordination details the product shows for the registry mode.
+- **Pledge Initiators** and other pledge participants can see pledge-related details needed to coordinate pooled contributions, where that feature is enabled.
 
-Other members see what the product shows them by design, including attribution after reveal when reveal has happened. Hosting providers process data as part of running infrastructure. **[Security practices](security-practices.md)** summarizes protections such as encryption for certain high-impact fields.
+Open coordination reveals attribution, not every sensitive artifact. Payout fields, QR images, receipt images, encrypted fields, storage paths, and private notes remain controlled by their specific product flows.
 
-For a simplier summary of user rights, protections, and reporting paths by role, read **[User protection](user-protection.md)**.
+Hosting providers process data as part of running infrastructure. **[Security practices](security-practices.md)** summarizes protections such as encryption for certain high-impact fields.
+
+For a simpler summary of user rights, protections, and reporting paths by role, read **[User protection](user-protection.md)**.
 
 ---
 
@@ -73,4 +75,4 @@ _End of Privacy overview and disclosures_
 ---
 
 **Effective date:** May 3, 2026  
-**Last updated:** May 3, 2026  
+**Last updated:** May 5, 2026

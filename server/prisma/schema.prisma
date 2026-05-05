@@ -46,6 +46,7 @@ model Registry {
   revealDatetime              DateTime
   showPledgeTotalBeforeReveal Boolean              @default(true)
   showConsideringItems        Boolean              @default(false)
+  visibilityMode              RegistryVisibilityMode @default(private_until_reveal) @map("visibility_mode")
   isRevealed                  Boolean              @default(false)
   createdAt                   DateTime             @default(now())
   updatedAt                   DateTime             @updatedAt
@@ -283,6 +284,11 @@ enum RegistryItemOwnerStatus {
   confirmed
   considering
   removed
+}
+
+enum RegistryVisibilityMode {
+  private_until_reveal
+  open_coordination
 }
 
 enum ItemReservationStatus {

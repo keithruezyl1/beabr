@@ -1,4 +1,4 @@
-# Beabr’s responsibility
+# Beabr's responsibility
 
 This page explains what Beabr is responsible for, and what it is not responsible for.
 
@@ -10,13 +10,14 @@ Beabr is responsible for operating the product so it behaves as described in the
 
 That includes:
 
-- Protecting access to registries and documentation through signed in sessions.  
-- Enforcing role based visibility rules, including reveal privacy rules.  
-- Using secure transport (HTTPS) and standard web security protections for the app.  
-- Limiting what data the product collects and stores to what it needs to run.  
-- Protecting sensitive areas such as pooled pledge coordination and uploads, including added protections where the developer enables them.  
-- Reducing abusive traffic with safeguards such as rate limiting.  
-- Providing a way to report security issues and addressing verified issues.  
+- Enforcing access to registries through signed in sessions.
+- Keeping documentation pages available without requiring sign-in where the product exposes them publicly.
+- Enforcing role based visibility rules, including immutable gift visibility mode and reveal privacy rules.
+- Using secure transport (HTTPS) and standard web security protections for the app.
+- Limiting what data the product collects and stores to what it needs to run.
+- Protecting sensitive areas such as pooled pledge coordination and uploads, including added protections where the developer enables them.
+- Reducing abusive traffic with safeguards such as rate limiting.
+- Providing a way to report security issues and addressing verified issues.
 
 ---
 
@@ -24,10 +25,12 @@ That includes:
 
 Beabr is responsible for these privacy protections:
 
-- Before reveal, hiding contributor identity from Registry Owners for protected actions (reservations, prepared status, and pooled pledge participation).  
-- After reveal, showing contributor attribution only after reveal, per product rules.  
+- Making the registry's gift visibility mode a setup-time choice that cannot be changed later.
+- In **private surprise** registries, hiding contributor identity from **Registry Owners** for protected actions until reveal.
+- In **open coordination** registries, showing attribution only as product coordination data, not exposing unrelated sensitive materials.
+- After reveal, showing contributor attribution according to product rules.
 
-For a simplier role based summary, read **[User protection](user-protection.md)**.
+For a simpler role based summary, read **[User protection](user-protection.md)**.
 
 ---
 
@@ -35,10 +38,10 @@ For a simplier role based summary, read **[User protection](user-protection.md)*
 
 Beabr is responsible for acting on credible reports about misuse that happens in the product, such as:
 
-- Impersonation attempts  
-- Harassment, threats, or coercion  
-- Phishing links or screens that copy Beabr visuals  
-- Unexpected privacy leaks before reveal  
+- Impersonation attempts
+- Harassment, threats, or coercion
+- Phishing links or screens that copy Beabr visuals
+- Unexpected privacy leaks where private surprise rules apply
 
 What Beabr can do depends on the situation. Actions can include investigating, limiting access, or removing access to protect other people.
 
@@ -52,11 +55,11 @@ We aim to respond within 1 to 3 days for this Beabr instance.
 
 If it helps, include:
 
-- The registry link or join code  
-- The screen you were on  
-- What you expected to happen  
-- What happened instead  
-- The approximate time you saw it  
+- The registry link or join code
+- The screen you were on
+- What you expected to happen
+- What happened instead
+- The approximate time you saw it
 
 ---
 
@@ -66,19 +69,18 @@ Beabr does not process payments and does not hold money for you.
 
 Beabr is not responsible for:
 
-- Verifying payout instructions posted by members.  
-- Reversing bank or wallet transfers. Those are handled by your bank or wallet provider.  
-- Delivery, quality, or authenticity of physical gifts.  
-- Misuse, fraud, or malicious acts that happen outside the app.  
-- Disputes between members outside what the product can enforce.  
-- Outages or policies of third party services such as Google or email providers.  
+- Verifying payout instructions posted by members.
+- Reversing bank or wallet transfers. Those are handled by your bank or wallet provider.
+- Delivery, quality, or authenticity of physical gifts.
+- Misuse, fraud, or malicious acts that happen outside the app.
+- Disputes between members outside what the product can enforce.
+- Outages or policies of third party services such as Google or email providers.
 
 ---
 
-_End of Beabr’s responsibility_
+_End of Beabr's responsibility_
 
 ---
 
 **Effective date:** May 3, 2026  
-**Last updated:** May 3, 2026  
-
+**Last updated:** May 5, 2026

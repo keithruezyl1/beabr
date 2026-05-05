@@ -3,7 +3,7 @@
 
 ## 1. Product Overview
 
-Beabr is a web-based graduation gift-preparation registry app that allows graduates to create a private registry, share access through a code or link, and let invited gift givers reserve, prepare, or pledge gifts without revealing their identities until a scheduled reveal date.
+Beabr is a web-based gift-preparation registry app that allows people to create a private registry, share access through a code or link, and let invited gift givers reserve, prepare, or pledge gifts. Each registry chooses one visibility mode during setup: **private surprise** or **open coordination**.
 
 The app is not a social network. It should feel modern, premium, and easy to use like a polished social media app, but its purpose is functional: gift logging, preparation tracking, and reveal coordination.
 
@@ -21,11 +21,11 @@ The app is not a social network. It should feel modern, premium, and easy to use
 
 ## 4. Product Purpose
 
-Graduates often receive duplicate, mismatched, or unwanted gifts because friends and family have no centralized way to coordinate what has already been prepared.
+People often receive duplicate, mismatched, or unwanted gifts because friends and family have no centralized way to coordinate what has already been prepared.
 
-Beabr solves this by allowing the graduate to create a registry of desired gifts and allowing gift givers to privately claim, prepare, or pledge toward items.
+Beabr solves this by allowing the registry owner to create a registry of meaningful gift ideas and allowing gift givers to claim, prepare, or pledge toward items.
 
-The owner can set a date and time when everything is revealed, including who gave what and how much each person pledged.
+The owner sets a reveal date and chooses a visibility mode. Private surprise hides protected attribution until reveal. Open coordination shows attribution earlier so loved ones can avoid duplicates and coordinate gifts clearly.
 
 ---
 
@@ -43,9 +43,9 @@ A friend, family member, classmate, relative, or supporter who wants to prepare 
 
 ## 6. Core Product Goals
 
-1. Help graduates clearly list desired gifts.
+1. Help registry owners clearly list thoughtful gift ideas.
 2. Help gift givers avoid duplicate gifts.
-3. Preserve the surprise until the scheduled reveal.
+3. Preserve the surprise until the scheduled reveal when private surprise is chosen.
 4. Support both physical gifts and manual money pledges.
 5. Provide a premium, modern, mobile-first experience.
 6. Keep the early iteration simple enough for one-shot development.
@@ -58,6 +58,7 @@ This early iteration must include:
 
 - Google OAuth authentication
 - Registry creation
+- Immutable gift visibility mode during registry creation
 - Registry access through code and shareable link
 - Registry profile page
 - Owner item management
@@ -67,7 +68,7 @@ This early iteration must include:
 - Quantity support
 - Manual money pledge support
 - Scheduled reveal date and time
-- Post-reveal contributor visibility
+- Visibility-mode-aware contributor attribution
 - Post-reveal thank-you letters
 - In-app thank-you message pop-up for gift givers
 - Owner and viewer role permissions
@@ -108,6 +109,7 @@ The registry owner can:
 - Edit registry details
 - Set graduation date
 - Set reveal date and time
+- Choose gift visibility during initial setup
 - Add, edit, and reorder registry items
 - Add cash pledge funds
 - View gift preparation progress
@@ -116,7 +118,7 @@ The registry owner can:
 - Write thank-you letters after reveal
 - See thank-you message status
 
-The registry owner cannot see who reserved, prepared, or pledged before the reveal date/time.
+The registry owner cannot change gift visibility after creation. In private surprise mode, the owner cannot see who reserved, prepared, or pledged before the reveal date/time. In open coordination mode, attribution may be visible immediately for coordination.
 
 ---
 
@@ -133,13 +135,13 @@ A registry viewer can:
 - Add a private preparation note
 - View whether an item is available, partially reserved, fully reserved, partially prepared, or fully prepared
 - View thank-you letters sent to them after reveal
+- See attribution that the registry visibility mode makes available
 
 A registry viewer cannot:
 
 - Edit registry details
 - Add or edit owner-created items
-- See other gift givers before reveal
-- See who prepared a gift before reveal
+- See attribution hidden by private surprise rules before reveal
 - See private owner-only notes
 - Access registries they have not joined
 
@@ -176,9 +178,12 @@ The owner must be able to create a registry with:
 - Short message or note
 - Graduation date
 - Reveal date and time
+- Gift visibility mode: `private_until_reveal` or `open_coordination`
 - Optional cover image
 - Generated registry code
 - Generated shareable link
+
+The gift visibility mode is required at creation and cannot be changed later.
 
 ---
 
@@ -288,7 +293,7 @@ Reservation means:
 
 - The viewer intends to prepare the item
 - Other viewers should see that some or all quantity is no longer available
-- The owner still cannot see who reserved it before reveal
+- The owner sees who reserved it only when the registry visibility mode allows attribution
 
 Reservation fields:
 
@@ -386,7 +391,7 @@ A viewer can pledge:
 Before reveal:
 
 - Owner may see total pledged amount if enabled
-- Owner cannot see who pledged
+- Owner cannot see who pledged where private surprise rules apply
 
 After reveal:
 
@@ -414,11 +419,24 @@ These must not be implemented in the early iteration.
 
 The owner must set a reveal date and time.
 
-Before reveal:
+The owner must also choose one visibility mode during registry setup:
+
+- `private_until_reveal`: attribution is hidden from the owner until reveal.
+- `open_coordination`: attribution is visible immediately to support gift coordination.
+
+The visibility mode cannot be edited after the registry is created.
+
+Before reveal in private surprise mode:
 
 - Giver identities are hidden from the owner
 - Gift assignments are hidden from the owner
 - Pledge contributor details are hidden from the owner
+
+Before reveal in open coordination mode:
+
+- The owner and participants may see who reserved or prepared a gift
+- The owner and participants may see who initiated or contributed to an item-level group pledge
+- Private notes, pledge receipt images, payout fields, encrypted fields, and storage paths remain protected by their own flows
 
 After reveal:
 
@@ -448,7 +466,7 @@ After reveal has occurred:
 
 ## 25. Reveal Visibility Rules
 
-Before reveal:
+Before reveal in private surprise mode:
 
 | Data | Owner View |
 |---|---|
@@ -458,6 +476,17 @@ Before reveal:
 | Money pledge total | Optional |
 | Individual pledge amount | Hidden |
 | Viewer notes | Hidden |
+
+Before reveal in open coordination mode:
+
+| Data | Owner / Participant View |
+|---|---|
+| Item available status | Visible |
+| Item reserved/prepared status | Visible |
+| Reservation/preparation attribution | Visible |
+| Item-level pledge initiator/contributor attribution | Visible |
+| Sensitive pledge materials | Protected by pledge flows |
+| Private notes | Hidden from general registry detail |
 
 After reveal:
 

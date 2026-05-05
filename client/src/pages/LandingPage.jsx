@@ -98,13 +98,13 @@ export function LandingPage() {
               </div>
 
               <h1 className="mt-7 text-[40px] font-extrabold leading-[1.02] tracking-tight sm:text-[46px] md:mt-8 md:text-[68px] lg:text-[76px] xl:text-[86px]">
-                Keep the
-                <span className="block">surprise.</span>
-                <span className="mt-1 block text-[var(--color-primary-800)]">Plan the gifts.</span>
+                Plan gifts
+                <span className="block">with care.</span>
+                <span className="mt-1 block text-[var(--color-primary-800)]">Keep the love clear.</span>
               </h1>
               <p className="mt-4 max-w-[50ch] text-[14px] leading-relaxed text-[var(--text-secondary)] sm:text-[15px] md:mt-6 md:max-w-[44ch] md:text-[16px] lg:text-[18px]">
-                A private event registry where gift givers reserve, prepare, or pledge for an item, all without revealing
-                who did what until your reveal time.
+                A private event registry where loved ones reserve, prepare, or pledge for gifts with the visibility style
+                that fits your celebration.
               </p>
 
               <div className="mt-9 flex flex-row items-center gap-3 sm:grid sm:grid-cols-2 sm:items-stretch sm:gap-4">
@@ -211,7 +211,7 @@ export function LandingPage() {
                     <StepChip
                       step="4"
                       title="Reveal"
-                      body="See who prepared & pledged—thank-you notes follow."
+                      body="See who helped, then send thanks."
                       tone="lightestGreen"
                       className="w-[238px] -rotate-[2deg] px-4 py-3 shadow-[var(--shadow-md)] sm:w-[268px] sm:px-5 sm:py-4"
                     />
@@ -223,7 +223,7 @@ export function LandingPage() {
                 <StepChip step="1" title="Create" body="Set reveal date/time." tone="darkGreen" />
                 <StepChip step="2" title="Add" body="Gifts, links, details." tone="lightGreen" />
                 <StepChip step="3" title="Invite" body="Code or invite link." tone="lighterGreen" />
-                <StepChip step="4" title="Reveal" body="Who helped unlocks—then thanks." tone="lightestGreen" />
+                <StepChip step="4" title="Reveal" body="See helpers, then send thanks." tone="lightestGreen" />
               </div>
             </div>
           </div>

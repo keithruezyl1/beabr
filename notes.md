@@ -1,4 +1,7 @@
-- pledgers
+- add notification for registry owner when someone joins an open coordination registry
+- add preview for registry participants visible for both registry owner and participant
+- add confirmation modal when reserving a gift
+- let registry owners see gift item status'
 - test end to end
 - caching
 - create exportable cards

@@ -9,6 +9,7 @@ const { httpError } = require("../utils/httpErrors");
 const { makeJoinCode } = require("../utils/joinCode");
 const { createJoinLimiter } = require("../middleware/rateLimits");
 const {
+  attributionVisible,
   isRevealed,
   requireMembership,
   requireOwner,
@@ -34,6 +35,19 @@ function itemShownToMember(item, member, registry) {
   );
 }
 
+function publicRegistryMemberUser(memberRow) {
+  if (!memberRow?.user) return null;
+  const displayName =
+    (memberRow.publicDisplayName && String(memberRow.publicDisplayName).trim()) ||
+    memberRow.user.name ||
+    "Member";
+  return {
+    id: memberRow.user.id,
+    name: displayName,
+    avatarUrl: memberRow.hideAvatar ? null : memberRow.user.avatarUrl ?? null,
+  };
+}
+
 const createRegistrySchema = z.object({
   title: z.string().min(1).max(120),
   ownerDisplayName: z.string().min(1).max(80),
@@ -44,6 +58,7 @@ const createRegistrySchema = z.object({
   revealDatetime: z.string().datetime(),
   showPledgeTotalBeforeReveal: z.boolean().optional(),
   showConsideringItems: z.boolean().optional(),
+  visibilityMode: z.enum(["private_until_reveal", "open_coordination"]).default("private_until_reveal"),
 });
 
 registriesRouter.post(
@@ -75,6 +90,7 @@ registriesRouter.post(
         isRevealed: new Date() >= revealDt,
         showPledgeTotalBeforeReveal: req.body.showPledgeTotalBeforeReveal ?? true,
         showConsideringItems: req.body.showConsideringItems ?? false,
+        visibilityMode: req.body.visibilityMode,
         members: {
           create: { userId: req.user.id, role: "owner" },
         },
@@ -87,6 +103,7 @@ registriesRouter.post(
         title: registry.title,
         ownerDisplayName: registry.ownerDisplayName,
         joinCode: registry.joinCode,
+        visibilityMode: registry.visibilityMode,
         shareLink: `${config.publicClientOrigin}/registry/join/${registry.joinCode}`,
       },
     });
@@ -104,6 +121,7 @@ registriesRouter.get("/", requireAuth, async (req, res) => {
           ownerDisplayName: true,
           joinCode: true,
           eventCategory: true,
+          visibilityMode: true,
           finishedAt: true,
           revealDatetime: true,
           createdAt: true,
@@ -138,10 +156,11 @@ registriesRouter.get("/", requireAuth, async (req, res) => {
   res.json({
     registries: active.map((m) => {
       const revealed = new Date() >= new Date(m.registry.revealDatetime);
+      const showAttribution = attributionVisible(m.registry);
       const rosterRows = viewerRowsByRegistry.get(m.registry.id) || [];
       const viewerRoster = buildViewerRoster(rosterRows, {
         role: m.role,
-        revealed,
+        revealed: showAttribution,
         currentUserId,
       });
       return {
@@ -151,6 +170,8 @@ registriesRouter.get("/", requireAuth, async (req, res) => {
         ownerAvatarUrl: m.registry.owner?.avatarUrl ?? null,
         joinCode: m.registry.joinCode,
         eventCategory: m.registry.eventCategory,
+        visibilityMode: m.registry.visibilityMode,
+        attributionVisible: showAttribution,
         role: m.role,
         finishedAt: m.registry.finishedAt,
         finished: Boolean(m.registry.finishedAt),
@@ -169,6 +190,26 @@ const joinSchema = z.object({
     .pipe(z.string().min(3).max(14)),
   publicDisplayName: z.union([z.string().max(80), z.literal("")]).optional(),
   hideAvatar: z.boolean().optional(),
+});
+
+const joinPreviewSchema = z.object({
+  joinCode: z
+    .string()
+    .transform((s) => s.trim().replace(/\s+/g, "").toUpperCase())
+    .pipe(z.string().min(3).max(14)),
+});
+
+registriesRouter.post("/join/preview", requireAuth, validateBody(joinPreviewSchema), async (req, res) => {
+  const registry = await prisma.registry.findUnique({
+    where: { joinCode: req.body.joinCode },
+    select: { id: true, visibilityMode: true, archivedAt: true },
+  });
+  if (!registry || registry.archivedAt) throw httpError(404, "Registry not found.");
+  res.json({
+    registry: {
+      visibilityMode: registry.visibilityMode,
+    },
+  });
 });
 
 registriesRouter.post("/join", joinLimiter, requireAuth, validateBody(joinSchema), async (req, res) => {
@@ -256,6 +297,7 @@ registriesRouter.get("/:registryId", requireAuth, async (req, res) => {
   registry = await reconcileRegistryRevealFlag(registry);
 
   const revealed = isRevealed(registry);
+  const showAttribution = attributionVisible(registry);
 
   const visibleItemIds = registry.items.filter((item) => itemShownToMember(item, member, registry)).map((i) => i.id);
 
@@ -264,19 +306,21 @@ registriesRouter.get("/:registryId", requireAuth, async (req, res) => {
   const pledgeInitiatorByItemId = new Map();
   /** @type {Map<string, number>} */
   const gatheredByItemId = new Map();
+  let pledgeInits = [];
   if (visibleItemIds.length > 0) {
-    const inits = await prisma.pledgeInitiation.findMany({
+    pledgeInits = await prisma.pledgeInitiation.findMany({
       where: { itemId: { in: visibleItemIds } },
       select: {
         itemId: true,
+        initiatorUserId: true,
         initiator: { select: { id: true, name: true, avatarUrl: true } },
       },
     });
-    pledgeInitiationItemIds = new Set(inits.map((r) => r.itemId));
-    for (const r of inits) {
+    pledgeInitiationItemIds = new Set(pledgeInits.map((r) => r.itemId));
+    for (const r of pledgeInits) {
       if (r?.itemId && r?.initiator) pledgeInitiatorByItemId.set(r.itemId, r.initiator);
     }
-    if (member.role === "viewer" && pledgeInitiationItemIds.size > 0) {
+    if ((member.role === "viewer" || showAttribution) && pledgeInitiationItemIds.size > 0) {
       const withInit = [...pledgeInitiationItemIds];
       const pledgeSums = await prisma.pledgeContribution.groupBy({
         by: ["itemId"],
@@ -305,6 +349,68 @@ registriesRouter.get("/:registryId", requireAuth, async (req, res) => {
       select: { id: true, itemId: true, quantity: true, status: true, privateNote: true, createdAt: true },
     });
     for (const r of myReservations) viewerReservationByItem.set(r.itemId, r);
+  }
+
+  const memberByUserId = new Map();
+  const reservationsByItemId = new Map();
+  const pledgeContributionsByItemId = new Map();
+  if (showAttribution && visibleItemIds.length > 0) {
+    const [memberRows, reservationRows, contributionRows] = await Promise.all([
+      prisma.registryMember.findMany({
+        where: { registryId },
+        include: { user: { select: { id: true, name: true, avatarUrl: true } } },
+      }),
+      prisma.itemReservation.findMany({
+        where: {
+          registryId,
+          itemId: { in: visibleItemIds },
+          status: { in: ["reserved", "prepared"] },
+        },
+        include: { user: { select: { id: true, name: true, avatarUrl: true } } },
+        orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
+      }),
+      prisma.pledgeContribution.findMany({
+        where: {
+          registryId,
+          itemId: { in: visibleItemIds },
+        },
+        include: { contributor: { select: { id: true, name: true, avatarUrl: true } } },
+        orderBy: [{ createdAt: "desc" }],
+      }),
+    ]);
+
+    for (const row of memberRows) memberByUserId.set(row.userId, row);
+    for (const row of pledgeInits) {
+      const initiator =
+        publicRegistryMemberUser(memberByUserId.get(row.initiatorUserId)) ||
+        publicGiverUser(row.initiator);
+      if (row?.itemId && initiator) pledgeInitiatorByItemId.set(row.itemId, initiator);
+    }
+    for (const row of reservationRows) {
+      if (!reservationsByItemId.has(row.itemId)) reservationsByItemId.set(row.itemId, []);
+      const giver = publicRegistryMemberUser(memberByUserId.get(row.userId)) || publicGiverUser(row.user);
+      reservationsByItemId.get(row.itemId).push({
+        id: row.id,
+        quantity: row.quantity,
+        status: row.status,
+        createdAt: row.createdAt,
+        preparedAt: row.preparedAt,
+        giver,
+      });
+    }
+    for (const row of contributionRows) {
+      if (!pledgeContributionsByItemId.has(row.itemId)) pledgeContributionsByItemId.set(row.itemId, []);
+      const giver =
+        publicRegistryMemberUser(memberByUserId.get(row.contributorUserId)) ||
+        publicGiverUser(row.contributor);
+      pledgeContributionsByItemId.get(row.itemId).push({
+        id: row.id,
+        amount: row.amount,
+        status: row.status,
+        createdAt: row.createdAt,
+        contributor: giver,
+      });
+    }
   }
 
   const items = [];
@@ -357,7 +463,23 @@ registriesRouter.get("/:registryId", requireAuth, async (req, res) => {
         key: a.attributeKey,
         value: a.attributeValue,
       })),
+      attributionVisible: showAttribution,
     };
+
+    if (showAttribution) {
+      base.attribution = {
+        reservations: reservationsByItemId.get(item.id) || [],
+        pledgeInitiator: pledgeInitiatorByItemId.get(item.id) || null,
+        pledgeContributors: pledgeContributionsByItemId.get(item.id) || [],
+      };
+      if (pledgeInitiationItemIds.has(item.id)) {
+        base.groupPledge = {
+          gatheredAmount: gatheredByItemId.get(item.id) ?? 0,
+          goalAmount: item.priceReference != null ? Number(item.priceReference) : null,
+          initiator: pledgeInitiatorByItemId.get(item.id) || null,
+        };
+      }
+    }
 
     if (member.role !== "owner") {
       base.displayStatus = displayStatus;
@@ -402,6 +524,8 @@ registriesRouter.get("/:registryId", requireAuth, async (req, res) => {
       coverImageUrl: registry.coverImageUrl,
       joinCode: registry.joinCode,
       eventCategory: registry.eventCategory,
+      visibilityMode: registry.visibilityMode,
+      attributionVisible: showAttribution,
       graduationDate: registry.graduationDate,
       finishedAt: registry.finishedAt,
       finished: Boolean(registry.finishedAt),
@@ -442,6 +566,7 @@ const patchRegistrySchema = z
     revealDatetime: z.string().datetime().optional(),
     showPledgeTotalBeforeReveal: z.boolean().optional(),
     showConsideringItems: z.boolean().optional(),
+    visibilityMode: z.never().optional(),
   })
   .refine((v) => Object.keys(v).length > 0, "No changes provided.");
 
@@ -484,6 +609,7 @@ registriesRouter.patch(
         isRevealed: true,
         showPledgeTotalBeforeReveal: true,
         showConsideringItems: true,
+        visibilityMode: true,
       },
     });
 
@@ -543,6 +669,7 @@ registriesRouter.get("/:registryId/reveal", requireAuth, async (req, res) => {
       ownerDisplayName: true,
       revealDatetime: true,
       isRevealed: true,
+      visibilityMode: true,
       showPledgeTotalBeforeReveal: true,
     },
   });
@@ -551,7 +678,8 @@ registriesRouter.get("/:registryId/reveal", requireAuth, async (req, res) => {
   registry = await reconcileRegistryRevealFlag(registry);
 
   const revealed = new Date() >= new Date(registry.revealDatetime);
-  if (!revealed) {
+  const showAttribution = attributionVisible(registry);
+  if (!showAttribution) {
     return res.json({
       revealed: false,
       revealDatetime: registry.revealDatetime,
@@ -630,7 +758,8 @@ registriesRouter.get("/:registryId/reveal", requireAuth, async (req, res) => {
   }
 
   res.json({
-    revealed: true,
+    revealed,
+    attributionVisible: showAttribution,
     revealDatetime: registry.revealDatetime,
     prepared: preparedReservations.map((r) => ({
       id: r.id,
@@ -652,4 +781,3 @@ registriesRouter.get("/:registryId/reveal", requireAuth, async (req, res) => {
 });
 
 module.exports = { registriesRouter };
-

@@ -6,8 +6,11 @@ DO $$
 DECLARE
   t TEXT;
 BEGIN
-  FOR t IN SELECT unnest(
-    ARRAY[
+  FOR t IN
+    SELECT table_name
+    FROM information_schema.tables
+    WHERE table_schema = 'public'
+      AND table_name = ANY(ARRAY[
       'users',
       'registries',
       'registry_members',
@@ -21,8 +24,7 @@ BEGIN
       'notifications',
       'thank_you_messages',
       '_prisma_migrations'
-    ]
-  )
+    ])
   LOOP
     EXECUTE format('DROP POLICY IF EXISTS beabr_anon_blocked ON public.%I', t);
     EXECUTE format('DROP POLICY IF EXISTS beabr_authenticated_blocked ON public.%I', t);
