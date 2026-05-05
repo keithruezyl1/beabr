@@ -31,8 +31,32 @@ reservationsRouter.post(
     const member = await requireMembership(item.registryId, req.user.id);
     if (member.role !== "viewer") throw httpError(403, "Only viewers can reserve items.");
 
+    const pledgeInitiation = await prisma.pledgeInitiation.findUnique({
+      where: { itemId },
+      select: { id: true },
+    });
+    if (pledgeInitiation) {
+      throw httpError(409, "This item has an active group pledge. You can contribute instead of reserving it.");
+    }
+
+    const existing = await prisma.itemReservation.findFirst({
+      where: {
+        registryId: item.registryId,
+        itemId,
+        userId: req.user.id,
+        status: { in: ["reserved", "prepared"] },
+      },
+      select: { id: true, status: true },
+    });
+    if (existing) {
+      throw httpError(409, "You already have a reservation for this item. Cancel it first if you want to reserve again.");
+    }
+
     const qty = await getItemQuantitySummary(itemId);
     const available = Math.max(0, item.quantityNeeded - qty.totalClaimed);
+    if (available <= 0) {
+      throw httpError(409, "This item is fully reserved.", { available });
+    }
     if (req.body.quantity > available) {
       throw httpError(409, "Not enough quantity available to reserve.", {
         available,
@@ -80,6 +104,21 @@ reservationsRouter.post("/reservations/:reservationId/cancel", requireAuth, asyn
   const updated = await prisma.itemReservation.update({
     where: { id: reservationId },
     data: { status: "cancelled" },
+  });
+
+  res.json({ reservation: updated });
+});
+
+reservationsRouter.post("/reservations/:reservationId/unprepare", requireAuth, async (req, res) => {
+  const { reservationId } = req.params;
+  const r = await prisma.itemReservation.findUnique({ where: { id: reservationId } });
+  if (!r) throw httpError(404, "Reservation not found.");
+  if (r.userId !== req.user.id) throw httpError(403, "You can only change your own reservation.");
+  if (r.status !== "prepared") throw httpError(409, "Only prepared reservations can be reverted.");
+
+  const updated = await prisma.itemReservation.update({
+    where: { id: reservationId },
+    data: { status: "reserved", preparedAt: null },
   });
 
   res.json({ reservation: updated });

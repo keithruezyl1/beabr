@@ -1,4 +1,4 @@
-- set up notifications
+- pledgers
 - test end to end
+- caching
 - create exportable cards
-- deployment + domain

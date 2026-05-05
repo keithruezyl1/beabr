@@ -260,14 +260,22 @@ registriesRouter.get("/:registryId", requireAuth, async (req, res) => {
   const visibleItemIds = registry.items.filter((item) => itemShownToMember(item, member, registry)).map((i) => i.id);
 
   let pledgeInitiationItemIds = new Set();
+  /** @type {Map<string, { id: string, name: string, avatarUrl: string | null }>} */
+  const pledgeInitiatorByItemId = new Map();
   /** @type {Map<string, number>} */
   const gatheredByItemId = new Map();
   if (visibleItemIds.length > 0) {
     const inits = await prisma.pledgeInitiation.findMany({
       where: { itemId: { in: visibleItemIds } },
-      select: { itemId: true },
+      select: {
+        itemId: true,
+        initiator: { select: { id: true, name: true, avatarUrl: true } },
+      },
     });
     pledgeInitiationItemIds = new Set(inits.map((r) => r.itemId));
+    for (const r of inits) {
+      if (r?.itemId && r?.initiator) pledgeInitiatorByItemId.set(r.itemId, r.initiator);
+    }
     if (member.role === "viewer" && pledgeInitiationItemIds.size > 0) {
       const withInit = [...pledgeInitiationItemIds];
       const pledgeSums = await prisma.pledgeContribution.groupBy({
@@ -294,6 +302,7 @@ registriesRouter.get("/:registryId", requireAuth, async (req, res) => {
         userId: req.user.id,
         status: { in: ["reserved", "prepared"] },
       },
+      select: { id: true, itemId: true, quantity: true, status: true, privateNote: true, createdAt: true },
     });
     for (const r of myReservations) viewerReservationByItem.set(r.itemId, r);
   }
@@ -357,12 +366,13 @@ registriesRouter.get("/:registryId", requireAuth, async (req, res) => {
     if (member.role === "viewer") {
       const my = viewerReservationByItem.get(item.id) || null;
       base.myReservation = my
-        ? { id: my.id, quantity: my.quantity, status: my.status, privateNote: my.privateNote }
+        ? { id: my.id, quantity: my.quantity, status: my.status, privateNote: my.privateNote, createdAt: my.createdAt }
         : null;
       if (pledgeInitiationItemIds.has(item.id)) {
         base.groupPledge = {
           gatheredAmount: gatheredByItemId.get(item.id) ?? 0,
           goalAmount: item.priceReference != null ? Number(item.priceReference) : null,
+          initiator: pledgeInitiatorByItemId.get(item.id) || null,
         };
       }
     }

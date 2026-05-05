@@ -61,10 +61,15 @@ thankYouRouter.post("/", requireAuth, validateBody(createSchema), async (req, re
 });
 
 thankYouRouter.get("/inbox", requireAuth, async (req, res) => {
+  const sinceRaw = typeof req.query.since === "string" ? req.query.since.trim() : "";
+  const sinceDate = sinceRaw ? new Date(sinceRaw) : null;
+  const since = sinceDate && Number.isFinite(sinceDate.getTime()) ? sinceDate : null;
+
   const messages = await prisma.thankYouMessage.findMany({
     where: {
       giverId: req.user.id,
       status: { in: ["sent", "seen"] },
+      ...(since ? { createdAt: { gt: since } } : {}),
     },
     include: {
       registry: { select: { id: true, title: true, ownerDisplayName: true } },

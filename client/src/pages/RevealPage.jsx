@@ -13,6 +13,7 @@ import {
   IconWallet,
 } from "../components/ui/PageIcons.jsx";
 import { RevealScreenSkeleton } from "../components/ui/ScreenSkeletons.jsx";
+import { formatPesoDots } from "../utils/numberFormat.js";
 
 function pad2(n) {
   return String(n).padStart(2, "0");
@@ -281,8 +282,8 @@ export function RevealPage() {
                     <Card key={p.id} className="p-4 shadow-[var(--shadow-xs)] ring-1 ring-[var(--border-subtle)]">
                       <div className="text-sm font-semibold text-[var(--text-primary)]">{p.fund.title}</div>
                       <div className="mt-1 text-xs text-[var(--text-muted)]">
-                        <span className="font-medium text-[var(--text-secondary)]">{p.giver.name}</span> pledged ₱
-                        {String(p.amount)}
+                        <span className="font-medium text-[var(--text-secondary)]">{p.giver.name}</span> pledged{" "}
+                        {formatPesoDots(p.amount, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                       </div>
                       {p.privateNote ? (
                         <div className="mt-3 rounded-[var(--radius-md)] bg-[var(--surface-card-soft)] p-3 text-sm text-[var(--text-secondary)]">

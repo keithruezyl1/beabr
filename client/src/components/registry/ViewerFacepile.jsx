@@ -128,7 +128,8 @@ export function ViewerFacepile({ roster, role, compact = false, onShareInvite })
             {Array.from({ length: shown }).map((_, i) => (
               <div
                 key={i}
-                className={`flex ${avatarSm} items-center justify-center rounded-full border-2 border-[var(--surface-card)] bg-[var(--color-neutral-200)] text-[var(--color-primary-600)] shadow-[var(--shadow-xs)]`}
+                className={`flex ${avatarSm} items-center justify-center rounded-full border-2 border-[var(--color-primary-500)] bg-[var(--color-neutral-200)] text-[var(--color-primary-600)] shadow-[var(--shadow-xs)]`}
+                style={{ zIndex: i + 1 }}
               >
                 <IconUsers className={`${iconSm} shrink-0 opacity-80`} />
               </div>
@@ -142,7 +143,7 @@ export function ViewerFacepile({ roster, role, compact = false, onShareInvite })
     );
   }
 
-  const visible = faces.slice(0, maxStack);
+  const visible = faces.slice(-maxStack);
   const overflow = viewerCount > maxStack ? viewerCount - maxStack : 0;
   const onlyYou = viewerCount === 1 && faces[0]?.isYou;
 
@@ -174,21 +175,22 @@ export function ViewerFacepile({ roster, role, compact = false, onShareInvite })
       </div>
       <div className={`flex flex-wrap items-center gap-x-1.5 gap-y-1.5 ${compact ? "mt-2" : "mt-3"}`}>
         <div className="flex -space-x-2 pl-0.5">
-          {visible.map((face) => (
+          {visible.map((face, i) => (
             <div
               key={face.userId}
-              className={`relative shrink-0 ${face.isYou ? `ring-2 ring-[var(--color-primary-500)] ring-offset-[var(--surface-card-soft)] rounded-full ${compact ? "ring-offset-1" : "ring-offset-2"}` : ""}`}
+              className="relative shrink-0 rounded-full"
               title={face.displayName}
+              style={{ zIndex: i + 1 }}
             >
               {face.photoUrl ? (
                 <img
                   src={face.photoUrl}
                   alt=""
-                  className={`${avatarSm} rounded-full border-2 border-[var(--surface-card)] object-cover shadow-[var(--shadow-xs)]`}
+                  className={`${avatarSm} rounded-full border-2 border-[var(--color-primary-500)] object-cover shadow-[var(--shadow-xs)]`}
                 />
               ) : (
                 <div
-                  className={`flex ${avatarSm} items-center justify-center rounded-full border-2 border-[var(--surface-card)] font-semibold shadow-[var(--shadow-xs)] ${initialsSm}`}
+                  className={`flex ${avatarSm} items-center justify-center rounded-full border-2 border-[var(--color-primary-500)] font-semibold shadow-[var(--shadow-xs)] ${initialsSm}`}
                   style={{
                     backgroundColor: `hsl(${face.accentHue} 42% 88%)`,
                     color: `hsl(${face.accentHue} 38% 22%)`,

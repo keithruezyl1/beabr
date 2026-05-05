@@ -31,7 +31,7 @@ For each item, Beabr tracks how much is:
 - **Claimed** (reserved plus prepared)  
 - **Available** (quantity still open to reserve, which is quantity needed minus claimed)
 
-**Registry Participants** cannot over-reserve beyond what remains available. The running product enforces that. If reservations or pooled pledge flows block changes, resolve those first before archiving tricky items. Your app may warn you when archiving is blocked while activity exists.
+**Registry Participants** cannot over-reserve beyond what remains available. The running product enforces that.
 
 ### Status labels **Registry Participants** see on gift cards
 
@@ -51,15 +51,11 @@ Owner views emphasize the **numeric** breakdown (reserved, prepared, available) 
 
 ---
 
-## Archiving items
-
-You can archive items you no longer want listed. Archived items typically drop from the main gift list depending on filtering.
-
----
-
 ## Group pledges on an item
 
 For some gifts, **Registry Participants** may coordinate **pooled contributions** alongside or instead of a single purchaser. That involves **information related to external payments**, initiated by **Registry Participants**, not by you as the **Registry Owner** in typical flows, and settlements **outside** banks as you arrange them.  
+
+For the behavioral rules (for example what happens to reservations once a pledge is initiated), see **[Pledge rules for gift items](HC-025-pledge-rules.md)**.
 
 Read **[Group pledges and sensitive payout information](HC-024-pledges-group-gifts-sensitive-info.md)** before inviting people to use that path.
 
@@ -68,5 +64,4 @@ Read **[Group pledges and sensitive payout information](HC-024-pledges-group-gif
 ## Related articles
 
 - [Share your registry](HC-011-share-registry.md)  
-- [Reserve a gift](HC-021-reserve-gift.md)  
-- [Mark a gift as prepared](HC-022-mark-prepared.md)
+- [Reserve and prepare a gift item](HC-021-reserve-and-prepare.md)

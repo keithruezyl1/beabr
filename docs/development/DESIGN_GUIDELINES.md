@@ -552,7 +552,6 @@ Item cards should include:
 Owner cards may also show:
 
 - edit action
-- archive action
 - owner status
 - reorder handle
 
@@ -631,7 +630,6 @@ Icon categories:
 - money
 - link
 - edit
-- archive
 
 **Semantic pairing:** On dense summary surfaces (for example the registry landing hero), pair icons with labels and typography hierarchy so **dates and times** are never communicated by plain paragraph text alone—use a small uppercase label, primary line for date, secondary line for time with an icon so status + scheduling remain scannable.
 

@@ -108,7 +108,7 @@ The registry owner can:
 - Edit registry details
 - Set graduation date
 - Set reveal date and time
-- Add, edit, archive, and reorder registry items
+- Add, edit, and reorder registry items
 - Add cash pledge funds
 - View gift preparation progress
 - View pledge totals, depending on privacy setting
@@ -242,7 +242,6 @@ Each item must support:
 - Item lifecycle status
 - Created timestamp
 - Updated timestamp
-- Archived timestamp
 
 ---
 
@@ -260,7 +259,7 @@ By default, viewers should only see confirmed items.
 
 Considering items may be shown only if the owner enables them.
 
-Removed items should be hidden from viewers and treated as archived.
+Removed items should be hidden from viewers.
 
 ---
 
@@ -820,7 +819,6 @@ Do not include:
 
 - Owner can add item
 - Owner can edit item
-- Owner can archive item
 - Owner can set category
 - Category-specific fields appear correctly
 

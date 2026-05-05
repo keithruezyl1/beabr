@@ -68,7 +68,6 @@ async function getSessionUser(req) {
       update: {
         email: email || `${sUser.id}@users.local`,
         name,
-        avatarUrl,
         lastLoginAt: new Date(),
         ...(googleIdResolved ? { googleId: googleIdResolved } : {}),
       },

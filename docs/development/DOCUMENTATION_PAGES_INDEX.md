@@ -21,10 +21,10 @@ Use this map when building routes in the marketing site or in-app help browser.
 | `/help/after-reveal` | [`help-center/HC-014-after-reveal.md`](help-center/HC-014-after-reveal.md) | Customer |
 | `/help/thank-you-notes` | [`help-center/HC-015-thank-you.md`](help-center/HC-015-thank-you.md) | Customer |
 | `/help/join-registry` | [`help-center/HC-020-join-registry.md`](help-center/HC-020-join-registry.md) | Customer |
-| `/help/reserve-gift` | [`help-center/HC-021-reserve-gift.md`](help-center/HC-021-reserve-gift.md) | Customer |
-| `/help/mark-prepared` | [`help-center/HC-022-mark-prepared.md`](help-center/HC-022-mark-prepared.md) | Customer |
+| `/help/reserve-and-prepare` | [`help-center/HC-021-reserve-and-prepare.md`](help-center/HC-021-reserve-and-prepare.md) | Customer |
 | `/help/private-notes` | [`help-center/HC-023-private-notes.md`](help-center/HC-023-private-notes.md) | Customer |
 | `/help/group-pledges-security` | [`help-center/HC-024-pledges-group-gifts-sensitive-info.md`](help-center/HC-024-pledges-group-gifts-sensitive-info.md) | Customer |
+| `/help/pledge-rules` | [`help-center/HC-025-pledge-rules.md`](help-center/HC-025-pledge-rules.md) | Customer |
 | `/help/privacy-reveal` | [`help-center/HC-030-privacy-reveal-summary.md`](help-center/HC-030-privacy-reveal-summary.md) | Customer |
 | `/help/pledge-visibility` | [`help-center/HC-031-pledge-visibility.md`](help-center/HC-031-pledge-visibility.md) | Customer |
 | `/help/sign-in-troubleshooting` | [`help-center/HC-040-sign-in-troubleshooting.md`](help-center/HC-040-sign-in-troubleshooting.md) | Customer |

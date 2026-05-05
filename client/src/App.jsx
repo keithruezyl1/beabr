@@ -16,6 +16,7 @@ import { RevealPage } from "./pages/RevealPage.jsx";
 import { SettingsPage } from "./pages/SettingsPage.jsx";
 import { DocumentationPage } from "./pages/DocumentationPage.jsx";
 import { NotificationsPage } from "./pages/NotificationsPage.jsx";
+import { SuccessModalPage } from "./pages/SuccessModalPage.jsx";
 import { NotFoundPage } from "./pages/NotFoundPage.jsx";
 import { safeInternalPath } from "./utils/navigation.js";
 
@@ -56,6 +57,7 @@ export default function App() {
     <Routes>
       <Route element={<ShellLayout />}>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/success-modal" element={<SuccessModalPage />} />
         <Route
           path="/login"
           element={

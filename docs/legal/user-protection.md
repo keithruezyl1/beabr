@@ -85,6 +85,7 @@ Protections you should expect:
 
 What we expect from you:
 
+- Once you start a pooled pledge, it **cannot be cancelled** in Beabr. It is **your responsibility** to follow through on the pledge you initiated (keep payout instructions accurate, reconcile receipts/contributions, and close the loop with contributors through normal channels if anything changes).  
 - Post accurate payout instructions for accounts you are authorized to use.  
 - Handle receipts carefully. Do not pressure contributors for more proof than needed.  
 

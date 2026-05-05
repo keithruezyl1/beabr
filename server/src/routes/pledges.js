@@ -204,6 +204,7 @@ pledgesRouter.get("/items/:itemId/pledge", requireAuth, async (req, res) => {
   const groupPledgeAllowed = availableQuantity > 0;
 
   let contributionsForInitiator = [];
+  let myContributions = [];
   if (isInitiator && initiation) {
     const rows = await prisma.pledgeContribution.findMany({
       where: { initiationId: initiation.id },
@@ -219,6 +220,25 @@ pledgesRouter.get("/items/:itemId/pledge", requireAuth, async (req, res) => {
         status: c.status,
         createdAt: c.createdAt,
         contributor: publicGiverUser(c.contributor),
+        receiptSignedUrl: c.receiptImagePath ? await signUrl(c.receiptImagePath) : null,
+      }))
+    );
+  } else if (initiation) {
+    const rows = await prisma.pledgeContribution.findMany({
+      where: {
+        initiationId: initiation.id,
+        contributorUserId: req.user.id,
+        status: { in: ["receipt_uploaded", "confirmed"] },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 12,
+    });
+    myContributions = await Promise.all(
+      rows.map(async (c) => ({
+        id: c.id,
+        amount: c.amount,
+        status: c.status,
+        createdAt: c.createdAt,
         receiptSignedUrl: c.receiptImagePath ? await signUrl(c.receiptImagePath) : null,
       }))
     );
@@ -249,6 +269,7 @@ pledgesRouter.get("/items/:itemId/pledge", requireAuth, async (req, res) => {
         }
       : null,
     contributions: contributionsForInitiator,
+    myContributions,
   });
 });
 
@@ -261,12 +282,44 @@ pledgesRouter.post(
   requireAuth,
   validateBody(contributeSchema),
   async (req, res) => {
+    // Deprecated: creating a DB record before the receipt upload causes abandoned rows if a user cancels mid-flow.
+    // Use the receipt-first endpoint instead.
+    res.status(410).json({
+      error: {
+        message: "Contribution creation moved. Upload your receipt to submit a contribution.",
+        code: "PLEDGE_CONTRIBUTE_MOVED",
+      },
+    });
+  }
+);
+
+const contributeWithReceiptSchema = z.object({
+  amount: z
+    .string()
+    .transform((s) => String(s ?? "").replace(/[^\d]/g, ""))
+    .pipe(z.string().min(1))
+    .transform((s) => Number(s))
+    .refine((n) => Number.isFinite(n) && n >= 1 && n <= 999999, { message: "Invalid amount." }),
+});
+
+pledgesRouter.post(
+  "/items/:itemId/pledge/contribute-with-receipt",
+  requireAuth,
+  upload.single("receipt"),
+  async (req, res) => {
     const { itemId } = req.params;
+    if (!req.file) throw httpError(400, "Receipt image is required.");
+
     const item = await getItemOr404(itemId);
     const member = await requireMembership(item.registryId, req.user.id);
     if (member.role !== "viewer") throw httpError(403, "Only viewers can contribute.");
 
     await assertGroupPledgeAllowedForItem(item);
+
+    const parsed = contributeWithReceiptSchema.safeParse({ amount: req.body.amount });
+    if (!parsed.success) {
+      throw httpError(400, "Invalid amount.");
+    }
 
     const initiation = await prisma.pledgeInitiation.findUnique({ where: { itemId } });
     if (!initiation) throw httpError(409, "No pledge initiator yet.");
@@ -275,18 +328,44 @@ pledgesRouter.post(
       throw httpError(409, "Initiator cannot contribute to their own pledge.");
     }
 
-    const contribution = await prisma.pledgeContribution.create({
+    const receiptImagePath = await uploadReceipt({
+      registryId: item.registryId,
+      itemId,
+      contributorUserId: req.user.id,
+      file: req.file,
+    });
+
+    const created = await prisma.pledgeContribution.create({
       data: {
         registryId: item.registryId,
         itemId,
         initiationId: initiation.id,
         contributorUserId: req.user.id,
-        amount: req.body.amount,
-        status: "pending_receipt",
+        amount: parsed.data.amount,
+        status: "receipt_uploaded",
+        receiptImagePath,
       },
     });
 
-    res.status(201).json({ contribution: { id: contribution.id, status: contribution.status } });
+    await prisma.notification.create({
+      data: {
+        userId: initiation.initiatorUserId,
+        type: "pledge_receipt_uploaded",
+        payloadJson: {
+          registryId: item.registryId,
+          itemId,
+          contributionId: created.id,
+          amount: String(created.amount),
+        },
+      },
+    });
+
+    res.status(201).json({
+      contribution: {
+        id: created.id,
+        status: created.status,
+      },
+    });
   }
 );
 
@@ -347,10 +426,17 @@ pledgesRouter.post(
 );
 
 pledgesRouter.get("/notifications", requireAuth, async (req, res) => {
+  const sinceRaw = typeof req.query.since === "string" ? req.query.since.trim() : "";
+  const sinceDate = sinceRaw ? new Date(sinceRaw) : null;
+  const since = sinceDate && Number.isFinite(sinceDate.getTime()) ? sinceDate : null;
+
   const rows = await prisma.notification.findMany({
-    where: { userId: req.user.id },
-    orderBy: [{ seenAt: "asc" }, { createdAt: "desc" }],
-    take: 50,
+    where: {
+      userId: req.user.id,
+      ...(since ? { createdAt: { gt: since } } : {}),
+    },
+    orderBy: since ? [{ createdAt: "desc" }] : [{ seenAt: "asc" }, { createdAt: "desc" }],
+    take: since ? 200 : 50,
   });
 
   res.json({

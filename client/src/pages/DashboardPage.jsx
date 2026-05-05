@@ -41,17 +41,17 @@ function formatRevealCountdown(iso, revealed) {
   const mins = Math.floor(ms / 60000);
   const hours = Math.floor(ms / 3600000);
   const days = Math.floor(ms / 86400000);
-  if (days >= 2) return `Reveal in ${days} days`;
-  if (days === 1) return "Reveal tomorrow";
-  if (hours >= 2) return `Reveal in ${hours} hours`;
-  if (hours === 1) return "Reveal in 1 hour";
-  if (mins > 1) return `Reveal in ${mins} minutes`;
-  return "Reveal soon";
+  if (days >= 2) return `${days} days`;
+  if (days === 1) return "tomorrow";
+  if (hours >= 2) return `${hours} hours`;
+  if (hours === 1) return "1 hour";
+  if (mins > 1) return `${mins} minutes`;
+  return "soon";
 }
 
 function registrySubtitle(registry) {
   if (registry.role === "owner") return null;
-  if (registry.ownerDisplayName) return `Hosted by ${registry.ownerDisplayName}`;
+  if (registry.ownerDisplayName) return `Created by ${registry.ownerDisplayName}`;
   return "Joined registry";
 }
 
@@ -156,11 +156,6 @@ function RegistryCard({ registry }) {
                 <p className="min-w-0 text-sm text-[var(--text-secondary)]">{subtitle}</p>
               </div>
             ) : null}
-            {countdown ? (
-              <p className={`text-sm font-semibold text-[var(--color-primary-700)] ${subtitle ? "mt-2" : "mt-1"}`}>
-                {countdown}
-              </p>
-            ) : null}
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <div
@@ -185,7 +180,9 @@ function RegistryCard({ registry }) {
               <IconCalendar className="h-5 w-5" aria-hidden />
             </div>
             <div className="min-w-0">
-              <div className="text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">Reveal</div>
+              <div className="text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">
+                {countdown ? `Reveal in ${countdown}` : "Reveal"}
+              </div>
               <div className="mt-0.5 text-sm font-medium text-[var(--text-primary)]">{date}</div>
               <div className="mt-0.5 flex items-center gap-1.5 text-xs text-[var(--text-secondary)]">
                 <IconClock className="h-3.5 w-3.5 shrink-0 text-[var(--text-muted)]" aria-hidden />
@@ -224,6 +221,19 @@ export function DashboardPage() {
   const [joinModalOpen, setJoinModalOpen] = useState(false);
   /** Bump when opening join modal so it remounts with fresh form state (avoids reset effects). */
   const [joinModalSession, setJoinModalSession] = useState(0);
+  const [sessionGreeting, setSessionGreeting] = useState("Hello");
+
+  useEffect(() => {
+    const key = "beabr.dashboardGreeting";
+    const existing = sessionStorage.getItem(key);
+    if (existing === "Hello" || existing === "Hey there") {
+      setSessionGreeting(existing);
+      return;
+    }
+    const next = Math.random() < 0.5 ? "Hello" : "Hey there";
+    sessionStorage.setItem(key, next);
+    setSessionGreeting(next);
+  }, []);
 
   useEffect(() => {
     async function run() {
@@ -254,7 +264,7 @@ export function DashboardPage() {
     <div className="space-y-6">
       <PageHeader
         eyebrow="Home"
-        title={`Hello, ${user?.name?.split(" ")[0] || "there"}`}
+        title={`${sessionGreeting}, ${user?.name?.split(" ")[0] || "there"}`}
         description="Welcome to Beabr! Create a registry or join one with a code to start."
         illustrationSrc={wavingDash}
         illustrationOnTop

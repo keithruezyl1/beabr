@@ -7,6 +7,7 @@ import { BottomSheet } from "../components/ui/BottomSheet.jsx";
 import { PageHeader } from "../components/ui/PageChrome.jsx";
 import { IconBell, IconClock, IconHeart } from "../components/ui/PageIcons.jsx";
 import { NotificationsScreenSkeleton } from "../components/ui/ScreenSkeletons.jsx";
+import { formatPesoDots } from "../utils/numberFormat.js";
 
 function timeAgo(iso) {
   const t = new Date(iso).getTime();
@@ -84,13 +85,13 @@ export function NotificationsPage() {
       const payload = n.payload || {};
       const title =
         n.type === "pledge_receipt_uploaded"
-          ? `Receipt uploaded • ₱${payload.amount ?? ""}`
+          ? `Receipt uploaded • ${formatPesoDots(payload.amount ?? 0, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
           : n.type === "pledge_goal_not_reached"
             ? `Pledge goal not reached — ${payload.itemTitle ?? "item"}`
             : n.type;
       const subtitle =
         n.type === "pledge_goal_not_reached"
-          ? `₱${payload.gatheredAmount ?? "0"} of ₱${payload.goalAmount ?? "0"} gathered`
+          ? `${formatPesoDots(payload.gatheredAmount ?? 0, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} of ${formatPesoDots(payload.goalAmount ?? 0, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} gathered`
           : payload.registryId
             ? "Open registry to review"
             : null;

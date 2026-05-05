@@ -61,6 +61,8 @@ Examples (non-exhaustive):
 
 Users must adopt **privacy minimization** aggressively.
 
+**Screenshot warning:** Treat payout details, QR codes, and receipts as **highly sensitive**. Avoid taking screenshots or screen recordings, and never share them in group chats or on social media. Prefer **copy/paste** and **cropped** receipts that show only the minimum necessary details.
+
 ---
 
 ## 4. Fraud and social engineering playbook (Registry Participant diligence)
@@ -84,6 +86,7 @@ If defrauded, contact **your bank fraud desk** urgently. Preservation of device 
 
 Your duties include:
 
+- Once you start a pooled pledge, it **cannot be cancelled** in Beabr. Start it only if you are prepared to follow through with coordination. If plans change, resolve it with your contributors **outside the app** (for example by message) and do not rely on a future “undo” feature.
 - Publishing **truthful payable instructions for accounts you are authorized** to use. No impersonation hijacking another person’s payout identity.  
 - **Correct numeric and label accuracy**. Typographical divergence misroutes irrevocable pushes. You rectify quickly and visibly.  
 - **Guarding receipts** collaborators upload. Those images can include **financial intelligence** attackers want. Do not re-post publicly in social media flex threads.  
@@ -132,6 +135,7 @@ Coercive gift demands, domestic financial abuse via registries, minors pressured
 
 ## 10. Related articles
 
+- [Pledge rules for gift items](HC-025-pledge-rules.md)  
 - [Cash funds and registry money goals](HC-013-cash-funds.md)  
 - [Pledge and total visibility](HC-031-pledge-visibility.md)  
 - [Privacy before and after reveal](HC-030-privacy-reveal-summary.md)

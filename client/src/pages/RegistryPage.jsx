@@ -1,5 +1,10 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { createPortal } from "react-dom";
+import { SuccessModal } from "../components/ui/SuccessModal.jsx";
+import { resolveSuccessModalVariant } from "../utils/successModalVariants.js";
+import { useAuth } from "../state/AuthProvider.jsx";
+import { formatIntegerInput, formatNumberDots, formatPesoDots, parseIntegerInput } from "../utils/numberFormat.js";
 
 function IconEye({ className }) {
   return (
@@ -115,6 +120,47 @@ function IconExternalLink({ className }) {
   );
 }
 
+function IconShopee({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" width="1em" height="1em" fill="none" aria-hidden>
+      <path
+        d="M7.2 8.1V7a4.8 4.8 0 0 1 9.6 0v1.1"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      <path
+        d="M6.3 8.1h11.4c1 0 1.8.8 1.8 1.8v8.4c0 1-.8 1.8-1.8 1.8H6.3c-1 0-1.8-.8-1.8-1.8V9.9c0-1 .8-1.8 1.8-1.8Z"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M10.2 15.4c.7.6 2.9.8 3.8-.2.6-.7.1-1.6-.9-1.8l-1.1-.2c-1-.2-1.4-1.1-.9-1.8.9-1 3-1 4-.1"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function getProductSiteMeta(rawUrl) {
+  const url = String(rawUrl || "").trim();
+  if (!url) return null;
+  try {
+    const u = new URL(url);
+    const host = (u.hostname || "").toLowerCase();
+    const isShopee = host === "shopee.ph" || host.endsWith(".shopee.ph") || host.startsWith("shopee.");
+    if (isShopee) return { kind: "shopee", faviconUrl: null };
+    const faviconUrl = `https://www.google.com/s2/favicons?sz=64&domain_url=${encodeURIComponent(u.origin)}`;
+    return { kind: "generic", faviconUrl };
+  } catch {
+    return { kind: "generic", faviconUrl: null };
+  }
+}
+
 function IconReceipt({ className }) {
   return (
     <svg className={className} viewBox="0 0 24 24" width="1em" height="1em" fill="none" aria-hidden>
@@ -162,13 +208,14 @@ function getRemainingParts(targetDate, nowMs) {
 import { apiFetch, apiFetchBlob, apiFetchForm } from "../services/api";
 import { Card } from "../components/ui/Card.jsx";
 import { Button } from "../components/ui/Button.jsx";
-import { formatStatusLabel, StatusBadge } from "../components/ui/StatusBadge.jsx";
+import { formatStatusLabel, StatusBadge, StatusBadgeBy } from "../components/ui/StatusBadge.jsx";
 import { BottomSheet } from "../components/ui/BottomSheet.jsx";
 import { RegistryScreenSkeleton } from "../components/ui/ScreenSkeletons.jsx";
 import { Skeleton } from "../components/ui/Skeleton.jsx";
 import { ShareInviteModal } from "../components/registry/ShareInviteModal.jsx";
-import { IconLightbulb, IconPencil, IconShare } from "../components/ui/PageIcons.jsx";
+import { IconCopy, IconLightbulb, IconPencil, IconShare, IconSparkles } from "../components/ui/PageIcons.jsx";
 import peekRightImg from "../assets/peek_right.png";
+import sweatingImg from "../assets/sweating.png";
 
 function pledgeReceiptStatusMeta(status) {
   switch (status) {
@@ -206,7 +253,26 @@ function formatPledgeContributionDate(iso) {
 
 function formatGroupPledgeCardAmount(n) {
   if (n == null || Number.isNaN(Number(n))) return "0";
-  return String(Math.round(Number(n)));
+  return formatNumberDots(Math.round(Number(n)));
+}
+
+async function copyToClipboard(text) {
+  const t = String(text ?? "");
+  if (!t.trim()) return;
+  try {
+    await navigator.clipboard.writeText(t);
+    return;
+  } catch {
+    const el = document.createElement("textarea");
+    el.value = t;
+    el.setAttribute("readonly", "");
+    el.style.position = "fixed";
+    el.style.left = "-9999px";
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand("copy");
+    document.body.removeChild(el);
+  }
 }
 
 /** Parses optional price from form input; invalid or empty → null */
@@ -223,7 +289,16 @@ function formatItemPriceReference(value) {
   if (value == null || value === "") return null;
   const n = Number(value);
   if (!Number.isFinite(n)) return String(value).trim() || null;
-  return `₱${n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+  return formatPesoDots(n, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+}
+
+function formatReservationDateTime(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (!Number.isFinite(d.getTime())) return "";
+  const date = d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+  const time = d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  return `${date} · ${time}`;
 }
 
 /** Numeric estimate for filtering; invalid / missing → null */
@@ -347,6 +422,8 @@ function ItemSheetGalleryStrip({ urls, title, onPick }) {
 
 /** Full-size gallery in a vertically scrollable overlay */
 function ItemImageLightboxDialog({ urls, title, open, onClose }) {
+  const touchStartRef = useRef(null);
+
   useEffect(() => {
     if (!open) return undefined;
     const onKey = (e) => {
@@ -363,11 +440,10 @@ function ItemImageLightboxDialog({ urls, title, open, onClose }) {
 
   if (!open || !urls?.length) return null;
 
-  return (
-    <div className="fixed inset-0 z-[110] touch-manipulation">
-      <button
-        type="button"
-        aria-label="Close image viewer"
+  return createPortal(
+    <div className="fixed inset-0 z-[210] touch-manipulation">
+      <div
+        aria-hidden="true"
         className="absolute inset-0 z-0 bg-[var(--surface-overlay)] backdrop-blur-[2px]"
         onClick={onClose}
       />
@@ -376,21 +452,39 @@ function ItemImageLightboxDialog({ urls, title, open, onClose }) {
         aria-modal="true"
         aria-label="Full-size photos"
         className="relative z-[1] flex h-[100dvh] max-h-[100dvh] flex-col overflow-hidden"
+        onTouchStart={(e) => {
+          const t = e.touches?.[0];
+          if (!t) return;
+          touchStartRef.current = { x: t.clientX, y: t.clientY };
+        }}
+        onTouchEnd={(e) => {
+          const start = touchStartRef.current;
+          touchStartRef.current = null;
+          const t = e.changedTouches?.[0];
+          if (!start || !t) return;
+          const dx = t.clientX - start.x;
+          const dy = t.clientY - start.y;
+          // "Swipe back" (right swipe) closes the viewer.
+          if (dx > 70 && Math.abs(dy) < 60) onClose();
+        }}
       >
-        <div className="flex shrink-0 items-center justify-end gap-2 px-4 py-3 pt-[max(env(safe-area-inset-top,0px),12px)]">
-          <button
-            type="button"
-            className="min-h-[44px] rounded-full border border-[var(--border-default)] bg-[var(--surface-card)] px-4 text-sm font-semibold text-[var(--text-primary)] shadow-[var(--shadow-sm)]"
-            onClick={onClose}
-          >
-            Close
-          </button>
-        </div>
-        <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-8">
-          <div className="mx-auto flex max-w-3xl flex-col gap-6 pb-24 pt-2">
+        <div
+          className="min-h-0 flex-1 overflow-y-auto px-3 py-8"
+          onClick={(e) => {
+            // Close when tapping/clicking anywhere outside the image itself.
+            const target = e.target instanceof Element ? e.target : null;
+            if (target?.closest?.("[data-lightbox-figure]")) return;
+            onClose();
+          }}
+        >
+          <div className="mx-auto flex min-h-full max-w-3xl flex-col justify-center gap-6">
             {urls.map((src, i) => (
               // eslint-disable-next-line react/no-array-index-key — signed URLs distinct per refresh
-              <figure key={`lb-${i}`} className="overflow-hidden rounded-[var(--radius-lg)] bg-black/35 ring-1 ring-white/20">
+              <figure
+                key={`lb-${i}`}
+                data-lightbox-figure
+                className="overflow-hidden rounded-[var(--radius-lg)] bg-black/35 ring-1 ring-white/20"
+              >
                 <img
                   src={src}
                   alt={title ? `${title} · ${i + 1} of ${urls.length}` : `Photo ${i + 1} of ${urls.length}`}
@@ -406,7 +500,8 @@ function ItemImageLightboxDialog({ urls, title, open, onClose }) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -416,6 +511,13 @@ function groupPledgeProgressPercent(gp) {
   const goal = gp.goalAmount != null ? Number(gp.goalAmount) : null;
   if (goal != null && goal > 0) return Math.min(100, (g / goal) * 100);
   return g > 0 ? 100 : 0;
+}
+
+function groupPledgeStatusLabel({ gatheredAmount, goalAmount }) {
+  const g = Number(gatheredAmount) || 0;
+  const goal = goalAmount != null ? Number(goalAmount) : null;
+  if (goal != null && goal > 0 && g >= goal) return "Goal Reached";
+  return "On Going";
 }
 
 function RegistryPhotoPicker({
@@ -1012,13 +1114,17 @@ function PledgeInitiateForm({ draft, setDraft, errors, actionBusy, actionErr, on
 
 export function RegistryPage() {
   const { registryId } = useParams();
+  const { user } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
 
+  const [successVariantKey, setSuccessVariantKey] = useState(null);
+  const successVariant = useMemo(() => resolveSuccessModalVariant(successVariantKey), [successVariantKey]);
+
   const [activeItem, setActiveItem] = useState(null);
   const [editItem, setEditItem] = useState(null);
-  const [reserveQty, setReserveQty] = useState(1);
+  const [reserveQty, setReserveQty] = useState("1");
   const [privateNote, setPrivateNote] = useState("");
   const [actionErr, setActionErr] = useState(null);
   const [actionBusy, setActionBusy] = useState(false);
@@ -1026,13 +1132,13 @@ export function RegistryPage() {
   const [fabOpen, setFabOpen] = useState(false);
   const [countdownModalOpen, setCountdownModalOpen] = useState(false);
   const [shareInviteOpen, setShareInviteOpen] = useState(false);
-  const [archiveConfirmOpen, setArchiveConfirmOpen] = useState(false);
+  const [unprepareConfirmOpen, setUnprepareConfirmOpen] = useState(false);
   const [countdownTick, setCountdownTick] = useState(() => Date.now());
   const [draftItem, setDraftItem] = useState({
     title: "",
     category: "Dorm / Apartment",
     description: "",
-    quantityNeeded: 1,
+    quantityNeeded: "1",
     viewerInstruction: "",
     externalLink: "",
     priceReference: "",
@@ -1043,7 +1149,7 @@ export function RegistryPage() {
   const [imageLightbox, setImageLightbox] = useState(null);
 
   const [giftCategoryFilter, setGiftCategoryFilter] = useState("all");
-  /** Viewer-only: all | mine | others */
+  /** Viewer-only: all | reserved_mine | reserved | prepared_mine | prepared | pledge_started */
   const [giftStatusFilter, setGiftStatusFilter] = useState("all");
   /** Owner + viewer — ₱ range [min, max] vs. {@link giftPriceSliderCeiling} */
   const [giftPriceMin, setGiftPriceMin] = useState(0);
@@ -1053,7 +1159,7 @@ export function RegistryPage() {
 
   const [pledgeView, setPledgeView] = useState(null);
   const [pledgeLoading, setPledgeLoading] = useState(false);
-  const [pledgeStep, setPledgeStep] = useState(null); // "initiate" | "contribute_amount" | "contribute_details" | "contribute_receipt" | "done"
+  const [pledgeStep, setPledgeStep] = useState(null); // "initiate" | "contribute_amount" | "contribute_details" | "done"
   /**
    * Group pledge initiation form state.
    * paymentMethod is the UI grouping ("ewallet" | "bank") which we map to the
@@ -1073,8 +1179,8 @@ export function RegistryPage() {
   });
   const [pledgeFormErrors, setPledgeFormErrors] = useState({});
   const [contribAmount, setContribAmount] = useState("");
-  const [contribId, setContribId] = useState(null);
   const [receiptFile, setReceiptFile] = useState(null);
+  const [confirmContributionSent, setConfirmContributionSent] = useState(false);
   /** Object URL for decrypted pledge QR (`/pledge/qr-image`); revoked on cleanup. */
   const [pledgeQrBlobUrl, setPledgeQrBlobUrl] = useState(null);
   const [itemSheetScrollToPledge, setItemSheetScrollToPledge] = useState(false);
@@ -1116,7 +1222,6 @@ export function RegistryPage() {
         viewerInstruction: next.viewerInstruction,
         externalLink: next.externalLink,
         ownerStatus: next.ownerStatus,
-        ownerPrivateNote: next.ownerPrivateNote,
         totals: next.totals,
         displayStatus: next.displayStatus,
         myReservation: next.myReservation,
@@ -1246,13 +1351,23 @@ export function RegistryPage() {
     }
 
     if (role === "viewer") {
-      if (giftStatusFilter === "mine") {
-        list = list.filter((it) => Boolean(it.myReservation));
-      } else if (giftStatusFilter === "others") {
+      if (giftStatusFilter === "pledge_started") {
+        list = list.filter((it) => Boolean(it.groupPledge));
+      } else if (giftStatusFilter === "reserved_mine") {
+        list = list.filter((it) => it.myReservation?.status === "reserved");
+      } else if (giftStatusFilter === "prepared_mine") {
+        list = list.filter((it) => it.myReservation?.status === "prepared");
+      } else if (giftStatusFilter === "reserved") {
         list = list.filter((it) => {
-          const claimed = it.totals?.claimed ?? 0;
-          const mine = it.myReservation?.quantity ?? 0;
-          return claimed > mine;
+          const reserved = it.totals?.reserved ?? 0;
+          const mineReserved = it.myReservation?.status === "reserved" ? (it.myReservation?.quantity ?? 0) : 0;
+          return reserved > mineReserved;
+        });
+      } else if (giftStatusFilter === "prepared") {
+        list = list.filter((it) => {
+          const prepared = it.totals?.prepared ?? 0;
+          const minePrepared = it.myReservation?.status === "prepared" ? (it.myReservation?.quantity ?? 0) : 0;
+          return prepared > minePrepared;
         });
       }
       list.sort((a, b) => {
@@ -1283,10 +1398,6 @@ export function RegistryPage() {
     if (!canGroupPledge) setPledgeStep(null);
   }, [canGroupPledge]);
 
-  useEffect(() => {
-    if (!activeItem) setArchiveConfirmOpen(false);
-  }, [activeItem]);
-
   useLayoutEffect(() => {
     if (!itemSheetScrollToPledge || !activeItem) return;
     if (role !== "viewer" || !canGroupPledge) {
@@ -1310,18 +1421,28 @@ export function RegistryPage() {
 
   async function reserve() {
     if (!activeItem) return;
+    if (activeItem.hasPledge) {
+      setActionErr({ message: "This item has an active pledge. You can contribute instead of reserving it." });
+      setItemSheetScrollToPledge(true);
+      return;
+    }
+    if ((activeItem.totals?.available ?? 0) <= 0) {
+      setActionErr({ message: "This item is fully reserved." });
+      return;
+    }
+    const qty = parseIntegerInput(reserveQty) ?? 1;
     setActionBusy(true);
     setActionErr(null);
     try {
       await apiFetch(`/api/items/${activeItem.id}/reserve`, {
         method: "POST",
         body: JSON.stringify({
-          quantity: reserveQty,
+          quantity: qty,
           privateNote: privateNote || null,
         }),
       });
       setActiveItem(null);
-      setReserveQty(1);
+      setReserveQty("1");
       setPrivateNote("");
       await refresh();
     } catch (e) {
@@ -1445,6 +1566,7 @@ export function RegistryPage() {
       setPledgeStep(null);
       setPledgeFormErrors({});
       await loadGroupPledge(activeItem.id);
+      setSuccessVariantKey("pledge_initiated");
     } catch (e) {
       setActionErr(e);
     } finally {
@@ -1454,32 +1576,40 @@ export function RegistryPage() {
 
   async function startContribution() {
     if (!activeItem) return;
-    setActionBusy(true);
-    setActionErr(null);
-    try {
-      const r = await apiFetch(`/api/items/${activeItem.id}/pledge/contribute`, {
-        method: "POST",
-        body: JSON.stringify({ amount: Number(contribAmount) }),
-      });
-      setContribId(r.contribution.id);
-      setPledgeStep("contribute_details");
-    } catch (e) {
-      setActionErr(e);
-    } finally {
-      setActionBusy(false);
+    const targetRaw =
+      activeItem?.priceReference != null && String(activeItem.priceReference).trim() !== ""
+        ? String(activeItem.priceReference)
+        : pledgeView?.item?.priceReference != null && String(pledgeView.item.priceReference).trim() !== ""
+          ? String(pledgeView.item.priceReference)
+          : "";
+    const maxAmount = Number(targetRaw.replace(/[^\d]/g, ""));
+    const amount = Number(String(contribAmount || "").replace(/[^\d]/g, ""));
+    if (!Number.isFinite(amount) || amount <= 0) return;
+    if (Number.isFinite(maxAmount) && maxAmount > 0 && amount > maxAmount) {
+      setActionErr({ message: `Amount can’t exceed ₱${maxAmount.toLocaleString()}.` });
+      return;
     }
+    // Do not create a DB record yet. Only persist once receipt upload succeeds.
+    setPledgeStep("contribute_details");
   }
 
   async function uploadContributionReceipt() {
-    if (!contribId) return;
+    if (!activeItem) return;
+    if (!receiptFile) return;
     setActionBusy(true);
     setActionErr(null);
     try {
       const fd = new FormData();
       fd.set("receipt", receiptFile);
-      await apiFetchForm(`/api/pledge-contributions/${contribId}/receipt`, fd, { method: "POST" });
-      setPledgeStep("done");
+      fd.set("amount", String(parseIntegerInput(contribAmount) ?? ""));
+      await apiFetchForm(`/api/items/${activeItem.id}/pledge/contribute-with-receipt`, fd, { method: "POST" });
+      setPledgeStep(null);
+      setReceiptFile(null);
+      setContribAmount("");
+      setConfirmContributionSent(false);
+      setPledgeFormErrors({});
       if (activeItem) await loadGroupPledge(activeItem.id);
+      setSuccessVariantKey("pledge_contributed");
     } catch (e) {
       setActionErr(e);
     } finally {
@@ -1504,7 +1634,7 @@ export function RegistryPage() {
           title,
           category: draftItem.category,
           description: draftItem.description || null,
-          quantityNeeded: Number(draftItem.quantityNeeded) || 1,
+          quantityNeeded: parseIntegerInput(draftItem.quantityNeeded) || 1,
           viewerInstruction: draftItem.viewerInstruction || null,
           externalLink: draftItem.externalLink?.trim() ? draftItem.externalLink.trim() : null,
           storeName: null,
@@ -1539,6 +1669,7 @@ export function RegistryPage() {
       });
       setDraftItemPhotos([]);
       await refresh();
+      if (created?.item?.id) setSuccessVariantKey("item_added");
     } catch (e) {
       setActionErr(e);
     } finally {
@@ -1576,6 +1707,22 @@ export function RegistryPage() {
     }
   }
 
+  async function unprepareReservation() {
+    if (!activeItem?.myReservation?.id) return;
+    setActionBusy(true);
+    setActionErr(null);
+    try {
+      await apiFetch(`/api/reservations/${activeItem.myReservation.id}/unprepare`, { method: "POST" });
+      setUnprepareConfirmOpen(false);
+      setActiveItem(null);
+      await refresh();
+    } catch (e) {
+      setActionErr(e);
+    } finally {
+      setActionBusy(false);
+    }
+  }
+
   async function saveItemEdits() {
     if (!editItem?.id) return;
     setActionBusy(true);
@@ -1586,9 +1733,8 @@ export function RegistryPage() {
         body: JSON.stringify({
           title: editItem.title,
           category: editItem.category,
-          quantityNeeded: Number(editItem.quantityNeeded) || 1,
+          quantityNeeded: parseIntegerInput(editItem.quantityNeeded) || 1,
           viewerInstruction: editItem.viewerInstruction || null,
-          ownerPrivateNote: editItem.ownerPrivateNote || null,
           description: editItem.description || null,
           externalLink: editItem.externalLink?.trim() ? editItem.externalLink.trim() : null,
           storeName: null,
@@ -1597,22 +1743,6 @@ export function RegistryPage() {
         }),
       });
 
-      setActiveItem(null);
-      setEditItem(null);
-      await refresh();
-    } catch (e) {
-      setActionErr(e);
-    } finally {
-      setActionBusy(false);
-    }
-  }
-
-  async function archiveItem() {
-    if (!activeItem?.id) return;
-    setActionBusy(true);
-    setActionErr(null);
-    try {
-      await apiFetch(`/api/items/${activeItem.id}`, { method: "DELETE" });
       setActiveItem(null);
       setEditItem(null);
       await refresh();
@@ -1633,9 +1763,8 @@ export function RegistryPage() {
             title: item.title,
             category: item.category,
             description: item.description || "",
-            quantityNeeded: item.quantityNeeded,
+            quantityNeeded: formatIntegerInput(String(item.quantityNeeded ?? 1)),
             viewerInstruction: item.viewerInstruction || "",
-            ownerPrivateNote: item.ownerPrivateNote || "",
             externalLink: item.externalLink || "",
             priceReference:
               item.priceReference != null && item.priceReference !== ""
@@ -1645,13 +1774,12 @@ export function RegistryPage() {
           }
         : null
     );
-    setReserveQty(1);
+    setReserveQty("1");
     setPrivateNote("");
     setActionErr(null);
     setPledgeView(null);
     setPledgeStep(null);
     setContribAmount("");
-    setContribId(null);
     setReceiptFile(null);
     if (role === "viewer") {
       try {
@@ -1743,7 +1871,54 @@ export function RegistryPage() {
   }, [activeItem, role]);
 
   if (loading) return <RegistryScreenSkeleton />;
-  if (err) return <div className="py-10 text-center text-sm text-[var(--danger-text)]">{err.message}</div>;
+  if (err) {
+    const message = String(err.message || "");
+    const isNotMember =
+      err.status === 403 ||
+      /not\s+a\s+member/i.test(message) ||
+      /not\s+authorized/i.test(message) ||
+      /forbidden/i.test(message);
+
+    if (isNotMember) {
+      return (
+        <div className="px-5 py-12 sm:px-6">
+          <div className="mx-auto flex w-full max-w-[560px] flex-col items-center text-center">
+            <div className="relative w-full overflow-hidden rounded-[24px] border border-[var(--border-subtle)] bg-white px-6 py-8 shadow-[var(--shadow-sm)] sm:px-10 sm:py-10">
+              <div
+                className="pointer-events-none absolute inset-0 opacity-60"
+                aria-hidden="true"
+                style={{
+                  background:
+                    "radial-gradient(520px 320px at 18% 22%, rgba(129,160,63,0.12), transparent 58%), radial-gradient(560px 340px at 82% 28%, rgba(139,94,60,0.08), transparent 60%)",
+                }}
+              />
+              <img
+                src={sweatingImg}
+                alt=""
+                aria-hidden="true"
+                className="relative mx-auto h-[160px] w-auto select-none sm:h-[190px]"
+                decoding="async"
+              />
+              <h1 className="relative mt-5 text-[22px] font-bold tracking-tight text-[var(--text-primary)] sm:text-[26px]">
+                You’re not in this registry
+              </h1>
+              <p className="relative mt-2 max-w-[52ch] text-sm leading-relaxed text-[var(--text-secondary)] sm:text-[15px]">
+                This registry is only available to people who were invited. If you think this is a mistake, ask the owner
+                for a fresh invite link or join code.
+              </p>
+              <div className="relative mt-6 flex w-full justify-center">
+                <Link to="/dashboard" className="inline-flex">
+                  <Button className="min-h-[44px] px-6 py-3">Go back to home</Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return <div className="py-10 text-center text-sm text-[var(--danger-text)]">{message}</div>;
+  }
   if (!data) return null;
 
   const categoryFields = (() => {
@@ -1765,7 +1940,13 @@ export function RegistryPage() {
       ? String(activeItem.priceReference)
       : pledgeView?.item?.priceReference != null && String(pledgeView.item.priceReference).trim() !== ""
         ? String(pledgeView.item.priceReference)
-        : "1000";
+        : "9995";
+
+  const formattedContribPlaceholder = (() => {
+    const n = Number(String(suggestContribPlaceholder).replace(/[^\d]/g, ""));
+    if (!Number.isFinite(n) || n <= 0) return "₱9,995";
+    return `₱${n.toLocaleString()}`;
+  })();
 
   return (
     <div className="space-y-6">
@@ -2025,9 +2206,12 @@ export function RegistryPage() {
                         value={giftStatusFilter}
                         onChange={(e) => setGiftStatusFilter(e.target.value)}
                       >
-                        <option value="all">All reservations</option>
-                        <option value="mine">Reserved by me</option>
-                        <option value="others">Reserved by others</option>
+                        <option value="all">All statuses</option>
+                        <option value="reserved_mine">Reserved by me</option>
+                        <option value="reserved">Reserved</option>
+                        <option value="prepared_mine">Prepared by me</option>
+                        <option value="prepared">Prepared</option>
+                        <option value="pledge_started">Pledge started</option>
                       </select>
                     </label>
                   ) : null}
@@ -2050,9 +2234,9 @@ export function RegistryPage() {
                   <div className="block">
                     <div className="text-xs font-semibold text-[var(--text-secondary)]">Price estimate (PHP)</div>
                     <div className="mt-2 flex items-center justify-between gap-2 text-sm font-semibold tabular-nums text-[var(--text-primary)]">
-                      <span>₱{giftPriceMin.toLocaleString()}</span>
+                      <span>{formatPesoDots(giftPriceMin, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
                       <span className="text-xs font-normal text-[var(--text-muted)]">to</span>
-                      <span>₱{giftPriceMax.toLocaleString()}</span>
+                      <span>{formatPesoDots(giftPriceMax, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
                     </div>
                     <div className="mt-3 space-y-4">
                       <label className="block">
@@ -2182,11 +2366,18 @@ export function RegistryPage() {
                 const showExternal = Boolean(item.externalLink);
                 const showOwnerEdit = role === "owner";
                 const showMarkPrepared = canReserve && item.myReservation?.status === "reserved";
-                const showReserve = canReserve && !item.myReservation && avail > 0;
+                const showReserve = canReserve && !item.myReservation && avail > 0 && !item.groupPledge;
                 const showViewDetails = canReserve && showViewDetailsBtn;
                 const viewerReserveWithExternal =
                   role !== "owner" && Boolean(showExternal && showReserve);
                 const showPledgeQuickAction = canReserve && Boolean(item.groupPledge);
+                const reservedWithExternalPrimary = Boolean(showMarkPrepared && showExternal && !viewerReserveWithExternal);
+                const preparedWithExternalDetails = Boolean(
+                  canReserve && item.myReservation?.status === "prepared" && showExternal && !viewerReserveWithExternal,
+                );
+                const viewDetailsWithExternal = Boolean(
+                  showExternal && showViewDetails && !viewerReserveWithExternal && !preparedWithExternalDetails,
+                );
                 const footerActionCount =
                   (showExternal ? 1 : 0) +
                   (showOwnerEdit ? 1 : 0) +
@@ -2211,6 +2402,12 @@ export function RegistryPage() {
                   "min-h-[44px] min-w-0 flex-[2] basis-0 justify-center gap-1.5";
                 const pledgeBesideReserveRowClass =
                   "min-h-[44px] min-w-0 flex-[2] basis-0 justify-center";
+                const markPreparedPrimaryClass =
+                  "min-h-[44px] min-w-0 flex-[3] basis-0 justify-center";
+                const openLinkSecondaryClass =
+                  "min-h-[44px] min-w-0 flex-[2] basis-0 justify-center gap-1.5";
+                const viewDetailsPrimaryClass =
+                  "min-h-[44px] min-w-0 flex-[3] basis-0 justify-center";
                 const openLinkFlexClass = footerOneAction
                   ? "w-full justify-center"
                   : ownerEditWithLink
@@ -2263,13 +2460,36 @@ export function RegistryPage() {
                             >
                               <div className="line-clamp-2 text-sm font-semibold text-[var(--text-primary)]">{item.title}</div>
                             </div>
-                            {role !== "owner" ? <StatusBadge status={item.displayStatus} /> : null}
+                            {role !== "owner" ? (
+                              item.groupPledge?.initiator ? (
+                                <StatusBadgeBy
+                                  tone="success"
+                                  prefix={groupPledgeStatusLabel(item.groupPledge)}
+                                  prefixMobile={groupPledgeStatusLabel(item.groupPledge)}
+                                  byAvatarUrl={item.groupPledge.initiator.avatarUrl}
+                                  byInitials={item.groupPledge.initiator.name?.trim()?.[0] || "?"}
+                                  byAriaLabel="Pledge initiator"
+                                />
+                              ) : item.groupPledge ? (
+                                <StatusBadgeBy
+                                  tone="success"
+                                  prefix={groupPledgeStatusLabel(item.groupPledge)}
+                                  prefixMobile={groupPledgeStatusLabel(item.groupPledge)}
+                                  byAriaLabel={groupPledgeStatusLabel(item.groupPledge)}
+                                />
+                              ) : (
+                                <StatusBadge
+                                  status={item.displayStatus}
+                                  byAvatarUrl={item.myReservation ? user?.avatarUrl || null : null}
+                                  byInitials={item.myReservation ? (user?.name?.trim()?.[0] || "Y") : null}
+                                  byAriaLabel={item.myReservation ? "Reserved by you" : "Reserved by someone"}
+                                />
+                              )
+                            ) : null}
                           </div>
-                          {canReserve && item.myReservation ? (
+                          {canReserve && item.myReservation && item.myReservation.status !== "prepared" ? (
                             <span className="inline-flex w-fit rounded-full bg-[var(--color-primary-100)] px-2 py-0.5 text-[10px] font-semibold text-[var(--color-primary-800)]">
-                              {item.myReservation.status === "prepared"
-                                ? `You marked ${item.myReservation.quantity} prepared`
-                                : `You reserved ${item.myReservation.quantity}`}
+                              {`You reserved ${item.myReservation.quantity}`}
                             </span>
                           ) : null}
                           {formatItemPriceReference(item.priceReference) ? (
@@ -2303,14 +2523,14 @@ export function RegistryPage() {
                           {role !== "owner" && item.groupPledge ? (
                             <div className="mt-2 min-w-0">
                               <div className="text-[11px] font-semibold leading-snug text-[var(--text-secondary)]">
-                                Pledge: P{formatGroupPledgeCardAmount(item.groupPledge.gatheredAmount)}
+                                Contributed: ₱{formatGroupPledgeCardAmount(item.groupPledge.gatheredAmount)}
                                 {item.groupPledge.goalAmount != null ? (
                                   <>
                                     {" "}
-                                    / P{formatGroupPledgeCardAmount(item.groupPledge.goalAmount)} gathered
+                                    / ₱{formatGroupPledgeCardAmount(item.groupPledge.goalAmount)}
                                   </>
                                 ) : (
-                                  <> gathered</>
+                                  null
                                 )}
                               </div>
                               <div
@@ -2365,19 +2585,20 @@ export function RegistryPage() {
                               void openGiftItemSheet(item);
                             }}
                           >
+                            <IconGift className="h-4 w-4 shrink-0" aria-hidden />
                             Reserve this gift
                           </Button>
                           {showPledgeQuickAction ? (
                             <Button
                               type="button"
-                              variant="secondary"
                               className={`inline-flex ${pledgeBesideReserveRowClass}`}
                               onClick={(e) => {
                                 e.preventDefault();
                                 void openGiftItemSheet(item, { scrollToPledge: true });
                               }}
                             >
-                              Pledge
+                              <IconWallet className="h-4 w-4 shrink-0" aria-hidden />
+                              Contribute
                             </Button>
                           ) : null}
                           <a
@@ -2393,33 +2614,96 @@ export function RegistryPage() {
                       ) : null}
                       {showExternal && !viewerReserveWithExternal ? (
                         <>
-                          {showPledgeQuickAction ? (
+                          {preparedWithExternalDetails ? (
+                            <>
+                              <Button
+                                type="button"
+                                className={`inline-flex ${viewDetailsPrimaryClass}`}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  void openGiftItemSheet(item);
+                                }}
+                              >
+                                <IconEye className="h-4 w-4 shrink-0" aria-hidden />
+                                View details
+                              </Button>
+                              <a
+                                href={item.externalLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={`inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-[var(--border-default)] bg-white px-3 text-xs font-semibold text-[var(--color-primary-800)] shadow-[var(--shadow-xs)] transition hover:bg-[var(--color-primary-50)] ${openLinkSecondaryClass}`}
+                              >
+                                <IconExternalLink className="h-4 w-4 shrink-0" aria-hidden />
+                                Open link
+                              </a>
+                            </>
+                          ) : viewDetailsWithExternal ? (
+                            <>
+                              <Button
+                                type="button"
+                                className={`inline-flex ${viewDetailsPrimaryClass}`}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  void openGiftItemSheet(item);
+                                }}
+                              >
+                                <IconEye className="h-4 w-4 shrink-0" aria-hidden />
+                                View details
+                              </Button>
+                              <a
+                                href={item.externalLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={`inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-[var(--border-default)] bg-white px-3 text-xs font-semibold text-[var(--color-primary-800)] shadow-[var(--shadow-xs)] transition hover:bg-[var(--color-primary-50)] ${openLinkSecondaryClass}`}
+                              >
+                                <IconExternalLink className="h-4 w-4 shrink-0" aria-hidden />
+                                Open link
+                              </a>
+                            </>
+                          ) : reservedWithExternalPrimary ? (
                             <Button
                               type="button"
-                              variant="secondary"
-                              className={`inline-flex min-h-[44px] ${openLinkFlexClass}`}
+                              className={`inline-flex ${markPreparedPrimaryClass}`}
+                              disabled={actionBusy}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                void markPreparedQuick(item);
+                              }}
+                            >
+                              <IconSparkles className="h-4 w-4 shrink-0" aria-hidden />
+                              Mark as prepared
+                            </Button>
+                          ) : showPledgeQuickAction ? (
+                            <Button
+                              type="button"
+                              className={`inline-flex ${markPreparedPrimaryClass}`}
                               onClick={(e) => {
                                 e.preventDefault();
                                 void openGiftItemSheet(item, { scrollToPledge: true });
                               }}
                             >
-                              Pledge
+                              <IconWallet className="h-4 w-4 shrink-0" aria-hidden />
+                              Contribute
                             </Button>
                           ) : null}
-                          <a
-                            href={item.externalLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={`inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-[var(--border-default)] bg-white px-3 text-xs font-semibold text-[var(--color-primary-800)] shadow-[var(--shadow-xs)] transition hover:bg-[var(--color-primary-50)] ${openLinkFlexClass}`}
-                          >
-                            <IconExternalLink className="h-4 w-4 shrink-0" aria-hidden />
-                            Open link
-                          </a>
+                          {!preparedWithExternalDetails && !viewDetailsWithExternal ? (
+                            <a
+                              href={item.externalLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={`inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-[var(--border-default)] bg-white px-3 text-xs font-semibold text-[var(--color-primary-800)] shadow-[var(--shadow-xs)] transition hover:bg-[var(--color-primary-50)] ${
+                                reservedWithExternalPrimary || showPledgeQuickAction ? openLinkSecondaryClass : openLinkFlexClass
+                              }`}
+                            >
+                              <IconExternalLink className="h-4 w-4 shrink-0" aria-hidden />
+                              Open link
+                            </a>
+                          ) : null}
                         </>
                       ) : null}
                       {canReserve ? (
                         <>
-                          {showMarkPrepared ? (
+                          {showMarkPrepared && !reservedWithExternalPrimary ? (
                             <Button
                               type="button"
                               className={`inline-flex ${footerBtnClass}`}
@@ -2429,6 +2713,7 @@ export function RegistryPage() {
                                 void markPreparedQuick(item);
                               }}
                             >
+                              <IconSparkles className="h-4 w-4 shrink-0" aria-hidden />
                               Mark as prepared
                             </Button>
                           ) : null}
@@ -2441,33 +2726,34 @@ export function RegistryPage() {
                                 void openGiftItemSheet(item);
                               }}
                             >
+                              <IconGift className="h-4 w-4 shrink-0" aria-hidden />
                               Reserve this gift
                             </Button>
                           ) : null}
-                          {showViewDetails ? (
+                          {showViewDetails && !preparedWithExternalDetails && !viewDetailsWithExternal ? (
                             <Button
                               type="button"
-                              variant="secondary"
                               className={`inline-flex ${footerBtnClass}`}
                               onClick={(e) => {
                                 e.preventDefault();
                                 void openGiftItemSheet(item);
                               }}
                             >
+                              <IconEye className="h-4 w-4 shrink-0" aria-hidden />
                               View details
                             </Button>
                           ) : null}
                           {showPledgeQuickAction && !viewerReserveWithExternal && !(showExternal && !viewerReserveWithExternal) ? (
                             <Button
                               type="button"
-                              variant="secondary"
                               className={`inline-flex ${footerBtnClass}`}
                               onClick={(e) => {
                                 e.preventDefault();
                                 void openGiftItemSheet(item, { scrollToPledge: true });
                               }}
                             >
-                              Pledge
+                              <IconWallet className="h-4 w-4 shrink-0" aria-hidden />
+                              Contribute
                             </Button>
                           ) : null}
                         </>
@@ -2526,7 +2812,6 @@ export function RegistryPage() {
           setImageLightbox(null);
           setPledgeView(null);
           setPledgeStep(null);
-          setContribId(null);
           setReceiptFile(null);
           setContribAmount("");
           setActionErr(null);
@@ -2558,6 +2843,48 @@ export function RegistryPage() {
                     </div>
                   ),
                 )}
+                {activeItem.externalLink ? (
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="text-[var(--text-muted)]">Link</div>
+                    <a
+                      href={activeItem.externalLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex min-w-0 items-center gap-1.5 font-semibold text-[var(--color-primary-800)] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(129,160,63,0.45)]"
+                      aria-label="Visit product site"
+                    >
+                      {(() => {
+                        const meta = getProductSiteMeta(activeItem.externalLink);
+                        if (meta?.kind === "shopee") {
+                          return (
+                            <>
+                              <IconShopee className="h-4 w-4 shrink-0 text-[var(--text-secondary)]" aria-hidden />
+                              <span className="truncate">Visit product site</span>
+                            </>
+                          );
+                        }
+                        if (meta?.faviconUrl) {
+                          return (
+                            <>
+                              <img
+                                src={meta.faviconUrl}
+                                alt=""
+                                aria-hidden="true"
+                                className="h-4 w-4 shrink-0 rounded-[5px]"
+                                loading="lazy"
+                                decoding="async"
+                                referrerPolicy="no-referrer"
+                              />
+                              <span className="truncate">Visit product site</span>
+                            </>
+                          );
+                        }
+                        return <span className="truncate">Visit product site</span>;
+                      })()}
+                      <IconExternalLink className="h-3.5 w-3.5 shrink-0 text-[var(--text-secondary)]" aria-hidden />
+                    </a>
+                  </div>
+                ) : null}
               </div>
             ) : null}
 
@@ -2748,12 +3075,13 @@ export function RegistryPage() {
                   </label>
                   <label className="block">
                     <div className="text-xs font-semibold text-[var(--text-secondary)]">How many?</div>
-                    <input
-                      type="number"
-                      min={1}
+                      <input
+                        inputMode="numeric"
+                        type="text"
+                        min={1}
                       className="mt-1 w-full rounded-[14px] border border-[var(--border-default)] bg-white px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-[rgba(129,160,63,0.18)]"
                       value={editItem.quantityNeeded}
-                      onChange={(e) => setEditItem((s) => ({ ...s, quantityNeeded: e.target.value }))}
+                        onChange={(e) => setEditItem((s) => ({ ...s, quantityNeeded: formatIntegerInput(e.target.value) }))}
                     />
                   </label>
                   <label className="block">
@@ -2776,38 +3104,10 @@ export function RegistryPage() {
                       I am still considering this.
                     </span>
                   </label>
-                  <label className="block">
-                    <div className="text-xs font-semibold text-[var(--text-secondary)]">Owner private note</div>
-                    <textarea
-                      rows={3}
-                      className="mt-1 w-full resize-none rounded-[14px] border border-[var(--border-default)] bg-white px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-[rgba(129,160,63,0.18)]"
-                      value={editItem.ownerPrivateNote}
-                      onChange={(e) => setEditItem((s) => ({ ...s, ownerPrivateNote: e.target.value }))}
-                    />
-                  </label>
                   {actionErr ? <div className="text-sm text-[var(--danger-text)]">{actionErr.message}</div> : null}
-                  <div className="flex gap-2">
-                    <Button className="flex-1" onClick={saveItemEdits} disabled={actionBusy}>
-                      Save
-                    </Button>
-                    {activeItem.totals?.claimed > 0 || activeItem.hasPledge ? (
-                      <div className="flex flex-1 items-center justify-center rounded-[14px] bg-[var(--surface-card-soft)] px-3 py-2 text-center text-xs text-[var(--text-muted)]">
-                        Cannot archive — active reservations or pledge exist.
-                      </div>
-                    ) : (
-                      <Button
-                        className="flex-1"
-                        variant="danger"
-                        onClick={() => {
-                          setActionErr(null);
-                          setArchiveConfirmOpen(true);
-                        }}
-                        disabled={actionBusy}
-                      >
-                        Archive
-                      </Button>
-                    )}
-                  </div>
+                  <Button className="w-full" onClick={saveItemEdits} disabled={actionBusy}>
+                    Save
+                  </Button>
                 </div>
               </Card>
             ) : null}
@@ -2816,19 +3116,32 @@ export function RegistryPage() {
               <div className="space-y-3">
                 {activeItem.myReservation ? (
                   <Card className="p-4">
-                    <div className="text-sm font-semibold">Your reservation</div>
-                    <div className="mt-1 text-sm text-[var(--text-secondary)]">
-                      Quantity: {activeItem.myReservation.quantity} • Status:{" "}
-                      {formatStatusLabel(activeItem.myReservation.status)}
+                    <div
+                      className="rounded-[var(--radius-lg)] border border-[rgba(129,160,63,0.22)] bg-[radial-gradient(120%_120%_at_50%_0%,rgba(129,160,63,0.14)_0%,rgba(255,255,255,0)_62%)] px-3 py-3 text-center text-sm font-semibold text-[var(--text-primary)]"
+                      style={{
+                        backgroundImage:
+                          "radial-gradient(120% 120% at 50% 0%, rgba(129,160,63,0.14) 0%, rgba(255,255,255,0) 62%), radial-gradient(circle, rgba(129,160,63,0.14) 1px, transparent 1.6px)",
+                        backgroundSize: "auto, 16px 16px",
+                        backgroundPosition: "center, center",
+                      }}
+                    >
+                      You {formatStatusLabel(activeItem.myReservation.status).toLowerCase()}{" "}
+                      <span className="tabular-nums">{activeItem.myReservation.quantity}</span> of this item on{" "}
+                      <span className="tabular-nums text-[var(--color-primary-600)]">
+                        {formatReservationDateTime(activeItem.myReservation.createdAt)}
+                      </span>
                     </div>
                     <div className="mt-3 flex gap-2">
-                      <Button className="flex-1" onClick={markPrepared} disabled={actionBusy || activeItem.myReservation.status !== "reserved"}>
-                        Mark as prepared
-                      </Button>
                       <Button
                         className="flex-1"
                         variant="secondary"
-                        onClick={cancelReservation}
+                        onClick={() => {
+                          if (activeItem.myReservation.status === "prepared") {
+                            setUnprepareConfirmOpen(true);
+                          } else {
+                            void cancelReservation();
+                          }
+                        }}
                         disabled={actionBusy}
                       >
                         Cancel
@@ -2837,38 +3150,23 @@ export function RegistryPage() {
                   </Card>
                 ) : (
                   <>
-                    <label className="block">
-                      <div className="text-xs font-semibold text-[var(--text-secondary)]">Quantity</div>
-                      <input
-                        type="number"
-                        min={1}
-                        max={activeItem.totals?.available ?? 1}
-                        value={reserveQty}
-                        onChange={(e) => setReserveQty(Number(e.target.value))}
-                        className="mt-1 w-full rounded-[14px] border border-[var(--border-default)] bg-white px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-[rgba(129,160,63,0.18)]"
-                      />
-                      <div className="mt-1 text-xs text-[var(--text-muted)]">
-                        Available: {activeItem.totals?.available ?? 0}
-                      </div>
-                    </label>
-                    <label className="block">
-                      <div className="text-xs font-semibold text-[var(--text-secondary)]">
-                        Private note (optional)
-                      </div>
-                      <textarea
-                        rows={3}
-                        value={privateNote}
-                        onChange={(e) => setPrivateNote(e.target.value)}
-                        className="mt-1 w-full resize-none rounded-[14px] border border-[var(--border-default)] bg-white px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-[rgba(129,160,63,0.18)]"
-                        placeholder="e.g., I’ll buy this next week."
-                      />
-                    </label>
                     {actionErr ? (
                       <div className="text-sm text-[var(--danger-text)]">{actionErr.message}</div>
                     ) : null}
-                    <Button className="w-full" onClick={reserve} disabled={actionBusy}>
-                      Reserve this gift
-                    </Button>
+                    {!activeItem.hasPledge && activeItem.totals?.available > 0 ? (
+                      <Button className="w-full" onClick={reserve} disabled={actionBusy}>
+                        <IconGift className="h-4 w-4 shrink-0" aria-hidden />
+                        Reserve this gift
+                      </Button>
+                    ) : (
+                      <div className="rounded-[14px] bg-[var(--surface-card-soft)] px-3 py-3 text-center text-sm font-semibold text-[var(--text-muted)] ring-1 ring-[var(--border-subtle)]">
+                        {activeItem.hasPledge
+                          ? "Reservation is disabled for this item."
+                          : activeItem.displayStatus === "Prepared"
+                            ? "This item is fully prepared."
+                            : "This item is fully reserved."}
+                      </div>
+                    )}
                   </>
                 )}
               </div>
@@ -2877,9 +3175,16 @@ export function RegistryPage() {
             {role === "viewer" && canGroupPledge ? (
               <div ref={groupPledgeSectionRef} className="scroll-mt-4">
               <Card className="p-4">
-                <div className="text-sm font-semibold">Group pledge</div>
-                <div className="mt-1 text-sm text-[var(--text-secondary)]">
-                  Track shared contributions and receipts without notifying the registry owner.
+                <div className="flex items-center justify-between gap-3">
+                  <div className="text-sm font-semibold">Group pledge</div>
+                  {activeItem?.hasPledge ? (
+                    <span className="inline-flex items-center rounded-full bg-[var(--color-primary-100)] px-2 py-0.5 text-[11px] font-semibold text-[var(--color-primary-800)] ring-1 ring-[rgba(129,160,63,0.22)]">
+                      {groupPledgeStatusLabel({
+                        gatheredAmount: pledgeView?.gatheredAmount ?? activeItem?.groupPledge?.gatheredAmount ?? 0,
+                        goalAmount: activeItem?.groupPledge?.goalAmount ?? activeItem?.priceReference ?? null,
+                      })}
+                    </span>
+                  ) : null}
                 </div>
 
                 <div className="mt-4 flex items-center justify-between gap-3 rounded-[16px] bg-[var(--surface-card-soft)] p-4">
@@ -2902,14 +3207,58 @@ export function RegistryPage() {
                       <div>
                         <div className="text-xs font-semibold text-[var(--text-muted)]">Gathered</div>
                         <div className="mt-1 text-lg font-bold">
-                          ₱{pledgeView ? String(pledgeView.gatheredAmount) : "—"}
+                          ₱{pledgeView ? formatGroupPledgeCardAmount(pledgeView.gatheredAmount) : "—"}
+                          {pledgeView ? (
+                            <>
+                              {" "}
+                              /{" "}
+                              {(() => {
+                                const target =
+                                  activeItem?.priceReference != null && String(activeItem.priceReference).trim() !== ""
+                                    ? activeItem.priceReference
+                                    : pledgeView?.item?.priceReference != null &&
+                                        String(pledgeView.item.priceReference).trim() !== ""
+                                      ? pledgeView.item.priceReference
+                                      : null;
+                                return target != null ? `₱${formatGroupPledgeCardAmount(target)}` : "xx";
+                              })()}
+                            </>
+                          ) : null}
                         </div>
                       </div>
                       <div className="flex shrink-0 flex-col items-end justify-center text-right">
                         {pledgeLoading ? (
                           <Skeleton className="inline-block h-3 w-14 rounded-md align-middle" delayMs={40} />
                         ) : pledgeView?.isInitiator ? (
-                          <div className="text-xs font-semibold text-[var(--text-muted)]">You are the initiator</div>
+                          <>
+                            <div className="text-xs font-semibold text-[var(--text-muted)]">You are the initiator</div>
+                            <button
+                              type="button"
+                              onClick={() => setPledgeStep("initiate")}
+                              className="mt-2 inline-flex min-h-[36px] items-center gap-1.5 rounded-full bg-[var(--color-primary-100)] px-3 py-1.5 text-xs font-semibold text-[var(--color-primary-800)] shadow-[var(--shadow-xs)] transition hover:bg-[var(--color-primary-200)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(129,160,63,0.45)]"
+                            >
+                              <IconPencil className="h-3.5 w-3.5 shrink-0 text-[var(--color-primary-700)]" aria-hidden />
+                              Edit details
+                            </button>
+                          </>
+                        ) : pledgeView?.initiation?.initiator ? (
+                          <div className="flex items-center gap-2">
+                            <div className="text-xs font-semibold text-[var(--text-muted)]">Initiated by</div>
+                            {pledgeView.initiation.initiator.avatarUrl ? (
+                              <img
+                                src={pledgeView.initiation.initiator.avatarUrl}
+                                alt=""
+                                className="h-8 w-8 rounded-full object-cover ring-2 ring-[var(--color-primary-500)]"
+                              />
+                            ) : (
+                              <div
+                                className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-primary-100)] text-xs font-bold text-[var(--color-primary-800)] ring-2 ring-[var(--color-primary-500)]"
+                                aria-hidden
+                              >
+                                {(pledgeView.initiation.initiator.name?.trim()?.[0] || "?").toUpperCase()}
+                              </div>
+                            )}
+                          </div>
                         ) : null}
                       </div>
                     </>
@@ -2924,10 +3273,6 @@ export function RegistryPage() {
                   </div>
                 ) : pledgeView.isInitiator ? (
                   <div className="mt-4 space-y-3">
-                    <Button variant="secondary" className="w-full" onClick={() => setPledgeStep("initiate")}>
-                      Edit payout details / QR
-                    </Button>
-
                     <div className="mt-1 flex items-baseline justify-between gap-2">
                       <div className="text-sm font-semibold text-[var(--text-primary)]">Contributor receipts</div>
                       {(pledgeView.contributions || []).length > 0 ? (
@@ -2987,7 +3332,7 @@ export function RegistryPage() {
                                     </div>
                                     <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-xs text-[var(--text-muted)]">
                                       <span className="font-semibold text-[var(--text-secondary)]">
-                                        ₱{String(c.amount)}
+                                        {formatPesoDots(c.amount, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                                       </span>
                                       {dateLine ? <span aria-hidden>·</span> : null}
                                       {dateLine ? <span>Joined {dateLine}</span> : null}
@@ -3019,12 +3364,60 @@ export function RegistryPage() {
                     )}
                   </div>
                 ) : (
-                  <div className="mt-4 space-y-2">
-                    <div className="text-sm text-[var(--text-secondary)]">
-                      Initiator: {pledgeView.initiation.initiator.name}
-                    </div>
+                  <div className="mt-4 space-y-3">
+                    {(pledgeView?.myContributions || []).length > 0 ? (
+                      <div className="space-y-2">
+                        <div className="text-sm font-semibold text-[var(--text-primary)]">Your receipts</div>
+                        <ul className="space-y-2">
+                          {pledgeView.myContributions.map((c) => {
+                            const statusMeta = pledgeReceiptStatusMeta(c.status);
+                            const dateLine = formatPledgeContributionDate(c.createdAt);
+                            return (
+                              <li key={c.id}>
+                                <Card className="overflow-hidden p-0 shadow-[var(--shadow-sm)]">
+                                  <div className="flex items-center justify-between gap-3 p-3">
+                                    <div className="min-w-0">
+                                      <div className="flex flex-wrap items-center gap-2 gap-y-1">
+                                        <span className="text-sm font-semibold text-[var(--text-primary)]">
+                                          {formatPesoDots(c.amount, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                                        </span>
+                                        <span
+                                          className={`inline-flex max-w-full items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${statusMeta.className}`}
+                                        >
+                                          <span className="truncate">{statusMeta.label}</span>
+                                        </span>
+                                      </div>
+                                      {dateLine ? (
+                                        <div className="mt-1 text-xs text-[var(--text-muted)]">Uploaded {dateLine}</div>
+                                      ) : null}
+                                    </div>
+                                    <div className="shrink-0">
+                                      {c.receiptSignedUrl ? (
+                                        <a
+                                          className="inline-flex items-center gap-1 rounded-full border border-[var(--border-default)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--color-primary-700)] shadow-[var(--shadow-xs)] transition-colors hover:bg-[var(--color-primary-50)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary-500)]"
+                                          href={c.receiptSignedUrl}
+                                          target="_blank"
+                                          rel="noreferrer"
+                                        >
+                                          <IconReceipt className="h-3.5 w-3.5 shrink-0 opacity-80" aria-hidden />
+                                          View receipt
+                                        </a>
+                                      ) : (
+                                        <span className="text-[11px] font-medium text-[var(--text-placeholder)]">
+                                          No file yet
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </Card>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                    ) : null}
                     <Button className="w-full" onClick={() => setPledgeStep("contribute_amount")}>
-                      Contribute
+                      {pledgeView?.myContribution ? "Contribute again" : "Contribute"}
                     </Button>
                   </div>
                 )}
@@ -3036,16 +3429,16 @@ export function RegistryPage() {
       </BottomSheet>
 
       <BottomSheet
-        open={archiveConfirmOpen && Boolean(activeItem)}
+        open={unprepareConfirmOpen && Boolean(activeItem?.myReservation) && activeItem?.myReservation?.status === "prepared"}
         variant="modal"
-        title="Archive this gift?"
+        showCloseIcon={false}
+        title="Cancel preparation?"
         headerBelow={
           <p className="text-sm leading-relaxed text-[var(--text-secondary)]">
-            It will disappear from your registry for you and invited gift givers.{" "}
-            You can’t undo this from the app.
+            This item's status will revert back to preparing. Proceed?
           </p>
         }
-        onClose={() => setArchiveConfirmOpen(false)}
+        onClose={() => setUnprepareConfirmOpen(false)}
       >
         <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
           <Button
@@ -3053,21 +3446,18 @@ export function RegistryPage() {
             type="button"
             variant="secondary"
             disabled={actionBusy}
-            onClick={() => setArchiveConfirmOpen(false)}
+            onClick={() => setUnprepareConfirmOpen(false)}
           >
-            Cancel
+            Keep prepared
           </Button>
           <Button
             className="min-h-[44px] flex-1"
             type="button"
             variant="danger"
-            disabled={actionBusy || !activeItem}
-            onClick={() => {
-              setArchiveConfirmOpen(false);
-              void archiveItem();
-            }}
+            disabled={actionBusy || !activeItem?.myReservation}
+            onClick={() => void unprepareReservation()}
           >
-            {actionBusy ? "Archiving…" : "Archive gift"}
+            {actionBusy ? "Reverting…" : "Revert status"}
           </Button>
         </div>
       </BottomSheet>
@@ -3082,18 +3472,14 @@ export function RegistryPage() {
             ? "Contribute"
             : pledgeStep === "contribute_details"
             ? "Send money"
-            : pledgeStep === "contribute_receipt"
-            ? "Upload receipt"
-            : pledgeStep === "done"
-            ? "Done"
             : ""
         }
         onClose={() => {
           setPledgeStep(null);
           setActionErr(null);
-          setContribId(null);
           setReceiptFile(null);
           setContribAmount("");
+          setConfirmContributionSent(false);
           setPledgeFormErrors({});
         }}
       >
@@ -3114,99 +3500,177 @@ export function RegistryPage() {
               Choose how much you’ll contribute. Next, you’ll see the initiator’s payout details.
             </div>
             <label className="block">
-              <div className="text-xs font-semibold text-[var(--text-secondary)]">Amount</div>
-              <input
-                inputMode="numeric"
-                className="mt-1 w-full rounded-[14px] border border-[var(--border-default)] bg-white px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-[rgba(129,160,63,0.18)]"
-                value={contribAmount}
-                onChange={(e) => setContribAmount(e.target.value)}
-                placeholder={suggestContribPlaceholder}
-              />
+              {(() => {
+                const targetRaw =
+                  activeItem?.priceReference != null && String(activeItem.priceReference).trim() !== ""
+                    ? String(activeItem.priceReference)
+                    : pledgeView?.item?.priceReference != null && String(pledgeView.item.priceReference).trim() !== ""
+                      ? String(pledgeView.item.priceReference)
+                      : "";
+                const maxAmount = Number(targetRaw.replace(/[^\d]/g, ""));
+                const amount = Number(String(contribAmount || "").replace(/[^\d]/g, ""));
+                const hasMax = Number.isFinite(maxAmount) && maxAmount > 0;
+                const overMax = hasMax && Number.isFinite(amount) && amount > maxAmount;
+                const maxLabel = hasMax ? `₱${maxAmount.toLocaleString()}` : null;
+                return (
+                  <>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="text-xs font-semibold text-[var(--text-secondary)]">Amount</div>
+                      {overMax && maxLabel ? (
+                        <div className="text-xs font-semibold text-[var(--danger-text)]">
+                          Amount can’t exceed {maxLabel}.
+                        </div>
+                      ) : null}
+                    </div>
+                    <input
+                      inputMode="numeric"
+                      className={`mt-1 w-full rounded-[14px] border bg-white px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-[rgba(129,160,63,0.18)] ${
+                        overMax ? "border-[rgba(155,28,28,0.35)]" : "border-[var(--border-default)]"
+                      }`}
+                      value={contribAmount}
+                      onChange={(e) => {
+                        const digits = String(e.target.value || "").replace(/[^\d]/g, "");
+                        const formatted = digits.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                        setContribAmount(formatted);
+                      }}
+                      placeholder={formattedContribPlaceholder}
+                      aria-invalid={overMax ? "true" : "false"}
+                    />
+                    {actionErr ? <div className="mt-2 text-sm text-[var(--danger-text)]">{actionErr.message}</div> : null}
+                    <Button className="mt-3 w-full" disabled={actionBusy || !contribAmount || overMax} onClick={startContribution}>
+                      Continue
+                    </Button>
+                  </>
+                );
+              })()}
             </label>
-            {actionErr ? <div className="text-sm text-[var(--danger-text)]">{actionErr.message}</div> : null}
-            <Button className="w-full" disabled={actionBusy || !contribAmount} onClick={startContribution}>
-              Continue
-            </Button>
           </div>
         ) : null}
 
         {pledgeStep === "contribute_details" ? (
           <div className="space-y-3">
-            <div className="text-sm font-semibold">Send money to the initiator</div>
             <div className="text-sm text-[var(--text-secondary)]">
-              Initiator: {pledgeView?.initiation?.initiator?.name}
+              Send money outside Beabr, then upload your receipt.
             </div>
+
+            {pledgeView?.initiation?.hasQrImage ? (
+              <Card className="overflow-hidden p-0 shadow-[var(--shadow-sm)]">
+                {pledgeQrBlobUrl ? (
+                  <a href={pledgeQrBlobUrl} target="_blank" rel="noreferrer" className="block">
+                    <img
+                      src={pledgeQrBlobUrl}
+                      alt="Pledge QR code"
+                      className="h-auto w-full bg-white object-contain"
+                      loading="lazy"
+                    />
+                  </a>
+                ) : (
+                  <div className="p-4 text-center text-xs font-semibold text-[var(--text-muted)]">Loading QR…</div>
+                )}
+              </Card>
+            ) : null}
+
             <Card className="p-4">
-              <div className="text-xs font-semibold text-[var(--text-muted)]">Payout details</div>
-              <div className="mt-2 text-sm">
-                <div className="text-[var(--text-secondary)]">
-                  Method: {pledgeView?.initiation?.payoutMethod}
+              <div className="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">
+                Payout details
+              </div>
+              <div className="mt-2 space-y-1 text-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="text-[var(--text-muted)]">Method</div>
+                  <div className="font-semibold text-[var(--text-secondary)]">
+                    {(() => {
+                      const m = String(pledgeView?.initiation?.payoutMethod || "");
+                      if (m === "gcash") return "GCash";
+                      if (m === "bank") return "Bank transfer";
+                      if (m === "other") return "E-wallet";
+                      return m ? formatStatusLabel(m) : "—";
+                    })()}
+                  </div>
                 </div>
                 {pledgeView?.initiation?.payoutName ? (
-                  <div className="text-[var(--text-secondary)]">Name: {pledgeView.initiation.payoutName}</div>
-                ) : null}
-                {pledgeView?.initiation?.payoutInstitution ? (
-                  <div className="text-[var(--text-secondary)]">
-                    Institution: {pledgeView.initiation.payoutInstitution}
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-[var(--text-muted)]">Account Name</div>
+                    <div className="flex items-center gap-0.5">
+                      <div className="font-semibold text-[var(--text-secondary)]">{pledgeView.initiation.payoutName}</div>
+                      <button
+                        type="button"
+                        className="inline-flex h-6 w-6 items-center justify-center text-[var(--color-primary-700)] transition hover:text-[var(--color-primary-800)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary-500)]"
+                        aria-label="Copy name"
+                        onClick={() => void copyToClipboard(pledgeView.initiation.payoutName)}
+                      >
+                        <IconCopy className="h-3.5 w-3.5" aria-hidden />
+                      </button>
+                    </div>
                   </div>
                 ) : null}
                 {pledgeView?.initiation?.payoutAccount ? (
-                  <div className="text-[var(--text-secondary)]">
-                    Account: {pledgeView.initiation.payoutAccount}
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-[var(--text-muted)]">Account Number</div>
+                    <div className="flex items-center gap-0.5">
+                      <div className="font-semibold text-[var(--text-secondary)]">{pledgeView.initiation.payoutAccount}</div>
+                      <button
+                        type="button"
+                        className="inline-flex h-6 w-6 items-center justify-center text-[var(--color-primary-700)] transition hover:text-[var(--color-primary-800)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary-500)]"
+                        aria-label="Copy account number"
+                        onClick={() => void copyToClipboard(pledgeView.initiation.payoutAccount)}
+                      >
+                        <IconCopy className="h-3.5 w-3.5" aria-hidden />
+                      </button>
+                    </div>
                   </div>
                 ) : null}
                 {pledgeView?.initiation?.payoutNotes ? (
-                  <div className="mt-2 text-sm text-[var(--text-secondary)]">
-                    {pledgeView.initiation.payoutNotes}
+                  <div className="pt-2">
+                    <div className="text-[var(--text-muted)]">Note</div>
+                    <div className="mt-1 text-sm text-[var(--text-secondary)]">{pledgeView.initiation.payoutNotes}</div>
                   </div>
                 ) : null}
               </div>
-            </Card>
-            {pledgeView?.initiation?.hasQrImage ? (
-              pledgeQrBlobUrl ? (
-                <a
-                  href={pledgeQrBlobUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-sm font-semibold text-[var(--color-primary-700)] underline"
+              <div className="mt-3 text-center text-[11px] leading-snug text-[var(--text-muted)]">
+                This is sensitive info. Don’t screenshot or share.{" "}
+                <Link
+                  to="/documentation/help-center/HC-024-pledges-group-gifts-sensitive-info"
+                  className="font-semibold text-[var(--color-primary-700)] underline underline-offset-2 hover:text-[var(--color-primary-800)]"
                 >
-                  Open QR image
-                </a>
-              ) : (
-                <p className="text-xs text-[var(--text-muted)]">Loading QR…</p>
-              )
-            ) : null}
-            <Button className="w-full" onClick={() => setPledgeStep("contribute_receipt")}>
-              I sent the money — upload receipt
-            </Button>
-          </div>
-        ) : null}
+                  Learn more
+                </Link>
+                .
+              </div>
+            </Card>
 
-        {pledgeStep === "contribute_receipt" ? (
-          <div className="space-y-3">
-            <div className="text-sm text-[var(--text-secondary)]">
-              Upload a screenshot/photo of your transfer receipt.
+            <div className="space-y-2">
+              <div className="text-xs font-semibold text-[var(--text-secondary)]">Receipt</div>
+              <RegistryPhotoPicker
+                inputId="pledge-receipt-input"
+                emptyLabel="Add photo"
+                remoteUrl={null}
+                localFile={receiptFile}
+                onFile={setReceiptFile}
+                onClearLocal={() => setReceiptFile(null)}
+                disabled={actionBusy}
+              />
             </div>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
-            />
-            {actionErr ? <div className="text-sm text-[var(--danger-text)]">{actionErr.message}</div> : null}
-            <Button className="w-full" disabled={actionBusy || !receiptFile} onClick={uploadContributionReceipt}>
-              {actionBusy ? "Uploading…" : "Upload receipt"}
-            </Button>
-          </div>
-        ) : null}
 
-        {pledgeStep === "done" ? (
-          <div className="space-y-3">
-            <div className="text-sm font-semibold">Receipt uploaded</div>
-            <div className="text-sm text-[var(--text-secondary)]">
-              The pledge initiator has been notified and will review your receipt.
-            </div>
-            <Button className="w-full" onClick={() => setPledgeStep(null)}>
-              Close
+            <label className="flex cursor-pointer items-start gap-3 rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-card-soft)] p-3 text-left">
+              <input
+                type="checkbox"
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-[var(--border-default)] text-[var(--color-primary-600)] focus:ring-[rgba(129,160,63,0.35)]"
+                checked={confirmContributionSent}
+                onChange={(e) => setConfirmContributionSent(e.target.checked)}
+              />
+              <span className="text-sm text-[var(--text-secondary)]">
+                I confirm I sent the money to the provided account outside Beabr.
+              </span>
+            </label>
+
+            <Button
+              className="w-full"
+              disabled={!confirmContributionSent || !receiptFile || actionBusy}
+              onClick={() => {
+                void uploadContributionReceipt();
+              }}
+            >
+              Confirm contribution
             </Button>
           </div>
         ) : null}
@@ -3286,7 +3750,7 @@ export function RegistryPage() {
           </div>
           <label className="block">
             <div className="text-xs font-semibold text-[var(--text-secondary)]">
-              What do you want? <span className="text-[var(--text-muted)]">(required — main gift name)</span>
+              What do you want?
             </div>
             <input
               className="mt-1 w-full rounded-[14px] border border-[var(--border-default)] bg-white px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-[rgba(129,160,63,0.18)]"
@@ -3378,12 +3842,13 @@ export function RegistryPage() {
           </label>
           <label className="block">
             <div className="text-xs font-semibold text-[var(--text-secondary)]">How many?</div>
-            <input
-              type="number"
-              min={1}
+              <input
+                inputMode="numeric"
+                type="text"
+                min={1}
               className="mt-1 w-full rounded-[14px] border border-[var(--border-default)] bg-white px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-[rgba(129,160,63,0.18)]"
               value={draftItem.quantityNeeded}
-              onChange={(e) => setDraftItem((s) => ({ ...s, quantityNeeded: e.target.value }))}
+                onChange={(e) => setDraftItem((s) => ({ ...s, quantityNeeded: formatIntegerInput(e.target.value) }))}
             />
           </label>
           <label className="block">
@@ -3499,6 +3964,16 @@ export function RegistryPage() {
         urls={imageLightbox?.urls || []}
         title={imageLightbox?.title || "Gift"}
         onClose={() => setImageLightbox(null)}
+      />
+
+      <SuccessModal
+        open={Boolean(successVariant)}
+        badgeLabel={successVariant?.badgeLabel || "Success"}
+        title={successVariant?.title || "Success"}
+        subtitle={successVariant?.subtitle || ""}
+        ctaLabel={successVariant?.ctaLabel || "Continue"}
+        onCta={() => setSuccessVariantKey(null)}
+        onClose={() => setSuccessVariantKey(null)}
       />
     </div>
   );

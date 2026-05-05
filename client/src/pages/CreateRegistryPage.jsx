@@ -37,7 +37,10 @@ export function CreateRegistryPage() {
           revealDatetime: new Date(revealDatetime).toISOString(),
         }),
       });
-      nav(`/registry/${data.registry.id}`);
+      const registryPath = `/registry/${data.registry.id}`;
+      nav(
+        `/success-modal?variant=registry_created&next=${encodeURIComponent(registryPath)}`
+      );
     } catch (e2) {
       setErr(e2);
     } finally {

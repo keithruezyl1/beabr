@@ -309,9 +309,6 @@ export function SettingsPage() {
                   </div>
                 )}
                 <div className="pointer-events-none absolute inset-0 bg-[rgba(29,33,26,0.0)] transition group-hover:bg-[rgba(29,33,26,0.12)]" />
-                <div className="pointer-events-none absolute bottom-1 right-1 rounded-full bg-white/95 px-1.5 py-0.5 text-[10px] font-semibold text-[var(--color-primary-800)] opacity-0 shadow-[var(--shadow-xs)] transition group-hover:opacity-100">
-                  Edit
-                </div>
               </button>
               <input
                 ref={fileRef}
@@ -541,6 +538,7 @@ export function SettingsPage() {
       <BottomSheet
         variant="modal"
         open={Boolean(deleteTarget)}
+        showCloseIcon={false}
         onClose={() => {
           if (!deleteBusy) setDeleteTarget(null);
         }}
@@ -607,7 +605,7 @@ export function SettingsPage() {
         ) : null}
       </BottomSheet>
 
-      <BottomSheet variant="modal" open={logoutConfirmOpen} onClose={() => setLogoutConfirmOpen(false)}>
+      <BottomSheet variant="modal" open={logoutConfirmOpen} showCloseIcon={false} onClose={() => setLogoutConfirmOpen(false)}>
         <div className="space-y-4">
           <div className="flex gap-3">
             <div

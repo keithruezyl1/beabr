@@ -39,7 +39,10 @@ export function JoinRegistryPage() {
           method: "POST",
           body: JSON.stringify({ joinCode: String(joinCodeParam).toUpperCase() }),
         });
-        if (!cancelled) nav(`/registry/${data.registryId}`, { replace: true });
+        if (!cancelled) {
+          const registryPath = `/registry/${data.registryId}`;
+          nav(`/success-modal?variant=registry_joined&next=${encodeURIComponent(registryPath)}`, { replace: true });
+        }
       } catch (e2) {
         if (!cancelled) {
           setRouteJoining(false);
@@ -69,7 +72,8 @@ export function JoinRegistryPage() {
         method: "POST",
         body: JSON.stringify(body),
       });
-      nav(`/registry/${data.registryId}`);
+      const registryPath = `/registry/${data.registryId}`;
+      nav(`/success-modal?variant=registry_joined&next=${encodeURIComponent(registryPath)}`);
     } catch (e2) {
       setErr(e2);
     } finally {

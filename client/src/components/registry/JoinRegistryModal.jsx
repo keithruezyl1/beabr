@@ -190,7 +190,8 @@ export function JoinRegistryModal({ open, onClose }) {
         body: JSON.stringify(body),
       });
       onClose();
-      nav(`/registry/${data.registryId}`);
+      const registryPath = `/registry/${data.registryId}`;
+      nav(`/success-modal?variant=registry_joined&next=${encodeURIComponent(registryPath)}`);
     } catch (e2) {
       setErr(e2);
     } finally {

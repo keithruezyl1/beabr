@@ -7,7 +7,8 @@ import { apiFetch } from "../../services/api";
 import { Card } from "../ui/Card.jsx";
 import { Button } from "../ui/Button.jsx";
 import { BottomSheet } from "../ui/BottomSheet.jsx";
-import { IconBell, IconClock, IconHeart, IconHome } from "../ui/PageIcons.jsx";
+import { IconBell, IconClock, IconHeart, IconHome, IconWallet } from "../ui/PageIcons.jsx";
+import { formatPesoDots } from "../../utils/numberFormat.js";
 
 function timeAgo(iso) {
   const t = new Date(iso).getTime();
@@ -22,6 +23,33 @@ function timeAgo(iso) {
   const d = Math.floor(h / 24);
   if (d < 14) return `${d}d ago`;
   return new Date(iso).toLocaleDateString();
+}
+
+function safeJsonParse(raw) {
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+function maxIsoDate(rows, field) {
+  let best = null;
+  for (const r of rows || []) {
+    const v = r?.[field];
+    if (!v) continue;
+    const t = new Date(v).getTime();
+    if (!Number.isFinite(t)) continue;
+    if (!best || t > best.t) best = { t, iso: new Date(t).toISOString() };
+  }
+  return best?.iso || null;
+}
+
+function mergeById(existing, incoming) {
+  const map = new Map();
+  for (const r of existing || []) map.set(r.id, r);
+  for (const r of incoming || []) map.set(r.id, { ...(map.get(r.id) || {}), ...r });
+  return [...map.values()];
 }
 
 export function AppShell({ children }) {
@@ -46,6 +74,18 @@ export function AppShell({ children }) {
 
   const avatarUrl = useMemo(() => user?.avatarUrl || "", [user]);
   const avatarFallback = useMemo(() => (user?.name ? user.name.slice(0, 1).toUpperCase() : "U"), [user]);
+
+  const notifCacheKey = user?.id ? `beabr_notifs_v1:${user.id}` : "";
+  const thankYouCacheKey = user?.id ? `beabr_thankyou_v1:${user.id}` : "";
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const cachedNotifs = safeJsonParse(localStorage.getItem(notifCacheKey) || "");
+    if (Array.isArray(cachedNotifs)) setNotifRows(cachedNotifs);
+    const cachedThanks = safeJsonParse(localStorage.getItem(thankYouCacheKey) || "");
+    if (Array.isArray(cachedThanks)) setThankYouRows(cachedThanks);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   useEffect(() => {
     function onDocMouseDown(e) {
@@ -85,12 +125,25 @@ export function AppShell({ children }) {
     setNotifLoading(true);
     setNotifErr(null);
     try {
+      const notifSince = maxIsoDate(notifRows, "createdAt");
+      const thankSince = maxIsoDate(thankYouRows, "createdAt");
+      const notifUrl = notifSince ? `/api/notifications?since=${encodeURIComponent(notifSince)}` : "/api/notifications";
+      const thankUrl = thankSince ? `/api/thank-you/inbox?since=${encodeURIComponent(thankSince)}` : "/api/thank-you/inbox";
       const [n, ty] = await Promise.all([
-        apiFetch("/api/notifications"),
-        apiFetch("/api/thank-you/inbox"),
+        apiFetch(notifUrl),
+        apiFetch(thankUrl),
       ]);
-      setNotifRows(n.notifications || []);
-      setThankYouRows(ty.messages || []);
+
+      setNotifRows((prev) => {
+        const merged = mergeById(prev, n.notifications || []);
+        localStorage.setItem(notifCacheKey, JSON.stringify(merged));
+        return merged;
+      });
+      setThankYouRows((prev) => {
+        const merged = mergeById(prev, ty.messages || []);
+        localStorage.setItem(thankYouCacheKey, JSON.stringify(merged));
+        return merged;
+      });
     } catch (e) {
       setNotifErr(e);
     } finally {
@@ -131,13 +184,13 @@ export function AppShell({ children }) {
       const payload = n.payload || {};
       const title =
         n.type === "pledge_receipt_uploaded"
-          ? `Receipt uploaded • ₱${payload.amount ?? ""}`
+          ? "Someone just contributed to your pledge!"
           : n.type === "pledge_goal_not_reached"
             ? `Pledge goal not reached — ${payload.itemTitle ?? "item"}`
             : n.type;
       const subtitle =
         n.type === "pledge_goal_not_reached"
-          ? `₱${payload.gatheredAmount ?? "0"} of ₱${payload.goalAmount ?? "0"} gathered`
+          ? `${formatPesoDots(payload.gatheredAmount ?? 0, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} of ${formatPesoDots(payload.goalAmount ?? 0, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} gathered`
           : payload.registryId
             ? "Open registry to review"
             : null;
@@ -149,7 +202,7 @@ export function AppShell({ children }) {
         seenAt: n.seenAt,
         title,
         subtitle,
-        icon: IconBell,
+        icon: n.type === "pledge_receipt_uploaded" ? IconWallet : IconBell,
         raw: n,
         link,
       });
@@ -164,10 +217,20 @@ export function AppShell({ children }) {
 
   async function markNotifSeen(id) {
     await apiFetch(`/api/notifications/${id}/seen`, { method: "PATCH" });
+    setNotifRows((prev) => {
+      const next = (prev || []).map((r) => (r?.id === id ? { ...r, seenAt: new Date().toISOString() } : r));
+      if (notifCacheKey) localStorage.setItem(notifCacheKey, JSON.stringify(next));
+      return next;
+    });
   }
 
   async function markThankYouSeen(id) {
     await apiFetch(`/api/thank-you/${id}/seen`, { method: "PATCH" });
+    setThankYouRows((prev) => {
+      const next = (prev || []).map((r) => (r?.id === id ? { ...r, seenAt: new Date().toISOString(), status: "seen" } : r));
+      if (thankYouCacheKey) localStorage.setItem(thankYouCacheKey, JSON.stringify(next));
+      return next;
+    });
   }
 
   async function onConfirmLogout() {
@@ -225,7 +288,7 @@ export function AppShell({ children }) {
                   <IconBell className="h-4 w-4" aria-hidden />
                   {hasUnread ? (
                     <span
-                      className="absolute right-1.5 top-2 h-2 w-2 rounded-full bg-[var(--color-primary-500)] ring-2 ring-[rgba(250,251,247,0.9)]"
+                      className="absolute left-1.5 top-2 z-10 h-1.5 w-1.5 rounded-full bg-[var(--color-primary-500)] ring-2 ring-[rgba(250,251,247,0.9)]"
                       aria-hidden
                     />
                   ) : null}
@@ -363,18 +426,19 @@ export function AppShell({ children }) {
                                 <Icon className="h-4 w-4 text-[var(--color-primary-700)]" aria-hidden />
                               </span>
                               <span className="min-w-0 flex-1">
-                                <span className="block truncate text-sm font-semibold text-[var(--text-primary)]">
-                                  {it.title}
+                                <span className="flex items-start justify-between gap-2">
+                                  <span className="min-w-0 truncate text-sm font-semibold text-[var(--text-primary)]">
+                                    {it.title}
+                                  </span>
+                                  <span className="shrink-0 text-[11px] font-medium tabular-nums text-[var(--text-muted)]">
+                                    {timeAgo(it.createdAt)}
+                                  </span>
                                 </span>
                                 {it.subtitle ? (
                                   <span className="mt-0.5 block line-clamp-1 text-xs text-[var(--text-muted)]">
                                     {it.subtitle}
                                   </span>
                                 ) : null}
-                                <span className="mt-1 flex items-center gap-1.5 text-[11px] text-[var(--text-muted)]">
-                                  <IconClock className="h-3.5 w-3.5 shrink-0 opacity-80" aria-hidden />
-                                  <span className="tabular-nums">{timeAgo(it.createdAt)}</span>
-                                </span>
                               </span>
                               {unread ? (
                                 <span
@@ -423,7 +487,7 @@ export function AppShell({ children }) {
                   Notifications
                   {hasUnread ? (
                     <span
-                      className="ml-2 h-2 w-2 rounded-full bg-[var(--color-primary-500)] ring-2 ring-[rgba(250,251,247,0.9)]"
+                      className="absolute left-2 top-2 z-10 h-1.5 w-1.5 rounded-full bg-[var(--color-primary-500)] ring-2 ring-[rgba(250,251,247,0.9)]"
                       aria-hidden
                     />
                   ) : null}
@@ -439,10 +503,26 @@ export function AppShell({ children }) {
                       <div className="text-sm font-semibold text-[var(--text-primary)]">Notifications</div>
                       <button
                         type="button"
-                        className="text-xs font-semibold text-[var(--text-muted)] underline underline-offset-2"
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[var(--text-muted)] transition hover:bg-[var(--color-neutral-100)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(129,160,63,0.45)]"
                         onClick={() => void refreshNotifications()}
+                        aria-label="Refresh notifications"
+                        title="Refresh"
                       >
-                        Refresh
+                        <svg className="h-4 w-4" viewBox="0 0 24 24" width="1em" height="1em" fill="none" aria-hidden>
+                          <path
+                            d="M21 12a9 9 0 1 1-3.07-6.74"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                          />
+                          <path
+                            d="M21 3v6h-6"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
                       </button>
                     </div>
                     <div className="max-h-[28rem] overflow-y-auto bg-[var(--surface-card)]">
@@ -485,18 +565,19 @@ export function AppShell({ children }) {
                                   <Icon className="h-4.5 w-4.5 text-[var(--color-primary-700)]" aria-hidden />
                                 </span>
                                 <span className="min-w-0 flex-1">
-                                  <span className="block truncate text-sm font-semibold text-[var(--text-primary)]">
-                                    {it.title}
+                                  <span className="flex items-start justify-between gap-2">
+                                    <span className="min-w-0 truncate text-sm font-semibold text-[var(--text-primary)]">
+                                      {it.title}
+                                    </span>
+                                    <span className="shrink-0 text-xs font-medium tabular-nums text-[var(--text-muted)]">
+                                      {timeAgo(it.createdAt)}
+                                    </span>
                                   </span>
                                   {it.subtitle ? (
                                     <span className="mt-0.5 block line-clamp-2 text-xs text-[var(--text-muted)]">
                                       {it.subtitle}
                                     </span>
                                   ) : null}
-                                  <span className="mt-1 flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
-                                    <IconClock className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                                    <span className="tabular-nums">{timeAgo(it.createdAt)}</span>
-                                  </span>
                                 </span>
                                 {unread ? (
                                   <span
@@ -621,7 +702,7 @@ export function AppShell({ children }) {
               <button
                 type="button"
                 aria-label="Close"
-                className="absolute inset-0 bg-[var(--surface-overlay)]"
+                className="absolute inset-0 bg-[var(--surface-overlay)] backdrop-blur-md"
                 onClick={() => setConfirmLogoutOpen(false)}
               />
               <div className="absolute inset-0 flex items-center justify-center p-5">
