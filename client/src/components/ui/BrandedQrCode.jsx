@@ -3,11 +3,11 @@ import QRCodeStyling from "qr-code-styling";
 import logoHead from "../../assets/logo_head.png";
 import exportCard from "../../assets/export_card.png";
 
-const EXPORT_QR_SIZE = 500;
-const EXPORT_CARD_QR_X = 116;
-const EXPORT_CARD_QR_Y = 340;
-const EXPORT_CARD_LINK_Y = 966;
-const EXPORT_CARD_LINK_MAX_WIDTH = 620;
+const EXPORT_QR_SIZE = 570;
+const EXPORT_CARD_QR_X = 227;
+const EXPORT_CARD_QR_Y = 270;
+const EXPORT_CARD_LINK_Y = 946;
+const EXPORT_CARD_LINK_MAX_WIDTH = 700;
 
 function loadImage(src) {
   return new Promise((resolve, reject) => {
@@ -32,39 +32,15 @@ function triggerPngDownload(canvas, name) {
   }, "image/png");
 }
 
-function roundedRectPath(ctx, x, y, width, height, radius) {
-  const r = Math.min(radius, width / 2, height / 2);
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.lineTo(x + width - r, y);
-  ctx.quadraticCurveTo(x + width, y, x + width, y + r);
-  ctx.lineTo(x + width, y + height - r);
-  ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
-  ctx.lineTo(x + r, y + height);
-  ctx.quadraticCurveTo(x, y + height, x, y + height - r);
-  ctx.lineTo(x, y + r);
-  ctx.quadraticCurveTo(x, y, x + r, y);
-  ctx.closePath();
-}
-
-function drawQrFrameStroke(ctx) {
-  ctx.save();
-  ctx.strokeStyle = "#4B611F";
-  ctx.lineWidth = 4;
-  roundedRectPath(ctx, 118, 342, 496, 496, 46);
-  ctx.stroke();
-  ctx.restore();
-}
-
 function fitCenteredText(ctx, text, y) {
-  let fontSize = 22;
+  let fontSize = 28;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillStyle = "#4B611F";
 
   do {
     ctx.font = `600 ${fontSize}px Inter, Manrope, system-ui, sans-serif`;
-    if (ctx.measureText(text).width <= EXPORT_CARD_LINK_MAX_WIDTH || fontSize <= 12) break;
+    if (ctx.measureText(text).width <= EXPORT_CARD_LINK_MAX_WIDTH || fontSize <= 16) break;
     fontSize -= 1;
   } while (true);
 
@@ -166,7 +142,6 @@ export function BrandedQrCode({
 
       ctx.drawImage(cardImage, 0, 0, canvas.width, canvas.height);
       ctx.drawImage(qrImage, EXPORT_CARD_QR_X, EXPORT_CARD_QR_Y, EXPORT_QR_SIZE, EXPORT_QR_SIZE);
-      drawQrFrameStroke(ctx);
       fitCenteredText(ctx, value, EXPORT_CARD_LINK_Y);
       triggerPngDownload(canvas, qrName);
     } catch (error) {
