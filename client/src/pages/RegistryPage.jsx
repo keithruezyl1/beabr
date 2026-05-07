@@ -374,6 +374,41 @@ function AttributionRows({ title, rows }) {
   );
 }
 
+function giftItemOpenCoordinationStatusMeta(item) {
+  if (!item?.attributionVisible || !item?.attribution) return null;
+
+  if (item.groupPledge) {
+    const initiator = item.attribution.pledgeInitiator || item.groupPledge.initiator || null;
+    return {
+      type: "pledge",
+      prefix: "Pledge initiated by",
+      person: initiator,
+    };
+  }
+
+  const reservationRows = Array.isArray(item.attribution.reservations)
+    ? item.attribution.reservations
+    : [];
+  const row =
+    reservationRows.find((r) => r.status === "prepared") ||
+    reservationRows.find((r) => r.status === "reserved") ||
+    null;
+
+  if (!row) return null;
+  return {
+    type: "reservation",
+    status: item.displayStatus || row.status,
+    person: row.giver || null,
+  };
+}
+
+function archiveBlockedStatusLabel(item) {
+  if (item?.hasPledge) return "pledged";
+  if ((item?.totals?.prepared ?? 0) > 0) return "prepared";
+  if ((item?.totals?.reserved ?? 0) > 0) return "reserved";
+  return "claimed";
+}
+
 /** Numeric estimate for filtering; invalid / missing → null */
 function giftItemNumericPriceEstimate(value) {
   if (value == null || value === "") return null;
@@ -406,41 +441,61 @@ function itemGalleryUrls(item) {
 const ITEM_GALLERY_THUMB_FRAME_CLASS = "relative w-[5.5rem] shrink-0 sm:w-24";
 
 /** Local draft file previews — parent should use `flex flex-wrap items-start gap-2` alongside the dropzone tile */
+function DraftItemPhotoThumb({ file, index, onRemove, disabled }) {
+  const src = useMemo(() => URL.createObjectURL(file), [file]);
+  const [showRemove, setShowRemove] = useState(false);
+
+  return (
+    <div
+      className={`${ITEM_GALLERY_THUMB_FRAME_CLASS} group`}
+      onClick={() => setShowRemove(true)}
+      onMouseEnter={() => setShowRemove(true)}
+      onMouseLeave={() => setShowRemove(false)}
+    >
+      <img
+        src={src}
+        alt=""
+        onLoad={() => URL.revokeObjectURL(src)}
+        onError={() => URL.revokeObjectURL(src)}
+        className={`aspect-square w-full rounded-[var(--radius-md)] object-cover ring-2 ring-[var(--color-primary-600)] ring-offset-2 ring-offset-[var(--surface-page)] transition md:group-hover:blur-[1.5px] ${
+          showRemove ? "blur-[1.5px]" : ""
+        }`}
+      />
+      <button
+        type="button"
+        disabled={disabled}
+        className={`absolute left-1/2 top-1/2 flex h-9 w-9 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-red-200 bg-red-50/95 text-base font-bold text-red-600 shadow-[var(--shadow-sm)] transition hover:bg-red-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300 disabled:opacity-50 md:opacity-0 md:group-hover:opacity-100 ${
+          showRemove ? "opacity-100" : "opacity-0"
+        }`}
+        aria-label="Remove draft photo"
+        onClick={(e) => {
+          e.stopPropagation();
+          onRemove(index);
+        }}
+      >
+        X
+      </button>
+    </div>
+  );
+}
+
 function DraftItemPhotosRow({ files, onRemove, disabled }) {
-  const urls = useMemo(() => files.map((f) => URL.createObjectURL(f)), [files]);
-
-  useEffect(() => {
-    return () => {
-      urls.forEach((u) => URL.revokeObjectURL(u));
-    };
-  }, [urls]);
-
   if (files.length === 0) return null;
 
   return (
     <>
       {files.map((f, idx) => (
-        <div key={`${f.name}-${f.lastModified}-${idx}`} className={ITEM_GALLERY_THUMB_FRAME_CLASS}>
-          <img
-            src={urls[idx]}
-            alt=""
-            className="aspect-square w-full rounded-[var(--radius-md)] object-cover ring-2 ring-[var(--color-primary-600)] ring-offset-2 ring-offset-[var(--surface-page)]"
-          />
-          <button
-            type="button"
-            disabled={disabled}
-            className="absolute -right-1 -top-1 flex h-7 w-7 items-center justify-center rounded-full border border-[var(--border-default)] bg-white text-sm font-bold text-[var(--text-secondary)] shadow-[var(--shadow-sm)] hover:bg-[var(--surface-card-soft)] disabled:opacity-50"
-            aria-label="Remove draft photo"
-            onClick={() => onRemove(idx)}
-          >
-            ×
-          </button>
-        </div>
+        <DraftItemPhotoThumb
+          key={`${f.name}-${f.lastModified}-${idx}`}
+          file={f}
+          index={idx}
+          onRemove={onRemove}
+          disabled={disabled}
+        />
       ))}
     </>
   );
 }
-
 /** Scrollable thumbnails in sheet; opens lightbox with full gallery */
 function ItemSheetGalleryStrip({ urls, title, onPick }) {
   if (urls.length === 0) return null;
@@ -1194,6 +1249,7 @@ export function RegistryPage() {
 
   const [successVariantKey, setSuccessVariantKey] = useState(null);
   const successVariant = useMemo(() => resolveSuccessModalVariant(successVariantKey), [successVariantKey]);
+  const successModalOpen = Boolean(successVariant);
 
   const [activeItem, setActiveItem] = useState(null);
   const [editItem, setEditItem] = useState(null);
@@ -1206,6 +1262,7 @@ export function RegistryPage() {
   const [countdownModalOpen, setCountdownModalOpen] = useState(false);
   const [shareInviteOpen, setShareInviteOpen] = useState(false);
   const [unprepareConfirmOpen, setUnprepareConfirmOpen] = useState(false);
+  const [giftActionConfirm, setGiftActionConfirm] = useState(null);
   const [countdownTick, setCountdownTick] = useState(() => Date.now());
   const [draftItem, setDraftItem] = useState({
     title: "",
@@ -1220,6 +1277,30 @@ export function RegistryPage() {
   });
   const [draftItemPhotos, setDraftItemPhotos] = useState([]);
   const [imageLightbox, setImageLightbox] = useState(null);
+
+  useEffect(() => {
+    function closeAddItemModalFromTour() {
+      setFabOpen(false);
+      setDraftItemPhotos([]);
+      setActionErr(null);
+    }
+
+    function closeShareInviteModalFromTour() {
+      setShareInviteOpen(false);
+    }
+
+    window.addEventListener("beabr:close-add-item-modal", closeAddItemModalFromTour);
+    window.addEventListener("beabr:close-share-invite-modal", closeShareInviteModalFromTour);
+    return () => {
+      window.removeEventListener("beabr:close-add-item-modal", closeAddItemModalFromTour);
+      window.removeEventListener("beabr:close-share-invite-modal", closeShareInviteModalFromTour);
+    };
+  }, []);
+
+  useEffect(() => {
+    document.body.classList.toggle("beabr-success-modal-open", successModalOpen);
+    return () => document.body.classList.remove("beabr-success-modal-open");
+  }, [successModalOpen]);
 
   const [giftCategoryFilter, setGiftCategoryFilter] = useState("all");
   /** Viewer-only: all | reserved_mine | reserved | prepared_mine | prepared | pledge_started */
@@ -1494,6 +1575,31 @@ export function RegistryPage() {
     return activeItem.title;
   }, [activeItem]);
 
+  const giftActionConfirmMeta = useMemo(() => {
+    if (!giftActionConfirm) return null;
+    const item = giftActionConfirm.type === "prepare" ? giftActionConfirm.item : activeItem;
+    const itemTitle = item?.title ? `"${item.title}"` : "this gift";
+    const openCoordination = data?.registry?.visibilityMode === "open_coordination";
+    const visibilityNote = openCoordination
+      ? " In Open Coordination, others in this registry can see your status."
+      : "";
+
+    if (giftActionConfirm.type === "reserve") {
+      const qty = parseIntegerInput(reserveQty) ?? 1;
+      return {
+        title: "Reserve this gift?",
+        subtitle: `This will hold ${qty} of ${itemTitle} for you and let others know it is being prepared.${visibilityNote}`,
+        confirmLabel: actionBusy ? "Reserving..." : "Reserve gift",
+      };
+    }
+
+    return {
+      title: "Mark gift as prepared?",
+      subtitle: `Confirm once ${itemTitle} is bought or ready to give. Its status will change from reserved to prepared.${visibilityNote}`,
+      confirmLabel: actionBusy ? "Marking..." : "Mark prepared",
+    };
+  }, [activeItem, actionBusy, data?.registry?.visibilityMode, giftActionConfirm, reserveQty]);
+
   async function reserve() {
     if (!activeItem) return;
     if (activeItem.hasPledge) {
@@ -1745,7 +1851,10 @@ export function RegistryPage() {
       });
       setDraftItemPhotos([]);
       await refresh();
-      if (created?.item?.id) setSuccessVariantKey("item_added");
+      if (created?.item?.id) {
+        document.body.classList.add("beabr-success-modal-open");
+        setSuccessVariantKey("item_added");
+      }
     } catch (e) {
       setActionErr(e);
     } finally {
@@ -1895,6 +2004,28 @@ export function RegistryPage() {
     } finally {
       setActionBusy(false);
     }
+  }
+
+  function requestReserveConfirmation() {
+    if (!activeItem) return;
+    setActionErr(null);
+    setGiftActionConfirm({ type: "reserve" });
+  }
+
+  function requestPrepareConfirmation(item) {
+    if (!item?.myReservation?.id) return;
+    setActionErr(null);
+    setGiftActionConfirm({ type: "prepare", item });
+  }
+
+  async function confirmGiftAction() {
+    if (!giftActionConfirm) return;
+    if (giftActionConfirm.type === "reserve") {
+      await reserve();
+    } else {
+      await markPreparedQuick(giftActionConfirm.item);
+    }
+    setGiftActionConfirm(null);
   }
 
   async function addOwnerItemPhotoFromFile(file) {
@@ -2066,6 +2197,7 @@ export function RegistryPage() {
             <div className="flex w-full min-w-0 flex-shrink-0 flex-row flex-nowrap gap-1 sm:gap-2 md:w-auto md:justify-end">
               {role === "owner" ? (
                 <Button
+                  data-tour-id="registry-add-item"
                   variant="secondary"
                   className="min-h-[44px] min-w-0 flex-1 gap-1 border-white/35 bg-white/15 px-2.5 py-2 text-xs font-semibold text-white backdrop-blur-[2px] hover:bg-white/25 sm:gap-2 sm:px-4 sm:py-3 sm:text-sm md:flex-initial md:w-auto [&_svg]:text-white [&_span]:text-white"
                   onClick={() => {
@@ -2156,6 +2288,7 @@ export function RegistryPage() {
               </div>
               {role === "owner" && data.registry.joinCode ? (
                 <Button
+                  data-tour-id="registry-share"
                   type="button"
                   variant="secondary"
                   className="w-full shrink-0 gap-2 sm:w-auto sm:self-start"
@@ -2404,6 +2537,7 @@ export function RegistryPage() {
                 </div>
                 {role === "owner" ? (
                   <Button
+                    data-tour-id="registry-add-item"
                     className="w-full shrink-0 sm:w-auto"
                     onClick={() => {
                       setFabOpen(true);
@@ -2458,6 +2592,9 @@ export function RegistryPage() {
                 const cardPreviewImage = itemGalleryUrls(item)[0] ?? null;
                 const showExternal = Boolean(item.externalLink);
                 const showOwnerEdit = role === "owner";
+                const ownerCoordinationStatus = showOwnerEdit
+                  ? giftItemOpenCoordinationStatusMeta(item)
+                  : null;
                 const showMarkPrepared = canReserve && item.myReservation?.status === "reserved";
                 const showReserve = canReserve && !item.myReservation && avail > 0 && !item.groupPledge;
                 const showViewDetails = canReserve && showViewDetailsBtn;
@@ -2558,7 +2695,7 @@ export function RegistryPage() {
                                 <StatusBadgeBy
                                   tone="success"
                                   prefix={groupPledgeStatusLabel(item.groupPledge)}
-                                  prefixMobile={groupPledgeStatusLabel(item.groupPledge)}
+                                  prefixMobile="Pledge"
                                   byAvatarUrl={item.groupPledge.initiator.avatarUrl}
                                   byInitials={item.groupPledge.initiator.name?.trim()?.[0] || "?"}
                                   byAriaLabel="Pledge initiator"
@@ -2567,7 +2704,7 @@ export function RegistryPage() {
                                 <StatusBadgeBy
                                   tone="success"
                                   prefix={groupPledgeStatusLabel(item.groupPledge)}
-                                  prefixMobile={groupPledgeStatusLabel(item.groupPledge)}
+                                  prefixMobile="Pledge"
                                   byAriaLabel={groupPledgeStatusLabel(item.groupPledge)}
                                 />
                               ) : (
@@ -2578,6 +2715,22 @@ export function RegistryPage() {
                                   byAriaLabel={item.myReservation ? "Reserved by you" : "Reserved by someone"}
                                 />
                               )
+                            ) : ownerCoordinationStatus?.type === "pledge" ? (
+                              <StatusBadgeBy
+                                tone="success"
+                                prefix={ownerCoordinationStatus.prefix}
+                                prefixMobile="Pledge"
+                                byAvatarUrl={ownerCoordinationStatus.person?.avatarUrl}
+                                byInitials={ownerCoordinationStatus.person?.name?.trim()?.[0] || null}
+                                byAriaLabel="Pledge initiator"
+                              />
+                            ) : ownerCoordinationStatus?.type === "reservation" ? (
+                              <StatusBadge
+                                status={ownerCoordinationStatus.status}
+                                byAvatarUrl={ownerCoordinationStatus.person?.avatarUrl}
+                                byInitials={ownerCoordinationStatus.person?.name?.trim()?.[0] || null}
+                                byAriaLabel="Gift status actor"
+                              />
                             ) : null}
                           </div>
                           {canReserve && item.myReservation && item.myReservation.status !== "prepared" ? (
@@ -2760,7 +2913,7 @@ export function RegistryPage() {
                               disabled={actionBusy}
                               onClick={(e) => {
                                 e.preventDefault();
-                                void markPreparedQuick(item);
+                                requestPrepareConfirmation(item);
                               }}
                             >
                               <IconSparkles className="h-4 w-4 shrink-0" aria-hidden />
@@ -2803,7 +2956,7 @@ export function RegistryPage() {
                               disabled={actionBusy}
                               onClick={(e) => {
                                 e.preventDefault();
-                                void markPreparedQuick(item);
+                                requestPrepareConfirmation(item);
                               }}
                             >
                               <IconSparkles className="h-4 w-4 shrink-0" aria-hidden />
@@ -3228,7 +3381,7 @@ export function RegistryPage() {
                     </Button>
                   ) : (
                     <div className="rounded-[var(--radius-md)] bg-[var(--surface-card-soft)] px-3 py-2 text-center text-xs leading-relaxed text-[var(--text-muted)] ring-1 ring-[var(--border-subtle)]">
-                      Archive before any reservation, prep, or pledge.
+                      This item has been {archiveBlockedStatusLabel(activeItem)}, so you can't archive it.
                     </div>
                   )}
                 </div>
@@ -3277,7 +3430,7 @@ export function RegistryPage() {
                       <div className="text-sm text-[var(--danger-text)]">{actionErr.message}</div>
                     ) : null}
                     {!activeItem.hasPledge && activeItem.totals?.available > 0 ? (
-                      <Button className="w-full" onClick={reserve} disabled={actionBusy}>
+                      <Button className="w-full" onClick={requestReserveConfirmation} disabled={actionBusy}>
                         <IconGift className="h-4 w-4 shrink-0" aria-hidden />
                         Reserve this gift
                       </Button>
@@ -3552,6 +3705,43 @@ export function RegistryPage() {
       </BottomSheet>
 
       <BottomSheet
+        open={Boolean(giftActionConfirmMeta)}
+        variant="modal"
+        showCloseIcon={false}
+        title={giftActionConfirmMeta?.title || ""}
+        headerBelow={
+          giftActionConfirmMeta ? (
+            <p className="text-sm leading-relaxed text-[var(--text-secondary)]">
+              {giftActionConfirmMeta.subtitle}
+            </p>
+          ) : null
+        }
+        onClose={() => {
+          if (!actionBusy) setGiftActionConfirm(null);
+        }}
+      >
+        <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
+          <Button
+            className="min-h-[44px] flex-1"
+            type="button"
+            variant="secondary"
+            disabled={actionBusy}
+            onClick={() => setGiftActionConfirm(null)}
+          >
+            Not yet
+          </Button>
+          <Button
+            className="min-h-[44px] flex-1"
+            type="button"
+            disabled={actionBusy}
+            onClick={() => void confirmGiftAction()}
+          >
+            {giftActionConfirmMeta?.confirmLabel || "Confirm"}
+          </Button>
+        </div>
+      </BottomSheet>
+
+      <BottomSheet
         open={unprepareConfirmOpen && Boolean(activeItem?.myReservation) && activeItem?.myReservation?.status === "prepared"}
         variant="modal"
         showCloseIcon={false}
@@ -3803,6 +3993,7 @@ export function RegistryPage() {
         open={fabOpen}
         title="Add gift item"
         variant="modal"
+        showCloseIcon={false}
         onClose={() => {
           setFabOpen(false);
           setDraftItemPhotos([]);
@@ -3810,6 +4001,7 @@ export function RegistryPage() {
         }}
       >
         <form
+          data-tour-id="registry-item-form"
           className="space-y-3"
           noValidate
           onSubmit={(e) => {
@@ -3818,9 +4010,9 @@ export function RegistryPage() {
             void createItem();
           }}
         >
-          <div>
+          <div data-tour-id="registry-item-photo" data-tour-highlight="self">
             <div className="text-xs font-semibold text-[var(--text-secondary)]">
-              Photos <span className="text-[var(--text-muted)]">(optional, up to {MAX_ITEM_PHOTOS})</span>
+              Photos
             </div>
             <div className="mt-2">
               <input
@@ -3848,7 +4040,7 @@ export function RegistryPage() {
                   }}
                 />
               ) : (
-                <div className="flex flex-wrap items-start gap-2">
+                <div className="flex flex-wrap items-start gap-3">
                   <DraftItemPhotosRow
                     files={draftItemPhotos}
                     disabled={actionBusy}
@@ -3876,6 +4068,7 @@ export function RegistryPage() {
               Gift name
             </div>
             <input
+              data-tour-id="registry-item-name"
               className="mt-1 w-full rounded-[14px] border border-[var(--border-default)] bg-white px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-[rgba(129,160,63,0.18)]"
               value={draftItem.title}
               onChange={(e) => setDraftItem((s) => ({ ...s, title: e.target.value }))}
@@ -3895,6 +4088,7 @@ export function RegistryPage() {
                 ₱
               </span>
               <input
+                data-tour-id="registry-item-price"
                 type="number"
                 inputMode="decimal"
                 min={0}
@@ -3909,6 +4103,7 @@ export function RegistryPage() {
           <label className="block">
             <div className="text-xs font-semibold text-[var(--text-secondary)]">Category</div>
             <select
+              data-tour-id="registry-item-category"
               className="mt-1 w-full rounded-[14px] border border-[var(--border-default)] bg-white px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-[rgba(129,160,63,0.18)]"
               value={draftItem.category}
               onChange={(e) => setDraftItem((s) => ({ ...s, category: e.target.value }))}
@@ -3932,7 +4127,7 @@ export function RegistryPage() {
           </label>
 
           {categoryFields.length ? (
-            <div className="space-y-3">
+            <div data-tour-id="registry-item-category-details" data-tour-highlight="self" className="space-y-3">
               {categoryFields.map((key) => (
                 <label key={key} className="block">
                   <div className="text-xs font-semibold text-[var(--text-secondary)]">{formatAttributeLabel(key)}</div>
@@ -3984,7 +4179,7 @@ export function RegistryPage() {
               placeholder="e.g., Sage green preferred."
             />
           </label>
-          <label className="flex cursor-pointer items-start gap-3 rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-card-soft)] p-3 text-left">
+          <label data-tour-id="registry-item-considering" className="flex cursor-pointer items-start gap-3 rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-card-soft)] p-3 text-left">
             <input
               type="checkbox"
               className="mt-0.5 h-4 w-4 shrink-0 rounded border-[var(--border-default)] text-[var(--color-primary-600)] focus:ring-[rgba(129,160,63,0.35)]"
@@ -3996,7 +4191,7 @@ export function RegistryPage() {
             </span>
           </label>
           {actionErr ? <div className="text-sm text-[var(--danger-text)]">{actionErr.message}</div> : null}
-          <Button type="submit" className="w-full" disabled={actionBusy}>
+          <Button data-tour-id="registry-item-submit" type="submit" className="w-full" disabled={actionBusy}>
             <span className="mr-1.5 text-lg font-light leading-none" aria-hidden>
               +
             </span>
@@ -4090,7 +4285,7 @@ export function RegistryPage() {
       />
 
       <SuccessModal
-        open={Boolean(successVariant)}
+        open={successModalOpen}
         badgeLabel={successVariant?.badgeLabel || "Success"}
         title={successVariant?.title || "Success"}
         subtitle={successVariant?.subtitle || ""}

@@ -11,7 +11,7 @@ export function ViewerFacepile({ roster, role, compact = false, onShareInvite })
   const faces = roster?.faces ?? [];
 
   const shell = compact
-    ? "rounded-[var(--radius-md)] bg-[var(--surface-card-soft)] px-2.5 py-2 ring-1 ring-[var(--border-subtle)] h-full min-h-0 flex flex-col"
+    ? "rounded-[var(--radius-md)] bg-[var(--surface-card-soft)] px-2.5 py-2 ring-1 ring-[var(--border-subtle)] h-full min-h-[5.75rem] flex flex-col"
     : "rounded-[var(--radius-md)] bg-[var(--surface-card-soft)] px-3 py-3 ring-1 ring-[var(--border-subtle)]";
   const titleCls = compact ? "text-xs font-semibold leading-snug text-[var(--text-primary)]" : "text-sm font-semibold text-[var(--text-primary)]";
   const subCls = compact ? "mt-1 text-[11px] leading-snug text-[var(--text-secondary)]" : "mt-1 text-xs leading-relaxed text-[var(--text-secondary)]";
@@ -167,6 +167,9 @@ export function ViewerFacepile({ roster, role, compact = false, onShareInvite })
             </button>
           ) : null}
         </div>
+        {compact ? (
+          <div className="mt-1 min-h-[1.125rem]" aria-hidden="true" />
+        ) : null}
         {onlyYou ? (
           <p className={compact ? "mt-0.5 text-[11px] text-[var(--text-secondary)]" : "mt-1 text-xs text-[var(--text-secondary)]"}>
             {compact ? "Just you so far." : "You’re the only gift giver here so far."}

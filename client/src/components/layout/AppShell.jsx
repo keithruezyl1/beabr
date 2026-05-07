@@ -7,7 +7,8 @@ import { apiFetch } from "../../services/api";
 import { Card } from "../ui/Card.jsx";
 import { Button } from "../ui/Button.jsx";
 import { BottomSheet } from "../ui/BottomSheet.jsx";
-import { IconBell, IconClock, IconHeart, IconHome, IconWallet } from "../ui/PageIcons.jsx";
+import { GuidedTour } from "../onboarding/GuidedTour.jsx";
+import { IconBell, IconHeart, IconHome, IconWallet } from "../ui/PageIcons.jsx";
 import { formatPesoDots } from "../../utils/numberFormat.js";
 
 function timeAgo(iso) {
@@ -667,6 +668,8 @@ export function AppShell({ children }) {
         {children}
       </main>
 
+      <GuidedTour />
+
       <BottomSheet
         open={Boolean(activeThankYou)}
         title={
@@ -726,4 +729,3 @@ export function AppShell({ children }) {
     </div>
   );
 }
-

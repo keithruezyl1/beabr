@@ -175,7 +175,7 @@ function RegistryCard({ registry }) {
         </div>
 
         <div className="mt-4 grid grid-cols-1 items-stretch gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(9rem,12.5rem)]">
-          <div className="flex min-h-0 min-w-0 items-center gap-3 rounded-[var(--radius-md)] bg-[var(--surface-card-soft)] p-3 ring-1 ring-[var(--border-subtle)]">
+          <div className="flex min-h-[5.75rem] min-w-0 items-center gap-3 rounded-[var(--radius-md)] bg-[var(--surface-card-soft)] p-3 ring-1 ring-[var(--border-subtle)]">
             <div className="flex shrink-0 flex-col items-center justify-center text-[var(--color-primary-600)]">
               <IconCalendar className="h-5 w-5" aria-hidden />
             </div>
@@ -289,7 +289,7 @@ export function DashboardPage() {
         illustrationOnTop
         actions={
           <>
-            <Link className="w-full sm:w-auto" to="/registries/new">
+            <Link className="w-full sm:w-auto" to="/registries/new" data-tour-id="dashboard-create-registry">
               <Button className="w-full gap-2 sm:w-auto">
                 <IconPlus className="h-4 w-4 shrink-0" aria-hidden />
                 Create registry
@@ -329,7 +329,7 @@ export function DashboardPage() {
                   Create one to get started, then share the code or link with gift givers.
                 </div>
                 <div className="mt-4">
-                  <Link to="/registries/new">
+                  <Link to="/registries/new" data-tour-id="dashboard-create-registry">
                     <Button className="gap-2">
                       <IconPlus className="h-4 w-4" aria-hidden />
                       Create registry

@@ -2,7 +2,7 @@ export const SUCCESS_MODAL_VARIANTS = {
   registry_created: {
     badgeLabel: "Success",
     title: "Registry created",
-    subtitle: "Your gift list is ready. Share the invite so loved ones can choose with less guessing.",
+    subtitle: "Your registry is ready! Add gifts and share your invite with your loved ones.",
     ctaLabel: "Open registry",
   },
   registry_joined: {

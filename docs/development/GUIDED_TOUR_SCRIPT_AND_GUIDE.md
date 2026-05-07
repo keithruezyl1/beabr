@@ -1,10 +1,21 @@
-# Beabr Guided Tour — Conversational Script
+# Beabr Guided Tour - Conversational Script
+
+This script is for the first-run Registry Owner tour. It should match the current product model:
+
+- Every registry is invite-only.
+- Every registry chooses one gift visibility mode during setup.
+- **Private surprise** hides contributor attribution from the Registry Owner until reveal.
+- **Open coordination** shows safe attribution earlier so invited loved ones can avoid duplicates and coordinate clearly.
+- The visibility mode is immutable after creation.
+- Private notes, payout details, receipt images, encrypted fields, storage paths, and other sensitive materials are not made public just because a registry uses open coordination.
+
+---
 
 ## 1. Welcome
 
 Beve:
-“Hey there! Welcome to Beabr 🦫  
-I’m Beve — your gifting companion. I’ll walk you through everything real quick.”
+"Hey there! Welcome to Beabr.
+I'm Beve, your gifting companion. I'll walk you through everything real quick."
 
 [Continue]
 
@@ -13,9 +24,9 @@ I’m Beve — your gifting companion. I’ll walk you through everything real q
 ## 2. Ask Name
 
 Beve:
-“Before we start… what should I call you?”
+"Before we start, what should I call you?"
 
-[input field appears — prefilled if Google login]
+[input field appears - prefilled if Google login]
 
 [User enters name]
 
@@ -24,235 +35,255 @@ Beve:
 ## 3. Greeting
 
 Beve:
-“Nice to meet you, <username> 🙂  
-Ready? This won’t take long.”
+"Nice to meet you, <username>.
+Ready to start the tour? This won't take long."
 
 [Continue]
 
 ---
 
-## 4. What Beabr is (Part 1)
+## 4. What Beabr Is
 
 Beve:
-“So here’s the idea —  
-Beabr helps you list out the things you actually need…”
-
----
-
-## 5. What Beabr is (Part 2)
+"Here's the idea:
+Beabr helps you list the things you actually need, then lets invited loved ones prepare gifts without guessing or duplicating."
 
 Beve:
-“…and lets people prepare gifts for you without guessing or duplicating.”
-
-Beve:
-“Oh — and everything stays anonymous until your reveal date 👀”
+"You also get to choose the coordination style for each registry: keep the surprise private until reveal, or let the group coordinate openly from the start."
 
 [Continue]
 
 ---
 
-## 6. Create Registry (highlight button)
+## 5. Create Registry
 
 Beve:
-“Let’s make your first registry.  
-Go ahead — click **Create registry**.”
+"Let's make your first registry.
+Go ahead and click **Create registry**."
 
 [wait for click]
 
 ---
 
-## 7. On Create Registry Page
+## 6. On Create Registry Page
 
 Beve:
-“This is where we set everything up.  
-Let’s just make a simple one for now — imagine it’s for your birthday 🎂”
+"This is where we set everything up.
+Let's make a simple one for now, like a birthday registry."
 
 ---
 
-## 8. Filling the Form (guided but natural)
+## 7. Filling Basic Details
 
 Beve:
-“Give it a name… something like *‘My Birthday Registry’* works.”
+"Give it a name. Something like *My Birthday Registry* works."
 
 [pause for input]
 
 Beve:
-“Pick the event type… whatever fits.”
+"Pick the event type, whatever fits."
 
 Beve:
-“And this name here — that’s what people will see when they open your registry.”
+"This display name is what invited viewers will see when they open your registry."
 
 Beve:
-“You can also leave a short message if you want — totally optional.”
+"You can also leave a short message if you want. That's optional."
 
 Beve:
-“Now choose your event date… when everything happens.”
-
-Beve:
-“And this part’s important — your **reveal date**.  
-That’s when you finally see who gave what.”
+"Now choose the main event date if you know it."
 
 ---
 
-## 9. Important Reminder
+## 8. Choose Gift Visibility
 
 Beve:
-“Quick note —  
-just because you made a registry doesn’t mean anyone *has* to give you something.”
+"This part is important: **Gift visibility**."
 
 Beve:
-“It’s just a guide.  
-It helps people avoid guessing… or buying the same thing twice.”
+"Choose **Private surprise** if you want loved ones to coordinate quietly. Their names stay hidden from you until the reveal."
+
+Beve:
+"Choose **Open coordination** if your group needs more visibility. Invited loved ones can see who reserved, prepared, started a group pledge, or contributed, so gifts are easier to coordinate."
+
+Beve:
+"Pick carefully. You choose this once during setup, and it can't be changed after the registry is created."
+
+[pause for selection]
+
+---
+
+## 9. Reveal Date
+
+Beve:
+"Now choose your **reveal date and time**."
+
+Beve:
+"For private surprise registries, that's when hidden contributor details unlock for you."
+
+Beve:
+"For open coordination registries, people may already see attribution earlier, but the reveal date still marks the celebration moment."
+
+---
+
+## 10. Important Reminder
+
+Beve:
+"Quick note:
+making a registry doesn't mean anyone has to give you something."
+
+Beve:
+"It's just a guide. It helps people avoid guessing or buying the same thing twice."
+
+Beve:
+"And even in open coordination, sensitive things like private notes, payout details, receipts, and hidden system records stay protected by their own rules."
 
 [Continue]
 
 ---
 
-## 10. Create Registry
+## 11. Create Registry
 
 Beve:
-“Alright, looks good. Go ahead and create it.”
+"Alright, looks good. Go ahead and create it."
 
 [wait for click]
 
 ---
 
-## 11. Registry Page
+## 12. Registry Page
 
 Beve:
-“Nice — this is your registry!”
+"Nice, this is your registry."
 
 Beve:
-“You’ll see your message here, your dates, and everything people need to know.”
+"You'll see your message, dates, gift visibility mode, and the details invited people need."
 
 Beve:
-“Let’s add your first item.”
+"Let's add your first item."
 
 ---
 
-## 12. Add Item (highlight button)
+## 13. Add Item
 
 Beve:
-“Click **Add Item**.”
+"Click **Add Item**."
 
 [wait for click]
 
 ---
 
-## 13. Item Modal Intro
+## 14. Item Modal Intro
 
 Beve:
-“This is where you describe what you want.”
+"This is where you describe what you want."
 
 Beve:
-“The clearer you are here… the easier it is for people to get it right.”
+"The clearer you are here, the easier it is for people to get it right."
 
 ---
 
-## 14. Filling Item Form (conversational)
+## 15. Filling Item Form
 
 Beve:
-“Start with the name — what do you want?”
+"Start with the name. What do you want?"
 
 Beve:
-“You can add a photo too, if you have one.”
+"You can add a photo too, if you have one."
 
 Beve:
-“Add an estimated price — just to give people an idea.”
+"Add an estimated price, just to give people an idea."
 
 Beve:
-“Pick a category… it helps organize everything.”
+"Pick a category. It helps organize everything."
 
 Beve:
-“Then fill in details like size, color, or brand if it matters.”
+"Then fill in details like size, color, or brand if it matters."
 
 Beve:
-“If you already found it online, you can drop the link here.”
+"If you already found it online, you can drop the link here."
 
 Beve:
-“And set how many you need.”
+"Set how many you need."
 
 Beve:
-“You can leave extra notes if you want — like preferences.”
+"You can leave extra notes if you want, like preferences."
 
 Beve:
-“Oh, and if you’re not 100% sure about it, just tick this box.”
+"If you're not completely sure about it, tick the maybe box."
 
 ---
 
-## 15. Submit Item
+## 16. Submit Item
 
 Beve:
-“Alright — add it.”
+"Alright, add it."
 
 [wait for click]
 
 ---
 
-## 16. Success
+## 17. Success
 
 Beve:
-“Nice 😄  
-That’s your first item in the registry.”
+"Nice. That's your first item in the registry."
 
 ---
 
-## 17. Share Registry (highlight button)
+## 18. Share Registry
 
 Beve:
-“Now let’s get people in.  
-Click **Share**.”
+"Now let's get people in.
+Click **Share**."
 
 [wait for click]
 
 ---
 
-## 18. Share Modal
+## 19. Share Modal
 
 Beve:
-“This is your invite.”
+"This is your invite."
 
 Beve:
-“You can send the link… or let them scan the QR code.”
+"You can send the link or let people scan the QR code."
+
+Beve:
+"Share it only with people you trust. Your registry is invite-only, not a public storefront."
 
 ---
 
-## 19. Copy Link
+## 20. Copy Link
 
 Beve:
-“Go ahead — copy the link.”
+"Go ahead and copy the link."
 
 [wait for click]
 
 ---
 
-## 20. Close Modal
+## 21. Close Modal
 
 Beve:
-“You can close this now. You can always come back here later.”
+"You can close this now. You can always come back here later."
 
 [wait for close]
 
 ---
 
-## 21. Redirect to Dashboard
+## 22. Redirect to Dashboard
 
 Beve:
-“And that’s it.”
+"And that's it."
 
 ---
 
-## 22. Final Message
+## 23. Final Message
 
 Beve:
-“You’ve got your registry, your first item, and your invite ready.”
+"You've got your registry, your first item, and your invite ready."
 
 Beve:
-“Just share it with people you trust — and you’re good to go.”
-
----
-
-## 23. Closing Line
+"Just remember the visibility mode you chose: private surprise keeps names hidden until reveal, while open coordination helps the group see who's helping earlier."
 
 Beve:
-“Happy gifting, <username> 🦫”
+"Happy gifting, <username>."

@@ -33,10 +33,6 @@ async function getSessionUser(req) {
 
   const sUser = data.user;
   const email = sUser.email;
-  const name =
-    sUser.user_metadata?.full_name ||
-    sUser.user_metadata?.name ||
-    (email ? email.split("@")[0] : "Beabr User");
   const avatarUrl =
     sUser.user_metadata?.avatar_url || sUser.user_metadata?.picture || null;
 
@@ -49,9 +45,10 @@ async function getSessionUser(req) {
   const profile = {
     id: null,
     supabaseId: sUser.id,
-    name,
+    name: "",
     email: email || `${sUser.id}@users.local`,
     avatarUrl,
+    authProvider: googleIdResolved ? "google" : "email",
   };
 
   try {
@@ -61,13 +58,12 @@ async function getSessionUser(req) {
         supabaseId: sUser.id,
         googleId: googleIdResolved,
         email: email || `${sUser.id}@users.local`,
-        name,
+        name: "",
         avatarUrl,
         lastLoginAt: new Date(),
       },
       update: {
         email: email || `${sUser.id}@users.local`,
-        name,
         lastLoginAt: new Date(),
         ...(googleIdResolved ? { googleId: googleIdResolved } : {}),
       },
@@ -103,4 +99,3 @@ module.exports = {
   getSessionUser,
   requireAuth,
 };
-

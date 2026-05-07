@@ -38,11 +38,11 @@ function fitCenteredText(ctx, text, y) {
   ctx.textBaseline = "middle";
   ctx.fillStyle = "#4B611F";
 
-  do {
+  while (fontSize > 16) {
     ctx.font = `600 ${fontSize}px Inter, Manrope, system-ui, sans-serif`;
-    if (ctx.measureText(text).width <= EXPORT_CARD_LINK_MAX_WIDTH || fontSize <= 16) break;
+    if (ctx.measureText(text).width <= EXPORT_CARD_LINK_MAX_WIDTH) break;
     fontSize -= 1;
-  } while (true);
+  }
 
   ctx.fillText(text, ctx.canvas.width / 2, y);
 }
@@ -62,6 +62,8 @@ export function BrandedQrCode({
   qrName = "beabr-invite",
   fgColor = "var(--text-primary)",
   bgColor = "#FFFFFF",
+  qrTourId,
+  downloadTourId,
 }) {
   const mountRef = useRef(null);
   const qrRef = useRef(null);
@@ -105,15 +107,16 @@ export function BrandedQrCode({
 
     const qr = createQrCode(size);
 
-    mountRef.current.innerHTML = "";
-    qr.append(mountRef.current);
+    const mount = mountRef.current;
+    mount.innerHTML = "";
+    qr.append(mount);
     qrRef.current = qr;
     setReady(Boolean(value));
 
     return () => {
       qrRef.current = null;
       setReady(false);
-      if (mountRef.current) mountRef.current.innerHTML = "";
+      mount.innerHTML = "";
     };
   }, [createQrCode, size, value]);
 
@@ -155,11 +158,16 @@ export function BrandedQrCode({
     <div className={`mx-auto flex w-fit max-w-full flex-col items-center rounded-[var(--radius-lg)] bg-white p-1 sm:p-2 ${className}`}>
       <div className="flex w-full max-w-full justify-center rounded-[var(--radius-md)] bg-white p-1">
         <div className="grid max-w-full place-items-center rounded-[14px] bg-white p-1">
-          <div ref={mountRef} className="grid max-w-full place-items-center overflow-hidden [&_canvas]:block [&_canvas]:h-auto [&_canvas]:max-w-full [&_svg]:block [&_svg]:h-auto [&_svg]:max-w-full" />
+          <div
+            ref={mountRef}
+            data-tour-id={qrTourId}
+            className="grid max-w-full place-items-center overflow-hidden [&_canvas]:block [&_canvas]:h-auto [&_canvas]:max-w-full [&_svg]:block [&_svg]:h-auto [&_svg]:max-w-full"
+          />
         </div>
       </div>
       <button
         type="button"
+        data-tour-id={downloadTourId}
         onClick={() => download("png")}
         disabled={!ready}
         className="mt-2 inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-full bg-[var(--button-primary-bg)] px-4 py-2 text-sm font-semibold text-[var(--button-primary-text)] shadow-[var(--shadow-sm)] transition-colors hover:bg-[var(--button-primary-bg-hover)] active:bg-[var(--color-primary-700)] disabled:cursor-not-allowed disabled:opacity-60"

@@ -17,9 +17,9 @@ const CREATE_BULLETS = [
 ];
 
 /**
- * @param {{ variant: "join" | "create"; hintId: string; termsAccepted: boolean; onTermsAcceptedChange: (next: boolean) => void }} props
+ * @param {{ variant: "join" | "create"; hintId: string; termsAccepted: boolean; onTermsAcceptedChange: (next: boolean) => void; termsTourId?: string; hideMascot?: boolean }} props
  */
-export function BevesReminders({ variant, hintId, termsAccepted, onTermsAcceptedChange }) {
+export function BevesReminders({ variant, hintId, termsAccepted, onTermsAcceptedChange, termsTourId, hideMascot = false }) {
   const headingId = `${hintId}-beve-heading`;
   const listId = `${hintId}-beve-list`;
   const termsId = `${hintId}-beve-terms`;
@@ -51,6 +51,7 @@ export function BevesReminders({ variant, hintId, termsAccepted, onTermsAccepted
       </ul>
 
       <label
+        data-tour-id={termsTourId}
         htmlFor={termsId}
         className={`relative z-10 mt-4 flex min-h-[44px] cursor-pointer items-center gap-3 text-left ${LIST_PR}`}
       >
@@ -73,15 +74,17 @@ export function BevesReminders({ variant, hintId, termsAccepted, onTermsAccepted
         </span>
       </label>
 
-      <img
-        src={mascotSrc}
-        alt=""
-        width={148}
-        height={185}
-        decoding="async"
-        draggable={false}
-        className="pointer-events-none absolute bottom-0 right-4 z-[1] block h-auto w-[5.75rem] select-none object-contain object-bottom sm:w-[6.5rem]"
-      />
+      {hideMascot ? null : (
+        <img
+          src={mascotSrc}
+          alt=""
+          width={148}
+          height={185}
+          decoding="async"
+          draggable={false}
+          className="pointer-events-none absolute bottom-0 right-4 z-[1] block h-auto w-[5.75rem] select-none object-contain object-bottom sm:w-[6.5rem]"
+        />
+      )}
     </aside>
   );
 }

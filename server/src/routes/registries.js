@@ -27,6 +27,15 @@ const { publicGiverUser } = require("../utils/publicUser");
 
 const registriesRouter = express.Router();
 
+function resolveRegistryRevealDatetime({ visibilityMode, revealDatetime, graduationDate }) {
+  if (revealDatetime) return new Date(revealDatetime);
+  if (visibilityMode === "open_coordination") {
+    if (graduationDate) return new Date(graduationDate);
+    return new Date();
+  }
+  throw httpError(400, "Reveal date and time is required for private surprise registries.");
+}
+
 function itemShownToMember(item, member, registry) {
   if (member.role === "owner") return true;
   return (
@@ -55,7 +64,7 @@ const createRegistrySchema = z.object({
   coverImageUrl: z.string().url().optional().nullable(),
   eventCategory: registryEventCategorySchema.default("Celebration"),
   graduationDate: z.string().datetime().optional().nullable(),
-  revealDatetime: z.string().datetime(),
+  revealDatetime: z.string().datetime().optional().nullable(),
   showPledgeTotalBeforeReveal: z.boolean().optional(),
   showConsideringItems: z.boolean().optional(),
   visibilityMode: z.enum(["private_until_reveal", "open_coordination"]).default("private_until_reveal"),
@@ -75,7 +84,11 @@ registriesRouter.post(
       joinCode = makeJoinCode();
     }
 
-    const revealDt = new Date(req.body.revealDatetime);
+    const revealDt = resolveRegistryRevealDatetime({
+      visibilityMode: req.body.visibilityMode,
+      revealDatetime: req.body.revealDatetime,
+      graduationDate: req.body.graduationDate,
+    });
     const registry = await prisma.registry.create({
       data: {
         ownerId: req.user.id,
@@ -481,7 +494,7 @@ registriesRouter.get("/:registryId", requireAuth, async (req, res) => {
       }
     }
 
-    if (member.role !== "owner") {
+    if (member.role !== "owner" || showAttribution) {
       base.displayStatus = displayStatus;
     }
 

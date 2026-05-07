@@ -74,14 +74,83 @@ function IconBookOutline({ className }) {
   );
 }
 
-function SettingsFooterSections() {
+function IconTag({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" width="1em" height="1em" fill="none" aria-hidden>
+      <path
+        d="M20.5 13.5 13.5 20.5a2.1 2.1 0 0 1-3 0L3 13V3h10l7.5 7.5a2.1 2.1 0 0 1 0 3Z"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path d="M7.5 7.5h.01" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconEye({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" width="1em" height="1em" fill="none" aria-hidden>
+      <path
+        d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function IconTrash({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" width="1em" height="1em" fill="none" aria-hidden>
+      <path d="M3 6h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path
+        d="M19 6 18 20a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+const REGISTRY_CARD_INTERACTION_CLASS =
+  "transition duration-200 hover:-translate-y-0.5 hover:ring-[var(--color-primary-500)] hover:shadow-[var(--shadow-md)] active:-translate-y-0.5 active:ring-[var(--color-primary-500)] focus-within:-translate-y-0.5 focus-within:ring-[var(--color-primary-500)] focus-within:shadow-[var(--shadow-md)]";
+const REGISTRY_ACTION_CLASS =
+  "w-full transition duration-200 hover:-translate-y-0.5 active:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-[rgba(129,160,63,0.45)]";
+
+function SettingsFooterSections({ onStartTour, startingTour }) {
   return (
     <>
       <div>
         <div className="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">App version</div>
-        <div className="mt-1.5 inline-flex items-center rounded-full border border-[var(--border-subtle)] bg-[var(--surface-card-soft)] px-3 py-1 text-sm font-medium text-[var(--text-secondary)]">
+        <div className="mt-1.5 inline-flex min-h-[44px] items-center gap-2 rounded-md text-sm font-semibold text-[var(--color-primary-700)]">
+          <IconTag className="h-5 w-5 shrink-0 text-[var(--color-primary-600)]" aria-hidden />
           v{APP_VERSION}
         </div>
+      </div>
+      <div>
+        <div className="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">Guided Tour</div>
+        <button
+          type="button"
+          onClick={onStartTour}
+          disabled={startingTour}
+          className="mt-1.5 inline-flex min-h-[44px] items-center gap-2 rounded-md text-sm font-semibold text-[var(--color-primary-700)] transition hover:text-[var(--color-primary-800)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(129,160,63,0.45)] disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <IconSettings className="h-5 w-5 shrink-0 text-[var(--color-primary-600)]" aria-hidden />
+          {startingTour ? "Starting..." : "Start tour"}
+        </button>
       </div>
       <div>
         <div className="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">Documentation</div>
@@ -153,6 +222,8 @@ export function SettingsPage() {
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [deleteErr, setDeleteErr] = useState(null);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
+  const [tourConfirmOpen, setTourConfirmOpen] = useState(false);
+  const [startingTour, setStartingTour] = useState(false);
 
   const loadOwnedRegistries = useCallback(async () => {
     setRegistriesLoading(true);
@@ -175,6 +246,25 @@ export function SettingsPage() {
   async function confirmLogout() {
     setLogoutConfirmOpen(false);
     await logout({ redirectTo: "/login" });
+  }
+
+  async function startGuidedTour() {
+    setStartingTour(true);
+    setErr(null);
+    setTourConfirmOpen(false);
+    try {
+      await apiFetch("/api/auth/me/tour", {
+        method: "PATCH",
+        body: JSON.stringify({ hadTour: false }),
+      });
+      window.localStorage.removeItem("last_tour_step");
+      window.dispatchEvent(new CustomEvent("beabr:reset-guided-tour"));
+      await refresh({ silent: true });
+    } catch (e) {
+      setErr(e);
+    } finally {
+      setStartingTour(false);
+    }
   }
 
   async function confirmDeleteRegistry() {
@@ -414,7 +504,7 @@ export function SettingsPage() {
               <ul className="space-y-3">
                 {currentRegistries.map((r) => (
                   <li key={r.id}>
-                    <Card className="relative overflow-hidden p-0 shadow-[var(--shadow-xs)] ring-1 ring-[var(--border-subtle)]">
+                    <Card className={`relative overflow-hidden p-0 shadow-[var(--shadow-xs)] ring-1 ring-[var(--border-subtle)] ${REGISTRY_CARD_INTERACTION_CLASS}`}>
                   {/* Dot grid + diagonal mask */}
                   <div
                     className="pointer-events-none absolute inset-0 z-0 select-none"
@@ -448,19 +538,21 @@ export function SettingsPage() {
                     </div>
                     <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
                       <Link className="sm:flex-1" to={`/registry/${r.id}`}>
-                        <Button variant="secondary" className="w-full">
+                        <Button variant="secondary" className={REGISTRY_ACTION_CLASS}>
+                          <IconEye className="h-4 w-4 shrink-0" aria-hidden />
                           View registry
                         </Button>
                       </Link>
                       <Button
                         type="button"
                         variant="danger"
-                        className="w-full sm:flex-1"
+                        className={`${REGISTRY_ACTION_CLASS} sm:flex-1`}
                         onClick={() => {
                           setDeleteErr(null);
                           setDeleteTarget(r);
                         }}
                       >
+                        <IconTrash className="h-4 w-4 shrink-0" aria-hidden />
                         Delete registry
                       </Button>
                     </div>
@@ -480,7 +572,7 @@ export function SettingsPage() {
               <ul className="space-y-3">
                 {finishedRegistries.map((r) => (
                   <li key={r.id}>
-                    <Card className="relative overflow-hidden p-0 shadow-[var(--shadow-xs)] ring-1 ring-[var(--border-subtle)]">
+                    <Card className={`relative overflow-hidden p-0 shadow-[var(--shadow-xs)] ring-1 ring-[var(--border-subtle)] ${REGISTRY_CARD_INTERACTION_CLASS}`}>
                       <div
                         className="pointer-events-none absolute inset-0 z-0 select-none"
                         aria-hidden
@@ -509,19 +601,21 @@ export function SettingsPage() {
                         </div>
                         <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
                           <Link className="sm:flex-1" to={`/registry/${r.id}`}>
-                            <Button variant="secondary" className="w-full">
+                            <Button variant="secondary" className={REGISTRY_ACTION_CLASS}>
+                              <IconEye className="h-4 w-4 shrink-0" aria-hidden />
                               View registry
                             </Button>
                           </Link>
                           <Button
                             type="button"
                             variant="danger"
-                            className="w-full sm:flex-1"
+                            className={`${REGISTRY_ACTION_CLASS} sm:flex-1`}
                             onClick={() => {
                               setDeleteErr(null);
                               setDeleteTarget(r);
                             }}
                           >
+                            <IconTrash className="h-4 w-4 shrink-0" aria-hidden />
                             Delete registry
                           </Button>
                         </div>
@@ -636,12 +730,39 @@ export function SettingsPage() {
         </div>
       </BottomSheet>
 
+      <BottomSheet variant="modal" open={tourConfirmOpen} showCloseIcon={false} onClose={() => !startingTour && setTourConfirmOpen(false)}>
+        <div className="space-y-4">
+          <div className="flex gap-3">
+            <div
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[var(--surface-card-soft)] text-[var(--color-primary-700)] ring-1 ring-[var(--border-subtle)]"
+              aria-hidden
+            >
+              <IconSettings className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-base font-semibold text-[var(--text-primary)]">Start guided tour?</h2>
+              <p className="mt-1.5 text-sm leading-relaxed text-[var(--text-secondary)]">
+                This will restart the guided tour from the beginning.
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+            <Button variant="secondary" className="w-full sm:flex-1" onClick={() => setTourConfirmOpen(false)} disabled={startingTour}>
+              Go back
+            </Button>
+            <Button variant="primary" className="w-full sm:flex-1" onClick={startGuidedTour} disabled={startingTour}>
+              {startingTour ? "Starting..." : "Start tour"}
+            </Button>
+          </div>
+        </div>
+      </BottomSheet>
+
       <Card className="relative overflow-hidden px-5 pt-5 shadow-[var(--shadow-sm)] ring-1 ring-[var(--border-subtle)] sm:px-6 sm:pt-6 pb-0">
         <div
-          className="relative z-10 grid gap-6 pb-5 pr-[6.75rem] sm:grid-cols-2 sm:pb-6 sm:pr-40 md:pr-44 lg:grid-cols-3 lg:gap-8 lg:pr-48"
+          className="relative z-10 grid gap-6 pb-5 pr-[6.75rem] sm:grid-cols-2 sm:pb-6 sm:pr-40 md:pr-44 lg:grid-cols-4 lg:gap-8 lg:pr-48"
         >
           <div className="contents">
-            <SettingsFooterSections />
+            <SettingsFooterSections onStartTour={() => setTourConfirmOpen(true)} startingTour={startingTour} />
           </div>
         </div>
         <img

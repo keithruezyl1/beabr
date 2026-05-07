@@ -50,6 +50,7 @@ export function EditRegistryPage() {
 
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState(null);
+  const needsRevealDatetime = visibilityMode !== "open_coordination";
 
   useEffect(() => {
     let cancelled = false;
@@ -102,7 +103,9 @@ export function EditRegistryPage() {
           message: message.trim() ? message.trim() : null,
           eventCategory,
           graduationDate: graduationDate ? new Date(graduationDate).toISOString() : null,
-          revealDatetime: new Date(revealDatetime).toISOString(),
+          ...(needsRevealDatetime && revealDatetime
+            ? { revealDatetime: new Date(revealDatetime).toISOString() }
+            : {}),
           showPledgeTotalBeforeReveal,
           showConsideringItems,
         }),
@@ -174,7 +177,7 @@ export function EditRegistryPage() {
       <Card className="p-5 shadow-[var(--shadow-md)] ring-1 ring-[var(--border-subtle)] sm:p-6">
         <form className="space-y-4" onSubmit={onSubmit}>
           <label className="block text-left">
-            <div className="text-xs font-semibold text-[var(--text-secondary)]">Registry title</div>
+            <div className="text-xs font-semibold text-[var(--text-secondary)]">Registry Name</div>
             <input
               className="mt-1 w-full rounded-[14px] border border-[var(--border-default)] bg-white px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-[rgba(129,160,63,0.18)]"
               value={title}
@@ -201,13 +204,13 @@ export function EditRegistryPage() {
           </label>
 
           <label className="block text-left">
-            <div className="text-xs font-semibold text-[var(--text-secondary)]">Your display name (for viewers)</div>
+            <div className="text-xs font-semibold text-[var(--text-secondary)]">Your display name</div>
             <input
               className="mt-1 w-full rounded-[14px] border border-[var(--border-default)] bg-white px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-[rgba(129,160,63,0.18)]"
               value={ownerDisplayName}
               onChange={(e) => setOwnerDisplayName(e.target.value)}
               required
-              placeholder="Alex"
+              placeholder="Enter your name"
             />
           </label>
 
@@ -236,19 +239,21 @@ export function EditRegistryPage() {
               />
             </label>
 
-            <label className="block text-left">
-              <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-secondary)]">
-                <IconClock className="h-3.5 w-3.5 text-[var(--color-beaver-600)]" aria-hidden />
-                Reveal date &amp; time
-              </div>
-              <input
-                type="datetime-local"
-                className="mt-1 w-full rounded-[14px] border border-[var(--border-default)] bg-white px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-[rgba(129,160,63,0.18)]"
-                value={revealDatetime}
-                onChange={(e) => setRevealDatetime(e.target.value)}
-                required
-              />
-            </label>
+            {needsRevealDatetime ? (
+              <label className="block text-left">
+                <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-secondary)]">
+                  <IconClock className="h-3.5 w-3.5 text-[var(--color-beaver-600)]" aria-hidden />
+                  Reveal date &amp; time
+                </div>
+                <input
+                  type="datetime-local"
+                  className="mt-1 w-full rounded-[14px] border border-[var(--border-default)] bg-white px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-[rgba(129,160,63,0.18)]"
+                  value={revealDatetime}
+                  onChange={(e) => setRevealDatetime(e.target.value)}
+                  required
+                />
+              </label>
+            ) : null}
           </div>
 
           <div className="space-y-3 rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-card-soft)] p-4">

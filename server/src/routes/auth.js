@@ -12,6 +12,47 @@ const { config } = require("../config");
 
 const authRouter = express.Router();
 
+const baseUserSelect = {
+  id: true,
+  name: true,
+  email: true,
+  avatarUrl: true,
+  createdAt: true,
+  lastLoginAt: true,
+};
+
+function mapUserRow(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    name: row.name,
+    email: row.email,
+    avatarUrl: row.avatarUrl,
+    authProvider: row.googleId ? "google" : "email",
+    hadTour: Boolean(row.hadTour),
+    createdAt: row.createdAt,
+    lastLoginAt: row.lastLoginAt,
+  };
+}
+
+async function findUserProfile(userId) {
+  const rows = await prisma.$queryRaw`
+    SELECT
+      id::text AS id,
+      name,
+      email,
+      "googleId",
+      "avatarUrl",
+      had_tour AS "hadTour",
+      "createdAt",
+      "lastLoginAt"
+    FROM users
+    WHERE id = ${userId}::uuid
+    LIMIT 1
+  `;
+  return mapUserRow(rows[0]);
+}
+
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 3 * 1024 * 1024 }, // 3MB
@@ -29,17 +70,7 @@ authRouter.get("/me", async (req, res) => {
   if (!req.user?.id) return res.json({ user: null });
 
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: req.user.id },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        avatarUrl: true,
-        createdAt: true,
-        lastLoginAt: true,
-      },
-    });
+    const user = await findUserProfile(req.user.id);
     res.json({ user, dbOk: true });
   } catch (_e) {
     // If DB errors happen after a valid Supabase session, keep the session on the client.
@@ -68,14 +99,15 @@ authRouter.patch(
   ),
   async (req, res, next) => {
     try {
-      const updated = await prisma.user.update({
+      await prisma.user.update({
         where: { id: req.user.id },
         data: {
           ...(typeof req.body.name === "string" ? { name: req.body.name } : {}),
           ...(typeof req.body.avatarUrl !== "undefined" ? { avatarUrl: req.body.avatarUrl } : {}),
         },
-        select: { id: true, name: true, email: true, avatarUrl: true, createdAt: true, lastLoginAt: true },
+        select: baseUserSelect,
       });
+      const updated = await findUserProfile(req.user.id);
       res.json({ user: updated });
     } catch (e) {
       next(e);
@@ -110,11 +142,12 @@ authRouter.post("/me/avatar", requireAuth, upload.single("avatar"), async (req, 
     const publicPath = `/uploads/avatars/${filename}`;
     const avatarUrl = `${config.serverUrl}${publicPath}`;
 
-    const updated = await prisma.user.update({
+    await prisma.user.update({
       where: { id: req.user.id },
       data: { avatarUrl },
-      select: { id: true, name: true, email: true, avatarUrl: true, createdAt: true, lastLoginAt: true },
+      select: baseUserSelect,
     });
+    const updated = await findUserProfile(req.user.id);
 
     res.json({ user: updated, avatarUrl });
   } catch (e) {
@@ -122,13 +155,32 @@ authRouter.post("/me/avatar", requireAuth, upload.single("avatar"), async (req, 
   }
 });
 
+authRouter.patch("/me/tour", requireAuth, async (req, res, next) => {
+  try {
+    const hadTour = typeof req.body?.hadTour === "boolean" ? req.body.hadTour : true;
+    const rows = await prisma.$queryRaw`
+      UPDATE users
+      SET had_tour = ${hadTour}, "updatedAt" = now()
+      WHERE id = ${req.user.id}::uuid
+      RETURNING
+        id::text AS id,
+        name,
+        email,
+        "googleId",
+        "avatarUrl",
+        had_tour AS "hadTour",
+        "createdAt",
+        "lastLoginAt"
+    `;
+    res.json({ user: mapUserRow(rows[0]) });
+  } catch (e) {
+    next(e);
+  }
+});
+
 authRouter.get("/whoami", requireAuth, async (req, res) => {
-  const user = await prisma.user.findUnique({
-    where: { id: req.user.id },
-    select: { id: true, name: true, email: true, avatarUrl: true },
-  });
+  const user = await findUserProfile(req.user.id);
   res.json({ user });
 });
 
 module.exports = { authRouter };
-

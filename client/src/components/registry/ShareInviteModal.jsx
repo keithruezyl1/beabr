@@ -59,7 +59,9 @@ export function ShareInviteModal({ open, onClose, joinCode }) {
   const [copied, setCopied] = useState(null);
 
   useEffect(() => {
-    if (!open) setCopied(null);
+    if (open) return undefined;
+    const timer = window.setTimeout(() => setCopied(null), 0);
+    return () => window.clearTimeout(timer);
   }, [open]);
 
   const copyText = useCallback(async (label, text) => {
@@ -76,7 +78,7 @@ export function ShareInviteModal({ open, onClose, joinCode }) {
   }, [toast]);
 
   return (
-    <BottomSheet open={open} onClose={onClose} title="Invite gift givers" variant="modal">
+    <BottomSheet open={open} onClose={onClose} title="Invite gift givers" variant="modal" contentTourId="share-invite-modal">
       <div className="space-y-4">
         <p className="text-sm leading-relaxed text-[var(--text-secondary)]">
           Share the QR code, link, or join code to invite guests.
@@ -87,6 +89,8 @@ export function ShareInviteModal({ open, onClose, joinCode }) {
           size={196}
           fgColor="var(--text-primary)"
           qrName={qrName}
+          qrTourId="share-invite-qr-code"
+          downloadTourId="share-download-qr-code"
         />
 
         <div className="flex items-center gap-3 text-[11px] font-semibold uppercase tracking-wide text-[var(--text-muted)]" aria-hidden>
@@ -108,6 +112,7 @@ export function ShareInviteModal({ open, onClose, joinCode }) {
               <span className="pointer-events-none absolute inset-y-px right-px z-[1] w-16 rounded-r-[var(--radius-md)] bg-gradient-to-l from-white via-white to-transparent" aria-hidden />
               <button
                 type="button"
+                data-tour-id="share-copy-link"
                 onClick={() => copyText("link", inviteUrl)}
                 className="absolute right-1.5 top-1/2 z-[2] inline-flex min-h-[40px] min-w-[40px] -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-[var(--text-muted)] shadow-[var(--shadow-xs)] transition-colors hover:bg-[var(--color-primary-50)] hover:text-[var(--color-primary-700)] active:bg-[var(--color-primary-100)]"
                 aria-label={copied === "link" ? "Copied invite link" : "Copy invite link"}

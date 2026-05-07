@@ -21,6 +21,7 @@ export function BottomSheet({
   variant = "sheet",
   /** Non-confirmation modals should have a top-right close affordance. */
   showCloseIcon = true,
+  contentTourId,
 }) {
   useEffect(() => {
     function onKeyDown(e) {
@@ -50,17 +51,20 @@ export function BottomSheet({
       <button
         type="button"
         aria-label="Close"
-        className={`absolute inset-0 z-0 bg-[rgba(29,33,26,0.55)] ${isModal ? "backdrop-blur-md" : "backdrop-blur-sm"}`}
+        className={`absolute inset-0 z-0 bg-[rgba(29,33,26,0.55)] focus:outline-none ${isModal ? "backdrop-blur-md" : "backdrop-blur-sm"}`}
         onClick={onClose}
       />
       {isModal ? (
         <div className="absolute inset-0 z-[1] flex items-center justify-center p-4 pointer-events-none">
-          <div className="pointer-events-auto relative flex max-h-[min(90vh,880px)] w-full max-w-[560px] flex-col overflow-hidden rounded-[24px] bg-[var(--surface-card)] shadow-[var(--shadow-lg)]">
+          <div
+            data-tour-id={contentTourId}
+            className="pointer-events-auto relative flex max-h-[min(90vh,880px)] w-full max-w-[560px] flex-col overflow-hidden rounded-[24px] bg-[var(--surface-card)] shadow-[var(--shadow-lg)]"
+          >
             {shouldShowCloseIcon ? (
               <button
                 type="button"
                 onClick={onClose}
-                className="absolute right-3 top-3 z-10 inline-flex min-h-[44px] min-w-[44px] items-center justify-center text-[var(--text-muted)] transition-colors hover:text-[var(--color-primary-600)] active:text-[var(--color-primary-700)]"
+                className="absolute right-3 top-3 z-10 inline-flex min-h-[44px] min-w-[44px] items-center justify-center text-[var(--text-muted)] transition-colors hover:text-[var(--color-primary-600)] active:text-[var(--color-primary-700)] focus-visible:outline-none focus-visible:ring-0"
                 aria-label="Close"
               >
                 <IconX className="h-5 w-5" aria-hidden />
@@ -97,7 +101,10 @@ export function BottomSheet({
           </div>
         </div>
       ) : (
-        <div className="absolute inset-x-0 bottom-0 z-[1] mx-auto w-full max-w-md rounded-t-[24px] bg-[var(--surface-card)] shadow-[var(--shadow-lg)]">
+        <div
+          data-tour-id={contentTourId}
+          className="absolute inset-x-0 bottom-0 z-[1] mx-auto w-full max-w-md rounded-t-[24px] bg-[var(--surface-card)] shadow-[var(--shadow-lg)]"
+        >
           <div className="px-5 pb-3 pt-4">
             <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-[var(--border-strong)]" />
             {title || titleAccessory || headerBelow ? (
@@ -125,4 +132,3 @@ export function BottomSheet({
     document.body
   );
 }
-

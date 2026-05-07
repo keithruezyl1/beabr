@@ -7,12 +7,14 @@ import { PageHeader } from "../components/ui/PageChrome.jsx";
 import { IconCalendar, IconClock, IconGift, IconUsers } from "../components/ui/PageIcons.jsx";
 import { REGISTRY_EVENT_CATEGORIES } from "../constants/registryEventCategories.js";
 import { BevesReminders } from "../components/registry/BevesReminders.jsx";
+import { useAuth } from "../state/AuthProvider.jsx";
 
 export function CreateRegistryPage() {
   const hintId = useId();
   const nav = useNavigate();
+  const { user } = useAuth();
   const [title, setTitle] = useState("");
-  const [ownerDisplayName, setOwnerDisplayName] = useState("");
+  const [ownerDisplayNameOverride, setOwnerDisplayNameOverride] = useState(null);
   const [message, setMessage] = useState("");
   const [eventCategory, setEventCategory] = useState("Celebration");
   const [graduationDate, setGraduationDate] = useState("");
@@ -21,6 +23,8 @@ export function CreateRegistryPage() {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState(null);
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const ownerDisplayName = ownerDisplayNameOverride ?? user?.name?.trim() ?? "";
+  const needsRevealDatetime = visibilityMode !== "open_coordination";
 
   async function onSubmit(e) {
     e.preventDefault();
@@ -35,7 +39,7 @@ export function CreateRegistryPage() {
           message: message || null,
           eventCategory,
           graduationDate: graduationDate ? new Date(graduationDate).toISOString() : null,
-          revealDatetime: new Date(revealDatetime).toISOString(),
+          revealDatetime: needsRevealDatetime && revealDatetime ? new Date(revealDatetime).toISOString() : null,
           visibilityMode,
         }),
       });
@@ -55,13 +59,14 @@ export function CreateRegistryPage() {
       <PageHeader
         eyebrow="New registry"
         title="Create registry"
-        description="Help loved ones choose thoughtful gifts with less guessing and fewer duplicates."
+        description="Help loved ones choose thoughtful gifts with less guessing and fewer duplicates. You can change these settings later."
       />
 
       <Card className="p-5 shadow-[var(--shadow-md)] ring-1 ring-[var(--border-subtle)] sm:p-6">
         <form className="space-y-4" onSubmit={onSubmit}>
+          <div data-tour-id="registry-form-basics" className="space-y-4">
           <label className="block text-left">
-            <div className="text-xs font-semibold text-[var(--text-secondary)]">Registry title</div>
+            <div className="text-xs font-semibold text-[var(--text-secondary)]">Registry Name</div>
             <input
               className="mt-1 w-full rounded-[14px] border border-[var(--border-default)] bg-white px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-[rgba(129,160,63,0.18)]"
               value={title}
@@ -74,6 +79,7 @@ export function CreateRegistryPage() {
           <label className="block text-left">
             <div className="text-xs font-semibold text-[var(--text-secondary)]">Event type</div>
             <select
+              data-tour-id="registry-event-type"
               className="mt-1 w-full cursor-pointer rounded-[14px] border border-[var(--border-default)] bg-white px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-[rgba(129,160,63,0.18)]"
               value={eventCategory}
               onChange={(e) => setEventCategory(e.target.value)}
@@ -88,26 +94,31 @@ export function CreateRegistryPage() {
           </label>
 
           <label className="block text-left">
-            <div className="text-xs font-semibold text-[var(--text-secondary)]">Your display name (for viewers)</div>
+            <div className="text-xs font-semibold text-[var(--text-secondary)]">Your display name</div>
             <input
+              data-tour-id="registry-display-name"
               className="mt-1 w-full rounded-[14px] border border-[var(--border-default)] bg-white px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-[rgba(129,160,63,0.18)]"
               value={ownerDisplayName}
-              onChange={(e) => setOwnerDisplayName(e.target.value)}
+              onChange={(e) => {
+                setOwnerDisplayNameOverride(e.target.value);
+              }}
               required
-              placeholder="Alex"
+              placeholder="Enter your name here"
             />
           </label>
 
           <label className="block text-left">
             <div className="text-xs font-semibold text-[var(--text-secondary)]">Short message</div>
             <textarea
+              data-tour-id="registry-short-message"
               className="mt-1 w-full resize-none rounded-[14px] border border-[var(--border-default)] bg-white px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-[rgba(129,160,63,0.18)]"
               rows={3}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Thank you for celebrating this milestone with me…"
             />
-          </label>
+            </label>
+          </div>
 
           <div className="grid grid-cols-1 gap-4">
             <label className="block text-left">
@@ -117,28 +128,36 @@ export function CreateRegistryPage() {
               </div>
               <input
                 type="date"
+                data-tour-id="registry-main-event-date"
                 className="mt-1 w-full rounded-[14px] border border-[var(--border-default)] bg-white px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-[rgba(129,160,63,0.18)]"
                 value={graduationDate}
                 onChange={(e) => setGraduationDate(e.target.value)}
               />
             </label>
 
-            <label className="block text-left">
-              <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-secondary)]">
-                <IconClock className="h-3.5 w-3.5 text-[var(--color-beaver-600)]" aria-hidden />
-                Reveal date &amp; time
-              </div>
-              <input
-                type="datetime-local"
-                className="mt-1 w-full rounded-[14px] border border-[var(--border-default)] bg-white px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-[rgba(129,160,63,0.18)]"
-                value={revealDatetime}
-                onChange={(e) => setRevealDatetime(e.target.value)}
-                required
-              />
-            </label>
+            {needsRevealDatetime ? (
+              <label className="block text-left">
+                <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-secondary)]">
+                  <IconClock className="h-3.5 w-3.5 text-[var(--color-beaver-600)]" aria-hidden />
+                  Reveal date &amp; time
+                </div>
+                <input
+                  type="datetime-local"
+                  data-tour-id="registry-reveal-date"
+                  className="mt-1 w-full rounded-[14px] border border-[var(--border-default)] bg-white px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-[rgba(129,160,63,0.18)]"
+                  value={revealDatetime}
+                  onChange={(e) => setRevealDatetime(e.target.value)}
+                  required
+                />
+              </label>
+            ) : null}
           </div>
 
-          <div className="rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--surface-card-soft)] px-4 py-3">
+          <div
+            data-tour-id="registry-visibility"
+            data-tour-highlight="self"
+            className="rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--surface-card-soft)] px-4 py-3"
+          >
             <div id="gift-visibility-label" className="text-xs font-semibold text-[var(--text-secondary)]">
               Gift visibility
             </div>
@@ -151,13 +170,13 @@ export function CreateRegistryPage() {
               {[
                 {
                   value: "private_until_reveal",
-                  title: "Private surprise",
+                  title: "Private Surprise",
                   body: "Participants coordinate quietly; names unlock at reveal.",
                   icon: IconGift,
                 },
                 {
                   value: "open_coordination",
-                  title: "Open coordination",
+                  title: "Open Coordination",
                   body: "Participants can see who reserved or contributed so gifts are easier to coordinate.",
                   icon: IconUsers,
                 },
@@ -184,7 +203,7 @@ export function CreateRegistryPage() {
                     <span className="min-w-0">
                       <span className="flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">
                         <Icon className="h-4 w-4 shrink-0 text-[var(--color-primary-700)]" aria-hidden />
-                        {option.title}
+                        <span className="text-[var(--color-primary-700)]">{option.title}</span>
                       </span>
                       <span className="mt-1 block text-xs leading-relaxed text-[var(--text-secondary)]">
                         {option.body}
@@ -196,18 +215,22 @@ export function CreateRegistryPage() {
             </div>
           </div>
 
+          <div className="space-y-4">
           <BevesReminders
             variant="create"
             hintId={hintId}
             termsAccepted={termsAccepted}
             onTermsAcceptedChange={setTermsAccepted}
+            termsTourId="registry-terms-checkbox"
+            hideMascot={user?.hadTour === false}
           />
 
           {err ? <div className="text-sm text-[var(--danger-text)]">{err.message}</div> : null}
 
-          <Button className="w-full" type="submit" disabled={loading || !termsAccepted}>
+          <Button data-tour-id="registry-create-submit" className="w-full" type="submit" disabled={loading || !termsAccepted}>
             {loading ? "Creating…" : "Create registry"}
           </Button>
+          </div>
         </form>
       </Card>
     </div>
