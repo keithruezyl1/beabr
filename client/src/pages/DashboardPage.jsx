@@ -19,6 +19,7 @@ import { useAuth } from "../state/AuthProvider.jsx";
 import { DashboardRegistriesSkeleton } from "../components/ui/ScreenSkeletons.jsx";
 import wavingDash from "../assets/waving_dash.png";
 import { getDisplayAvatarUrl } from "../utils/avatar.js";
+import { AvatarImage } from "../components/ui/AvatarImage.jsx";
 
 function formatRevealLines(iso) {
   const d = new Date(iso);
@@ -101,6 +102,7 @@ function RegistryCard({ registry }) {
   const countdown = formatCloseCountdown(registry.closeDatetime || registry.revealDatetime, registry.closed);
   const subtitle = registrySubtitle(registry);
   const patterned = registry.role === "owner";
+  const canShareInvite = registry.role === "owner" && Boolean(registry.joinCode) && !registry.closed;
 
   return (
     <Card className="relative h-full overflow-hidden p-0 shadow-[var(--shadow-xs)]">
@@ -139,8 +141,8 @@ function RegistryCard({ registry }) {
             {subtitle ? (
               <div className="mt-1 flex min-w-0 items-center gap-2">
                 {registry.role !== "owner" ? (
-                  <img
-                    src={getDisplayAvatarUrl(registry.ownerAvatarUrl)}
+                  <AvatarImage
+                    src={registry.ownerAvatarUrl}
                     alt=""
                     className="h-8 w-8 shrink-0 rounded-full object-cover ring-2 ring-[var(--border-subtle)]"
                   />
@@ -187,14 +189,12 @@ function RegistryCard({ registry }) {
               roster={registry.viewerRoster}
               role={registry.role}
               compact
-              onShareInvite={
-                registry.role === "owner" && registry.joinCode ? () => setShareOpen(true) : undefined
-              }
+              onShareInvite={canShareInvite ? () => setShareOpen(true) : undefined}
             />
           </div>
         </div>
       </div>
-      {registry.role === "owner" && registry.joinCode ? (
+      {canShareInvite ? (
         <ShareInviteModal
           joinCode={registry.joinCode}
           open={shareOpen}

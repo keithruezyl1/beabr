@@ -10,6 +10,7 @@ import { GuidedTour } from "../onboarding/GuidedTour.jsx";
 import { IconBell, IconHome, IconWallet } from "../ui/PageIcons.jsx";
 import { formatPesoDots } from "../../utils/numberFormat.js";
 import { getDisplayAvatarUrl } from "../../utils/avatar.js";
+import { AvatarImage } from "../ui/AvatarImage.jsx";
 
 function timeAgo(iso) {
   const t = new Date(iso).getTime();
@@ -158,7 +159,7 @@ export function AppShell({ children }) {
         n.type === "pledge_receipt_uploaded"
           ? "Someone just contributed to your pledge!"
           : n.type === "pledge_goal_not_reached"
-            ? `Pledge goal not reached â€” ${payload.itemTitle ?? "item"}`
+            ? `Pledge goal not reached - ${payload.itemTitle ?? "item"}`
             : n.type === "registry_member_joined"
               ? `${payload.joinedDisplayName ?? "Someone"} joined your registry`
               : n.type;
@@ -275,7 +276,7 @@ export function AppShell({ children }) {
                   aria-label="Profile"
                 >
                   {avatarUrl ? (
-                    <img
+                    <AvatarImage
                       src={avatarUrl}
                       alt=""
                       aria-hidden="true"
@@ -353,7 +354,7 @@ export function AppShell({ children }) {
                   </div>
                   <div className="max-h-[min(calc(100vh-7.25rem),28rem)] overflow-y-auto bg-[var(--surface-card)]">
                     {notifLoading ? (
-                      <div className="px-3 py-3 text-sm text-[var(--text-muted)]">Loadingâ€¦</div>
+                      <div className="px-3 py-3 text-sm text-[var(--text-muted)]">Loading...</div>
                     ) : notifErr ? (
                       <div className="px-3 py-3 text-sm text-[var(--danger-text)]">{notifErr.message}</div>
                     ) : notifStream.length === 0 ? (
@@ -487,7 +488,7 @@ export function AppShell({ children }) {
                     </div>
                     <div className="max-h-[28rem] overflow-y-auto bg-[var(--surface-card)]">
                       {notifLoading ? (
-                        <div className="px-4 py-4 text-sm text-[var(--text-muted)]">Loadingâ€¦</div>
+                        <div className="px-4 py-4 text-sm text-[var(--text-muted)]">Loading...</div>
                       ) : notifErr ? (
                         <div className="px-4 py-4 text-sm text-[var(--danger-text)]">{notifErr.message}</div>
                       ) : notifStream.length === 0 ? (
@@ -639,7 +640,7 @@ export function AppShell({ children }) {
                 <Card className="w-full max-w-md p-5">
                   <div className="text-lg font-semibold">Log out?</div>
                   <div className="mt-1 text-sm text-[var(--text-secondary)]">
-                    Youâ€™ll need to sign in again to access your registries.
+                    You'll need to sign in again to access your registries.
                   </div>
                   <div className="mt-5 flex gap-2">
                     <Button variant="secondary" className="flex-1" onClick={() => setConfirmLogoutOpen(false)}>

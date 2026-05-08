@@ -5,6 +5,7 @@ import { SuccessModal } from "../components/ui/SuccessModal.jsx";
 import { resolveSuccessModalVariant } from "../utils/successModalVariants.js";
 import { useAuth } from "../state/AuthProvider.jsx";
 import { formatIntegerInput, formatNumberDots, formatPesoDots, parseIntegerInput } from "../utils/numberFormat.js";
+import { AvatarImage } from "../components/ui/AvatarImage.jsx";
 
 function IconEye({ className }) {
   return (
@@ -87,7 +88,7 @@ function IconTimer({ className }) {
   );
 }
 
-/** Stacked rows â€” items / inventory count card */
+/** Stacked rows - items / inventory count card */
 function IconListStack({ className }) {
   return (
     <svg className={className} viewBox="0 0 24 24" width="1em" height="1em" fill="none" aria-hidden>
@@ -101,7 +102,7 @@ function IconListStack({ className }) {
   );
 }
 
-/** Filter funnel â€” gift filters popover trigger */
+/** Filter funnel - gift filters popover trigger */
 function IconFunnel({ className }) {
   return (
     <svg className={className} viewBox="0 0 24 24" width="1em" height="1em" fill="none" aria-hidden>
@@ -284,7 +285,7 @@ async function copyToClipboard(text) {
   }
 }
 
-/** Parses optional price from form input; invalid or empty â†’ null */
+/** Parses optional price from form input; invalid or empty -> null */
 function parsePriceReferenceInput(raw) {
   const t = String(raw ?? "").trim();
   if (!t) return null;
@@ -320,7 +321,7 @@ function formatReservationDateTime(iso) {
   if (!Number.isFinite(d.getTime())) return "";
   const date = d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" });
   const time = d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
-  return `${date} Â· ${time}`;
+  return `${date} · ${time}`;
 }
 
 function attributionName(person) {
@@ -334,7 +335,7 @@ function attributionInitial(person) {
 function AttributionAvatar({ person }) {
   if (person?.avatarUrl) {
     return (
-      <img
+      <AvatarImage
         src={person.avatarUrl}
         alt=""
         className="h-8 w-8 shrink-0 rounded-full object-cover ring-1 ring-[var(--border-subtle)]"
@@ -366,8 +367,8 @@ function AttributionRows({ title, rows }) {
           const detail =
             row.detail ||
             (amount
-              ? `${amount} Â· ${formatStatusLabel(row.status)}`
-              : `${formatStatusLabel(row.status)} Â· Qty ${row.quantity}`);
+              ? `${amount} · ${formatStatusLabel(row.status)}`
+              : `${formatStatusLabel(row.status)} · Qty ${row.quantity}`);
           return (
             <li key={row.id} className="flex items-center gap-2 rounded-[var(--radius-md)] bg-white px-3 py-2 ring-1 ring-[var(--border-subtle)]">
               <AttributionAvatar person={person} />
@@ -418,7 +419,7 @@ function archiveBlockedStatusLabel(item) {
   return "claimed";
 }
 
-/** Numeric estimate for filtering; invalid / missing â†’ null */
+/** Numeric estimate for filtering; invalid / missing -> null */
 function giftItemNumericPriceEstimate(value) {
   if (value == null || value === "") return null;
   const n = Number(value);
@@ -427,8 +428,8 @@ function giftItemNumericPriceEstimate(value) {
 }
 
 /**
- * Upper bound for the gift price filter slider: next power of 10 â‰¥ max item price when that is â‰¤ 2Ã— max
- * (e.g. â‚±8,599 â†’ â‚±10,000). Otherwise round up to the next â‚±1,000. No priced items â†’ generous default.
+ * Upper bound for the gift price filter slider: next power of 10 >= max item price when that is <= 2x max
+ * (e.g. ₱8,599 -> ₱10,000). Otherwise round up to the next ₱1,000. No priced items -> generous default.
  */
 function roundPriceSliderCeiling(maxItemPrice) {
   if (!Number.isFinite(maxItemPrice) || maxItemPrice <= 0) return 50_000;
@@ -446,10 +447,10 @@ function itemGalleryUrls(item) {
   return item?.imageUrl ? [item.imageUrl] : [];
 }
 
-/** Framed thumbnails â€” matches square `PhotoDropzoneInner` tile (owner edit sheet + add-item) */
+/** Framed thumbnails - matches square `PhotoDropzoneInner` tile (owner edit sheet + add-item) */
 const ITEM_GALLERY_THUMB_FRAME_CLASS = "relative w-[5.5rem] shrink-0 sm:w-24";
 
-/** Local draft file previews â€” parent should use `flex flex-wrap items-start gap-2` alongside the dropzone tile */
+/** Local draft file previews - parent should use `flex flex-wrap items-start gap-2` alongside the dropzone tile */
 function DraftItemPhotoThumb({ file, index, onRemove, disabled }) {
   const src = useMemo(() => URL.createObjectURL(file), [file]);
   const [showRemove, setShowRemove] = useState(false);
@@ -542,7 +543,7 @@ function ItemSheetGalleryStrip({ urls, title, onPick }) {
           >
             <img
               src={src}
-              alt={title ? `${title} Â· photo ${i + 1} of ${urls.length}` : `Gift item photo ${i + 1} of ${urls.length}`}
+              alt={title ? `${title} · photo ${i + 1} of ${urls.length}` : `Gift item photo ${i + 1} of ${urls.length}`}
               className="aspect-[4/3] w-full object-cover"
               loading="lazy"
               decoding="async"
@@ -551,7 +552,7 @@ function ItemSheetGalleryStrip({ urls, title, onPick }) {
         ))}
       </div>
       <div className="text-center text-[11px] font-medium text-[var(--text-muted)]">
-        Scroll for more Â· tap an image for full size
+        Scroll for more · tap an image for full size
       </div>
     </div>
   );
@@ -616,7 +617,7 @@ function ItemImageLightboxDialog({ urls, title, open, onClose }) {
         >
           <div className="mx-auto flex min-h-full max-w-3xl flex-col justify-center gap-6">
             {urls.map((src, i) => (
-              // eslint-disable-next-line react/no-array-index-key â€” signed URLs distinct per refresh
+              // eslint-disable-next-line react/no-array-index-key - signed URLs distinct per refresh
               <figure
                 key={`lb-${i}`}
                 data-lightbox-figure
@@ -624,13 +625,13 @@ function ItemImageLightboxDialog({ urls, title, open, onClose }) {
               >
                 <img
                   src={src}
-                  alt={title ? `${title} Â· ${i + 1} of ${urls.length}` : `Photo ${i + 1} of ${urls.length}`}
+                  alt={title ? `${title} · ${i + 1} of ${urls.length}` : `Photo ${i + 1} of ${urls.length}`}
                   className="mx-auto block max-h-[min(85vh,900px)] w-full object-contain"
                   loading="lazy"
                   decoding="async"
                 />
                 <figcaption className="sr-only">
-                  {title ? `${title} Â· image ${i + 1} of ${urls.length}` : `Image ${i + 1} of ${urls.length}`}
+                  {title ? `${title} · image ${i + 1} of ${urls.length}` : `Image ${i + 1} of ${urls.length}`}
                 </figcaption>
               </figure>
             ))}
@@ -882,7 +883,7 @@ function PhotoDropzoneInner({
             </svg>
           </div>
           <div className="text-sm font-semibold text-[var(--text-primary)]">{label}</div>
-          <div className="text-xs text-[var(--text-muted)]">PNG, JPG, WEBP, HEIC, AVIF â€¢ up to 8MB</div>
+          <div className="text-xs text-[var(--text-muted)]">PNG, JPG, WEBP, HEIC, AVIF · up to 8MB</div>
         </div>
       )}
     </button>
@@ -1218,7 +1219,7 @@ function PledgeInitiateForm({ draft, setDraft, errors, actionBusy, actionErr, on
           onChange={(e) => update({ confirmed: e.target.checked })}
         />
         <span className="text-xs leading-snug text-[var(--text-secondary)]">
-          You are confirming that the details youâ€™ve provided are correct and that you will follow the
+          You are confirming that the details you've provided are correct and that you will follow the
           {" "}
           <Link
             to="/documentation/legal/terms-of-service"
@@ -1243,7 +1244,7 @@ function PledgeInitiateForm({ draft, setDraft, errors, actionBusy, actionErr, on
         disabled={actionBusy || !draft.confirmed}
         onClick={onSubmit}
       >
-        {actionBusy ? "Savingâ€¦" : "Save"}
+        {actionBusy ? "Saving..." : "Save"}
       </Button>
     </div>
   );
@@ -1318,7 +1319,7 @@ export function RegistryPage() {
   const [giftCategoryFilter, setGiftCategoryFilter] = useState("all");
   /** Viewer-only: all | reserved_mine | reserved | prepared_mine | prepared | pledge_started */
   const [giftStatusFilter, setGiftStatusFilter] = useState("all");
-  /** Owner + viewer â€” â‚± range [min, max] vs. {@link giftPriceSliderCeiling} */
+  /** Owner + viewer - ₱ range [min, max] vs. {@link giftPriceSliderCeiling} */
   const [giftPriceMin, setGiftPriceMin] = useState(0);
   const [giftPriceMax, setGiftPriceMax] = useState(50_000);
   const [giftFiltersPopoverOpen, setGiftFiltersPopoverOpen] = useState(false);
@@ -1348,6 +1349,7 @@ export function RegistryPage() {
   const [contribAmount, setContribAmount] = useState("");
   const [receiptFile, setReceiptFile] = useState(null);
   const [confirmContributionSent, setConfirmContributionSent] = useState(false);
+  const canShareInvite = role === "owner" && Boolean(data?.registry?.joinCode) && !closed;
   /** Object URL for decrypted pledge QR (`/pledge/qr-image`); revoked on cleanup. */
   const [pledgeQrBlobUrl, setPledgeQrBlobUrl] = useState(null);
   const [itemSheetScrollToPledge, setItemSheetScrollToPledge] = useState(false);
@@ -1783,7 +1785,7 @@ export function RegistryPage() {
     const amount = Number(String(contribAmount || "").replace(/[^\d]/g, ""));
     if (!Number.isFinite(amount) || amount <= 0) return;
     if (Number.isFinite(maxAmount) && maxAmount > 0 && amount > maxAmount) {
-      setActionErr({ message: `Amount canâ€™t exceed â‚±${maxAmount.toLocaleString()}.` });
+      setActionErr({ message: `Amount can't exceed ₱${maxAmount.toLocaleString()}.` });
       return;
     }
     // Do not create a DB record yet. Only persist once receipt upload succeeds.
@@ -2124,7 +2126,7 @@ export function RegistryPage() {
                 decoding="async"
               />
               <h1 className="relative mt-5 text-[22px] font-bold tracking-tight text-[var(--text-primary)] sm:text-[26px]">
-                Youâ€™re not in this registry
+                You're not in this registry
               </h1>
               <p className="relative mt-2 max-w-[52ch] text-sm leading-relaxed text-[var(--text-secondary)] sm:text-[15px]">
                 This registry is only available to people who were invited. If you think this is a mistake, ask the owner
@@ -2169,8 +2171,8 @@ export function RegistryPage() {
 
   const formattedContribPlaceholder = (() => {
     const n = Number(String(suggestContribPlaceholder).replace(/[^\d]/g, ""));
-    if (!Number.isFinite(n) || n <= 0) return "â‚±9,995";
-    return `â‚±${n.toLocaleString()}`;
+    if (!Number.isFinite(n) || n <= 0) return "₱9,995";
+    return `₱${n.toLocaleString()}`;
   })();
 
   return (
@@ -2265,16 +2267,16 @@ export function RegistryPage() {
         </div>
 
         <div className="space-y-5 px-5 py-5 sm:px-6 sm:py-6">
-          {data.registry.message || (role === "owner" && data.registry.joinCode) ? (
+          {data.registry.message || canShareInvite ? (
             <div
               className={`flex flex-col gap-3 ${
-                role === "owner" && data.registry.joinCode
+                canShareInvite
                   ? "sm:flex-row sm:items-start sm:justify-between"
                   : ""
               }`}
             >
               <div
-                className={`max-w-prose min-w-0 ${role === "owner" && data.registry.joinCode ? "flex-1" : ""}`}
+                className={`max-w-prose min-w-0 ${canShareInvite ? "flex-1" : ""}`}
               >
                 {data.registry.message ? (
                   <>
@@ -2287,7 +2289,7 @@ export function RegistryPage() {
                   </>
                 ) : null}
               </div>
-              {role === "owner" && data.registry.joinCode && !closed ? (
+              {canShareInvite ? (
                 <Button
                   data-tour-id="registry-share"
                   type="button"
@@ -2532,7 +2534,7 @@ export function RegistryPage() {
                     <div className="mt-1 text-sm text-[var(--text-secondary)]">
                       {role === "owner"
                         ? "Add a gift idea so loved ones know what would be meaningful."
-                        : "This registry doesnâ€™t have any visible items yet."}
+                        : "This registry doesn't have any visible items yet."}
                     </div>
                   </div>
                 </div>
@@ -2660,7 +2662,7 @@ export function RegistryPage() {
                       {role === "owner" && item.ownerStatus === "considering" ? (
                         <span
                           className="absolute right-3 top-3 z-10 inline-flex w-fit shrink-0 items-center gap-1 rounded-full border border-dashed border-[rgba(139,94,60,0.30)] bg-[var(--color-beaver-50)] px-2 py-0.5 text-[11px] font-semibold text-[var(--color-beaver-700)] shadow-[var(--shadow-xs)]"
-                          title="Still deciding â€” not finalized yet."
+                          title="Still deciding - not finalized yet."
                         >
                           <IconLightbulb className="h-3 w-3 text-[var(--color-beaver-600)]" />
                           <span>Maybe</span>
@@ -2771,11 +2773,11 @@ export function RegistryPage() {
                           {role !== "owner" && item.groupPledge ? (
                             <div className="mt-2 min-w-0">
                               <div className="text-[11px] font-semibold leading-snug text-[var(--text-secondary)]">
-                                Contributed: â‚±{formatGroupPledgeCardAmount(item.groupPledge.gatheredAmount)}
+                                Contributed: ₱{formatGroupPledgeCardAmount(item.groupPledge.gatheredAmount)}
                                 {item.groupPledge.goalAmount != null ? (
                                   <>
                                     {" "}
-                                    / â‚±{formatGroupPledgeCardAmount(item.groupPledge.goalAmount)}
+                                    / ₱{formatGroupPledgeCardAmount(item.groupPledge.goalAmount)}
                                   </>
                                 ) : (
                                   null
@@ -3215,7 +3217,7 @@ export function RegistryPage() {
                                 >
                                   <span className="sr-only">View larger</span>
                                 </button>
-                                {/* Hover-capable browsers: darken + centered Ã—; hidden on coarse/touch */}
+                                {/* Hover-capable browsers: darken + centered x; hidden on coarse/touch */}
                                 <div
                                   className="pointer-events-none absolute inset-0 z-[3] flex items-center justify-center bg-[rgba(29,33,26,0.62)] opacity-0 transition-opacity duration-200 [@media(hover:none)]:hidden group-hover/thumbphoto:pointer-events-auto group-hover/thumbphoto:opacity-100 focus-within:pointer-events-auto focus-within:opacity-100"
                                 >
@@ -3231,7 +3233,7 @@ export function RegistryPage() {
                                       void removeOwnerItemPhotoAt(idx);
                                     }}
                                   >
-                                    Ã—
+                                    ×
                                   </button>
                                 </div>
                                 {/* Touch-first: persistent corner remove (overlay block is hidden on hover:none) */}
@@ -3247,7 +3249,7 @@ export function RegistryPage() {
                                     void removeOwnerItemPhotoAt(idx);
                                   }}
                                 >
-                                  <span aria-hidden>Ã—</span>
+                                  <span aria-hidden>×</span>
                                 </button>
                               </div>
                               {sheetGalleryUrls.length > 1 ? (
@@ -3260,7 +3262,7 @@ export function RegistryPage() {
                                       onClick={() => void reorderOwnerItemPhoto(idx, -1)}
                                       aria-label="Move photo earlier"
                                     >
-                                      â†
+                                      ←
                                     </button>
                                   ) : null}
                                   {idx < sheetGalleryUrls.length - 1 ? (
@@ -3271,7 +3273,7 @@ export function RegistryPage() {
                                       onClick={() => void reorderOwnerItemPhoto(idx, 1)}
                                       aria-label="Move photo later"
                                     >
-                                      â†’
+                                      →
                                     </button>
                                   ) : null}
                                 </div>
@@ -3283,7 +3285,7 @@ export function RegistryPage() {
                               compact
                               squareThumb
                               inputId={`edit-item-photo-add-${activeItem.id}`}
-                              label={`Add photo Â· ${sheetGalleryUrls.length}/${MAX_ITEM_PHOTOS}`}
+                              label={`Add photo · ${sheetGalleryUrls.length}/${MAX_ITEM_PHOTOS}`}
                               disabled={actionBusy || closed}
                               onPick={(f) => {
                                 if (f) void addOwnerItemPhotoFromFile(f);
@@ -3342,7 +3344,7 @@ export function RegistryPage() {
                       className="mt-1 w-full rounded-[14px] border border-[var(--border-default)] bg-white px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-[rgba(129,160,63,0.18)]"
                       value={editItem.externalLink}
                       onChange={(e) => setEditItem((s) => ({ ...s, externalLink: e.target.value }))}
-                      placeholder="https://â€¦"
+                      placeholder="https://..."
                     />
                   </label>
                   <label className="block">
@@ -3493,7 +3495,7 @@ export function RegistryPage() {
                       <div>
                         <div className="text-xs font-semibold text-[var(--text-muted)]">Gathered</div>
                         <div className="mt-1 text-lg font-bold">
-                          â‚±{pledgeView ? formatGroupPledgeCardAmount(pledgeView.gatheredAmount) : "â€”"}
+                          ₱{pledgeView ? formatGroupPledgeCardAmount(pledgeView.gatheredAmount) : "—"}
                           {pledgeView ? (
                             <>
                               {" "}
@@ -3506,7 +3508,7 @@ export function RegistryPage() {
                                         String(pledgeView.item.priceReference).trim() !== ""
                                       ? pledgeView.item.priceReference
                                       : null;
-                                return target != null ? `â‚±${formatGroupPledgeCardAmount(target)}` : "xx";
+                                return target != null ? `₱${formatGroupPledgeCardAmount(target)}` : "xx";
                               })()}
                             </>
                           ) : null}
@@ -3620,7 +3622,7 @@ export function RegistryPage() {
                                       <span className="font-semibold text-[var(--text-secondary)]">
                                         {formatPesoDots(c.amount, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                                       </span>
-                                      {dateLine ? <span aria-hidden>Â·</span> : null}
+                                      {dateLine ? <span aria-hidden>·</span> : null}
                                       {dateLine ? <span>Joined {dateLine}</span> : null}
                                     </div>
                                   </div>
@@ -3780,7 +3782,7 @@ export function RegistryPage() {
             disabled={actionBusy || !activeItem?.myReservation}
             onClick={() => void unprepareReservation()}
           >
-            {actionBusy ? "Revertingâ€¦" : "Revert status"}
+            {actionBusy ? "Reverting..." : "Revert status"}
           </Button>
         </div>
       </BottomSheet>
@@ -3820,7 +3822,7 @@ export function RegistryPage() {
         {pledgeStep === "contribute_amount" ? (
           <div className="space-y-3">
             <div className="text-sm text-[var(--text-secondary)]">
-              Choose how much youâ€™ll contribute. Next, youâ€™ll see the initiatorâ€™s payout details.
+              Choose how much you'll contribute. Next, you'll see the initiator's payout details.
             </div>
             <label className="block">
               {(() => {
@@ -3834,14 +3836,14 @@ export function RegistryPage() {
                 const amount = Number(String(contribAmount || "").replace(/[^\d]/g, ""));
                 const hasMax = Number.isFinite(maxAmount) && maxAmount > 0;
                 const overMax = hasMax && Number.isFinite(amount) && amount > maxAmount;
-                const maxLabel = hasMax ? `â‚±${maxAmount.toLocaleString()}` : null;
+                const maxLabel = hasMax ? `₱${maxAmount.toLocaleString()}` : null;
                 return (
                   <>
                     <div className="flex items-center justify-between gap-3">
                       <div className="text-xs font-semibold text-[var(--text-secondary)]">Amount</div>
                       {overMax && maxLabel ? (
                         <div className="text-xs font-semibold text-[var(--danger-text)]">
-                          Amount canâ€™t exceed {maxLabel}.
+                          Amount can't exceed {maxLabel}.
                         </div>
                       ) : null}
                     </div>
@@ -3888,7 +3890,7 @@ export function RegistryPage() {
                     />
                   </a>
                 ) : (
-                  <div className="p-4 text-center text-xs font-semibold text-[var(--text-muted)]">Loading QRâ€¦</div>
+                  <div className="p-4 text-center text-xs font-semibold text-[var(--text-muted)]">Loading QR...</div>
                 )}
               </Card>
             ) : null}
@@ -3906,7 +3908,7 @@ export function RegistryPage() {
                       if (m === "gcash") return "GCash";
                       if (m === "bank") return "Bank transfer";
                       if (m === "other") return "E-wallet";
-                      return m ? formatStatusLabel(m) : "â€”";
+                      return m ? formatStatusLabel(m) : "—";
                     })()}
                   </div>
                 </div>
@@ -3950,7 +3952,7 @@ export function RegistryPage() {
                 ) : null}
               </div>
               <div className="mt-3 text-center text-[11px] leading-snug text-[var(--text-muted)]">
-                This is sensitive info. Donâ€™t screenshot or share.{" "}
+                This is sensitive info. Don't screenshot or share.{" "}
                 <Link
                   to="/documentation/help-center/HC-024-pledges-group-gifts-sensitive-info"
                   className="font-semibold text-[var(--color-primary-700)] underline underline-offset-2 hover:text-[var(--color-primary-800)]"
@@ -4061,7 +4063,7 @@ export function RegistryPage() {
                       compact
                       squareThumb
                       inputId={`add-item-photo-${registryId}`}
-                      label={`Add photo Â· ${draftItemPhotos.length}/${MAX_ITEM_PHOTOS}`}
+                      label={`Add photo · ${draftItemPhotos.length}/${MAX_ITEM_PHOTOS}`}
                       disabled={actionBusy}
                       onPick={(f) => {
                         if (!f) return;
@@ -4166,7 +4168,7 @@ export function RegistryPage() {
               className="mt-1 w-full rounded-[14px] border border-[var(--border-default)] bg-white px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-[rgba(129,160,63,0.18)]"
               value={draftItem.externalLink}
               onChange={(e) => setDraftItem((s) => ({ ...s, externalLink: e.target.value }))}
-              placeholder="https://â€¦"
+              placeholder="https://..."
             />
           </label>
           <label className="block">
@@ -4274,14 +4276,14 @@ export function RegistryPage() {
                   <IconClock className="h-4 w-4 text-[var(--text-muted)]" aria-hidden />
                   <span className="tabular-nums">{formatScheduleTime(data.registry.closeDatetime)}</span>
                 </span>
-                <span className="text-xs text-[var(--text-muted)]">Â· Local Timezone</span>
+                <span className="text-xs text-[var(--text-muted)]">· Local Timezone</span>
               </div>
             </div>
           </div>
         </div>
       </BottomSheet>
 
-      {role === "owner" && data.registry.joinCode && !closed ? (
+      {canShareInvite ? (
         <ShareInviteModal
           joinCode={data.registry.joinCode}
           open={shareInviteOpen && !closed}

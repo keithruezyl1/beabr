@@ -1,4 +1,5 @@
 import { IconShare, IconUsers } from "../ui/PageIcons.jsx";
+import { AvatarImage } from "../ui/AvatarImage.jsx";
 
 const MAX_VISIBLE = 5;
 
@@ -183,7 +184,7 @@ export function ViewerFacepile({ roster, role, compact = false, onShareInvite })
               style={{ zIndex: i + 1 }}
             >
               {face.photoUrl ? (
-                <img
+                <AvatarImage
                   src={face.photoUrl}
                   alt=""
                   className={`${avatarSm} rounded-full border-2 border-[var(--color-primary-500)] object-cover shadow-[var(--shadow-xs)]`}

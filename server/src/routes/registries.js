@@ -570,7 +570,7 @@ registriesRouter.get("/:registryId", requireAuth, async (req, res) => {
     const storagePaths = normalizeItemImagePaths(item);
     let imageUrls = [];
     if (storagePaths.length > 0) {
-      // eslint-disable-next-line no-await-in-loop -- bounded to â‰¤3 paths per item
+      // eslint-disable-next-line no-await-in-loop -- bounded to <=3 paths per item
       imageUrls = (await Promise.all(storagePaths.map((p, idx) => safeSignUrl(p, `item:${item.id}:image:${idx}`)))).filter(Boolean);
     } else if (item.imageUrl) {
       imageUrls = [item.imageUrl];
@@ -869,7 +869,7 @@ registriesRouter.get("/:registryId/reveal", requireAuth, async (req, res) => {
     orderBy: [{ createdAt: "desc" }],
   });
 
-  // Fire pledge shortfall notifications (idempotent â€” skips if already sent)
+  // Fire pledge shortfall notifications (idempotent - skips if already sent)
   const pledgeInits = await prisma.pledgeInitiation.findMany({
     where: { registryId },
     include: { item: { select: { id: true, title: true, priceReference: true } } },

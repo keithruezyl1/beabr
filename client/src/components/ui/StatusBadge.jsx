@@ -1,3 +1,5 @@
+import { AvatarImage } from "./AvatarImage.jsx";
+
 const styles = {
   Available: "bg-[var(--color-primary-50)] text-[var(--color-primary-800)] ring-1 ring-[rgba(129,160,63,0.18)]",
   "Partially Reserved": "bg-[var(--color-primary-100)] text-[var(--color-primary-800)] ring-1 ring-[rgba(129,160,63,0.18)]",
@@ -55,7 +57,7 @@ export function StatusBadge({ status, byAvatarUrl, byInitials, byAriaLabel = "St
             <span className="sm:hidden">{byPrefix.mobile}</span>
           </span>
           {byAvatarUrl ? (
-            <img
+            <AvatarImage
               src={byAvatarUrl}
               alt=""
               aria-hidden="true"
@@ -107,7 +109,7 @@ export function StatusBadgeBy({
         <span className="sm:hidden">{prefixMobile ?? prefix}</span>
       </span>
       {byAvatarUrl ? (
-        <img
+        <AvatarImage
           src={byAvatarUrl}
           alt=""
           aria-hidden="true"

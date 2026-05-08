@@ -125,7 +125,7 @@ export function CreateRegistryPage() {
               rows={3}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="Thank you for celebrating this milestone with meâ€¦"
+              placeholder="Thank you for celebrating this milestone with me..."
             />
             </label>
           </div>
@@ -253,7 +253,7 @@ export function CreateRegistryPage() {
           {err ? <div className="text-sm text-[var(--danger-text)]">{err.message}</div> : null}
 
           <Button data-tour-id="registry-create-submit" className="w-full" type="submit" disabled={loading || !termsAccepted}>
-            {loading ? "Creatingâ€¦" : "Create registry"}
+            {loading ? "Creating..." : "Create registry"}
           </Button>
           </div>
         </form>

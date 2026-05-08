@@ -4,6 +4,7 @@ import { useAuth } from "../state/AuthProvider.jsx";
 import { Link, useSearchParams } from "react-router-dom";
 import { useState } from "react";
 import { safeInternalPath } from "../utils/navigation.js";
+import { useToast } from "../components/ui/ToastProvider.jsx";
 import peek from "../assets/peek.png";
 
 const inputClassName =
@@ -43,25 +44,39 @@ function GoogleSignInButton({ href }) {
   );
 }
 
+function normalizeLoginErrorMessage(error) {
+  const message = String(error?.message || "").trim();
+  const lower = message.toLowerCase();
+
+  if (lower.includes("email rate limit exceeded")) {
+    return "You already have a pending sign-in email. Check your inbox or wait a moment before requesting another code.";
+  }
+
+  if (lower.includes("otp") || lower.includes("token") || lower.includes("invalid") || lower.includes("expired")) {
+    return "That code is invalid or expired. Request a new one and try again.";
+  }
+
+  return message || "Something went wrong. Try again.";
+}
+
 export function LoginPage() {
   const [searchParams] = useSearchParams();
   const nextAfterLogin = safeInternalPath(searchParams.get("next"));
   const { signInWithGoogle, sendEmailOtp, verifyEmailOtp } = useAuth();
+  const toast = useToast();
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
-  const [formErr, setFormErr] = useState(null);
   const [step, setStep] = useState("email"); // email | otp
   const [busy, setBusy] = useState(false);
 
   async function onEmailLogin(e) {
     e.preventDefault();
-    setFormErr(null);
     setBusy(true);
     try {
       await sendEmailOtp(email);
       setStep("otp");
     } catch (e2) {
-      setFormErr(e2.message);
+      toast.caution(normalizeLoginErrorMessage(e2));
     } finally {
       setBusy(false);
     }
@@ -69,12 +84,11 @@ export function LoginPage() {
 
   async function onVerifyOtp(e) {
     e.preventDefault();
-    setFormErr(null);
     setBusy(true);
     try {
       await verifyEmailOtp({ email, token: otp });
     } catch (e2) {
-      setFormErr(e2.message);
+      toast.error(normalizeLoginErrorMessage(e2));
     } finally {
       setBusy(false);
     }
@@ -127,15 +141,8 @@ export function LoginPage() {
                 </div>
               </label>
             ) : null}
-
-          {formErr ? (
-            <div className="rounded-[14px] border border-[rgba(155,28,28,0.20)] bg-[var(--danger-bg)] px-3 py-2 text-xs text-[var(--danger-text)]">
-              {formErr}
-            </div>
-          ) : null}
-
           <Button type="submit" className="w-full">
-            {busy ? "Working…" : step === "email" ? "Send code" : "Verify code"}
+            {busy ? "Working..." : step === "email" ? "Send code" : "Verify code"}
           </Button>
 
           <div className="flex items-center gap-3 py-1">
@@ -148,11 +155,10 @@ export function LoginPage() {
             type="button"
             className="inline-flex w-full items-center justify-center gap-3 rounded-[999px] border border-[var(--border-default)] bg-white px-4 py-3 text-sm font-semibold text-[var(--text-primary)] shadow-[var(--shadow-xs)] transition hover:bg-[var(--color-neutral-100)] active:scale-[0.99]"
             onClick={async () => {
-              setFormErr(null);
               try {
                 await signInWithGoogle(nextAfterLogin ?? undefined);
               } catch (e2) {
-                setFormErr(e2.message);
+                toast.error(normalizeLoginErrorMessage(e2));
               }
             }}
           >
@@ -205,4 +211,5 @@ export function LoginPage() {
     </div>
   );
 }
+
 
