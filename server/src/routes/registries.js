@@ -20,6 +20,7 @@ const joinLimiter = createJoinLimiter();
 const { buildViewerRoster } = require("../utils/viewerRoster");
 const { getItemDisplayStatus, getItemQuantitySummary } = require("../utils/itemQuantities");
 const { signUrl } = require("../services/supabaseStorage");
+const { normalizeItemImagePaths } = require("../utils/itemImages");
 const { publicGiverUser } = require("../utils/publicUser");
 const { resolveAvatarUrl } = require("../utils/avatar");
 const { registryEventCategorySchema } = require("../constants/registryEventCategories");
@@ -111,6 +112,17 @@ function publicRegistryMemberUser(memberRow) {
     name: displayName,
     avatarUrl: memberRow.hideAvatar ? null : resolveAvatarUrl(memberRow.user.avatarUrl),
   };
+}
+
+
+async function safeSignUrl(objectPath, contextLabel) {
+  if (!objectPath) return null;
+  try {
+    return await signUrl(objectPath);
+  } catch (err) {
+    console.error(`[registries] signed URL failed for ${contextLabel}:`, err?.message || err);
+    return null;
+  }
 }
 
 const createRegistrySchema = z.object({
@@ -559,7 +571,7 @@ registriesRouter.get("/:registryId", requireAuth, async (req, res) => {
     let imageUrls = [];
     if (storagePaths.length > 0) {
       // eslint-disable-next-line no-await-in-loop -- bounded to â‰¤3 paths per item
-      imageUrls = (await Promise.all(storagePaths.map((p) => signUrl(p)))).filter(Boolean);
+      imageUrls = (await Promise.all(storagePaths.map((p, idx) => safeSignUrl(p, `item:${item.id}:image:${idx}`)))).filter(Boolean);
     } else if (item.imageUrl) {
       imageUrls = [item.imageUrl];
     }
@@ -673,7 +685,7 @@ registriesRouter.get("/:registryId", requireAuth, async (req, res) => {
         id: f.id,
         title: f.title,
         description: f.description,
-        imageUrl: f.imagePath ? await signUrl(f.imagePath) : null,
+        imageUrl: f.imagePath ? await safeSignUrl(f.imagePath, `fund:${f.id}:image`) : null,
         targetAmount: f.targetAmount,
         suggestedAmount: f.suggestedAmount,
         instructions: f.instructions,
