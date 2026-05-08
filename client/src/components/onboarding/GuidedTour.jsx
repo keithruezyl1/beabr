@@ -293,6 +293,7 @@ export function GuidedTour() {
   const isRegistryCreateSubmitStep = step.targetId === "registry-create-submit";
   const canSkip = stepIndex > 1;
   const characterSrc = stepIndex % 2 === 0 ? talking1 : talking2;
+  const tourVisuallyPaused = location.pathname === "/success-modal";
 
   useEffect(() => {
     if (!open) return;
@@ -449,7 +450,7 @@ export function GuidedTour() {
     return "mb-[18vh] sm:mb-[16vh] md:mb-[8vh]";
   }, [step.targetId, targetRect]);
 
-  if (!open) return null;
+  if (!open || tourVisuallyPaused) return null;
 
   async function completeTour() {
     setSaving(true);
