@@ -11,10 +11,10 @@ export function ViewerFacepile({ roster, role, compact = false, onShareInvite })
   const faces = roster?.faces ?? [];
 
   const shell = compact
-    ? "rounded-[var(--radius-md)] bg-[var(--surface-card-soft)] px-2.5 py-2 ring-1 ring-[var(--border-subtle)] h-full min-h-[5.75rem] flex flex-col"
+    ? "flex h-[5.75rem] min-h-[5.75rem] max-h-[5.75rem] flex-col overflow-hidden rounded-[var(--radius-md)] bg-[var(--surface-card-soft)] px-2.5 py-2 ring-1 ring-[var(--border-subtle)]"
     : "rounded-[var(--radius-md)] bg-[var(--surface-card-soft)] px-3 py-3 ring-1 ring-[var(--border-subtle)]";
   const titleCls = compact ? "text-xs font-semibold leading-snug text-[var(--text-primary)]" : "text-sm font-semibold text-[var(--text-primary)]";
-  const subCls = compact ? "mt-1 text-[11px] leading-snug text-[var(--text-secondary)]" : "mt-1 text-xs leading-relaxed text-[var(--text-secondary)]";
+  const subCls = compact ? "mt-0.5 text-[11px] leading-snug text-[var(--text-secondary)]" : "mt-1 text-xs leading-relaxed text-[var(--text-secondary)]";
   const avatarSm = compact ? "h-8 w-8" : "h-9 w-9";
   const iconSm = compact ? "h-3.5 w-3.5" : "h-4 w-4";
   const initialsSm = compact ? "text-[10px]" : "text-[11px]";
@@ -102,7 +102,7 @@ export function ViewerFacepile({ roster, role, compact = false, onShareInvite })
     const shown = Math.min(viewerCount, maxStack);
     const extra = viewerCount > maxStack ? viewerCount - maxStack : 0;
     return (
-      <div className={`${shell} ${compact ? "justify-between" : ""}`}>
+      <div className={shell}>
         <div className="flex items-start justify-between gap-3">
           <p className={titleCls}>{headline}</p>
           {role === "owner" && onShareInvite ? (
@@ -120,10 +120,10 @@ export function ViewerFacepile({ roster, role, compact = false, onShareInvite })
             </button>
           ) : null}
         </div>
-        <p className={compact ? `${subCls} line-clamp-2` : `${subCls}`}>
+        <p className={compact ? `${subCls} relative z-[2] min-h-[0.875rem] shrink-0 truncate` : `${subCls}`}>
           {compact ? "Hidden until reveal." : "Names and photos stay private until reveal—you’ll see who joined after the reveal time."}
         </p>
-        <div className={`flex items-center gap-1.5 ${compact ? "mt-2" : "mt-3"}`} aria-hidden="true">
+        <div className={`relative z-[1] flex items-center gap-1.5 ${compact ? "mt-auto pt-1" : "mt-3"}`} aria-hidden="true">
           <div className="flex -space-x-2 pl-0.5">
             {Array.from({ length: shown }).map((_, i) => (
               <div
@@ -167,9 +167,6 @@ export function ViewerFacepile({ roster, role, compact = false, onShareInvite })
             </button>
           ) : null}
         </div>
-        {compact ? (
-          <div className="mt-1 min-h-[1.125rem]" aria-hidden="true" />
-        ) : null}
         {onlyYou ? (
           <p className={compact ? "mt-0.5 text-[11px] text-[var(--text-secondary)]" : "mt-1 text-xs text-[var(--text-secondary)]"}>
             {compact ? "Just you so far." : "You’re the only gift giver here so far."}

@@ -6,9 +6,8 @@ import logo from "../../assets/logo.png";
 import { apiFetch } from "../../services/api";
 import { Card } from "../ui/Card.jsx";
 import { Button } from "../ui/Button.jsx";
-import { BottomSheet } from "../ui/BottomSheet.jsx";
 import { GuidedTour } from "../onboarding/GuidedTour.jsx";
-import { IconBell, IconHeart, IconHome, IconWallet } from "../ui/PageIcons.jsx";
+import { IconBell, IconHome, IconWallet } from "../ui/PageIcons.jsx";
 import { formatPesoDots } from "../../utils/numberFormat.js";
 
 function timeAgo(iso) {
@@ -70,21 +69,16 @@ export function AppShell({ children }) {
   const [notifLoading, setNotifLoading] = useState(false);
   const [notifErr, setNotifErr] = useState(null);
   const [notifRows, setNotifRows] = useState([]);
-  const [thankYouRows, setThankYouRows] = useState([]);
-  const [activeThankYou, setActiveThankYou] = useState(null);
 
   const avatarUrl = useMemo(() => user?.avatarUrl || "", [user]);
   const avatarFallback = useMemo(() => (user?.name ? user.name.slice(0, 1).toUpperCase() : "U"), [user]);
 
   const notifCacheKey = user?.id ? `beabr_notifs_v1:${user.id}` : "";
-  const thankYouCacheKey = user?.id ? `beabr_thankyou_v1:${user.id}` : "";
 
   useEffect(() => {
     if (!user?.id) return;
     const cachedNotifs = safeJsonParse(localStorage.getItem(notifCacheKey) || "");
     if (Array.isArray(cachedNotifs)) setNotifRows(cachedNotifs);
-    const cachedThanks = safeJsonParse(localStorage.getItem(thankYouCacheKey) || "");
-    if (Array.isArray(cachedThanks)) setThankYouRows(cachedThanks);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
@@ -127,22 +121,12 @@ export function AppShell({ children }) {
     setNotifErr(null);
     try {
       const notifSince = maxIsoDate(notifRows, "createdAt");
-      const thankSince = maxIsoDate(thankYouRows, "createdAt");
       const notifUrl = notifSince ? `/api/notifications?since=${encodeURIComponent(notifSince)}` : "/api/notifications";
-      const thankUrl = thankSince ? `/api/thank-you/inbox?since=${encodeURIComponent(thankSince)}` : "/api/thank-you/inbox";
-      const [n, ty] = await Promise.all([
-        apiFetch(notifUrl),
-        apiFetch(thankUrl),
-      ]);
+      const n = await apiFetch(notifUrl);
 
       setNotifRows((prev) => {
         const merged = mergeById(prev, n.notifications || []);
         localStorage.setItem(notifCacheKey, JSON.stringify(merged));
-        return merged;
-      });
-      setThankYouRows((prev) => {
-        const merged = mergeById(prev, ty.messages || []);
-        localStorage.setItem(thankYouCacheKey, JSON.stringify(merged));
         return merged;
       });
     } catch (e) {
@@ -167,20 +151,6 @@ export function AppShell({ children }) {
 
   const notifStream = useMemo(() => {
     const items = [];
-    for (const m of thankYouRows || []) {
-      const createdAt = m.sentAt || m.createdAt;
-      items.push({
-        kind: "thank_you",
-        id: m.id,
-        createdAt,
-        seenAt: m.seenAt,
-        title: m.registry?.ownerDisplayName ? `Thank-you from ${m.registry.ownerDisplayName}` : "Thank-you note",
-        subtitle: m.item ? `Gift: ${m.item.title}` : m.fund ? `Fund: ${m.fund.title}` : null,
-        icon: IconHeart,
-        raw: m,
-        link: null,
-      });
-    }
     for (const n of notifRows || []) {
       const payload = n.payload || {};
       const title =
@@ -188,11 +158,15 @@ export function AppShell({ children }) {
           ? "Someone just contributed to your pledge!"
           : n.type === "pledge_goal_not_reached"
             ? `Pledge goal not reached — ${payload.itemTitle ?? "item"}`
-            : n.type;
+            : n.type === "registry_member_joined"
+              ? `${payload.joinedDisplayName ?? "Someone"} joined your registry`
+              : n.type;
       const subtitle =
         n.type === "pledge_goal_not_reached"
           ? `${formatPesoDots(payload.gatheredAmount ?? 0, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} of ${formatPesoDots(payload.goalAmount ?? 0, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} gathered`
-          : null;
+          : n.type === "registry_member_joined"
+            ? payload.registryTitle ?? "Open coordination registry"
+            : null;
       const link = payload.registryId ? `/registry/${payload.registryId}` : "/dashboard";
       items.push({
         kind: "update",
@@ -208,7 +182,7 @@ export function AppShell({ children }) {
     }
     items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     return items;
-  }, [notifRows, thankYouRows]);
+  }, [notifRows]);
 
   const hasUnread = useMemo(() => notifStream.some((n) => !n.seenAt), [notifStream]);
 
@@ -219,15 +193,6 @@ export function AppShell({ children }) {
     setNotifRows((prev) => {
       const next = (prev || []).map((r) => (r?.id === id ? { ...r, seenAt: new Date().toISOString() } : r));
       if (notifCacheKey) localStorage.setItem(notifCacheKey, JSON.stringify(next));
-      return next;
-    });
-  }
-
-  async function markThankYouSeen(id) {
-    await apiFetch(`/api/thank-you/${id}/seen`, { method: "PATCH" });
-    setThankYouRows((prev) => {
-      const next = (prev || []).map((r) => (r?.id === id ? { ...r, seenAt: new Date().toISOString(), status: "seen" } : r));
-      if (thankYouCacheKey) localStorage.setItem(thankYouCacheKey, JSON.stringify(next));
       return next;
     });
   }
@@ -408,13 +373,8 @@ export function AppShell({ children }) {
                               }`}
                               onClick={async () => {
                                 try {
-                                  if (it.kind === "thank_you") {
-                                    setActiveThankYou(it.raw);
-                                    if (!it.seenAt) await markThankYouSeen(it.id);
-                                  } else {
-                                    if (!it.seenAt) await markNotifSeen(it.id);
-                                    if (it.link) nav(it.link);
-                                  }
+                                  if (!it.seenAt) await markNotifSeen(it.id);
+                                  if (it.link) nav(it.link);
                                 } finally {
                                   setNotifOpen(false);
                                   await refreshNotifications();
@@ -547,13 +507,8 @@ export function AppShell({ children }) {
                                 }`}
                                 onClick={async () => {
                                   try {
-                                    if (it.kind === "thank_you") {
-                                      setActiveThankYou(it.raw);
-                                      if (!it.seenAt) await markThankYouSeen(it.id);
-                                    } else {
-                                      if (!it.seenAt) await markNotifSeen(it.id);
-                                      if (it.link) nav(it.link);
-                                    }
+                                    if (!it.seenAt) await markNotifSeen(it.id);
+                                    if (it.link) nav(it.link);
                                   } finally {
                                     setNotifOpen(false);
                                     await refreshNotifications();
@@ -669,33 +624,6 @@ export function AppShell({ children }) {
       </main>
 
       <GuidedTour />
-
-      <BottomSheet
-        open={Boolean(activeThankYou)}
-        title={
-          activeThankYou?.registry?.ownerDisplayName
-            ? `Thank-you from ${activeThankYou.registry.ownerDisplayName}`
-            : "Thank-you note"
-        }
-        variant="modal"
-        onClose={() => setActiveThankYou(null)}
-      >
-        {activeThankYou ? (
-          <div className="space-y-4">
-            {activeThankYou.item ? (
-              <div className="text-xs font-medium text-[var(--text-muted)]">Gift: {activeThankYou.item.title}</div>
-            ) : activeThankYou.fund ? (
-              <div className="text-xs font-medium text-[var(--text-muted)]">Fund: {activeThankYou.fund.title}</div>
-            ) : null}
-            <div className="rounded-[16px] border border-[var(--border-subtle)] bg-[var(--surface-card-soft)] p-4 text-sm leading-relaxed text-[var(--text-secondary)]">
-              {activeThankYou.message}
-            </div>
-            <Button className="w-full" onClick={() => setActiveThankYou(null)}>
-              Close
-            </Button>
-          </div>
-        ) : null}
-      </BottomSheet>
 
       {confirmLogoutOpen
         ? createPortal(

@@ -27,13 +27,69 @@ const { publicGiverUser } = require("../utils/publicUser");
 
 const registriesRouter = express.Router();
 
-function resolveRegistryRevealDatetime({ visibilityMode, revealDatetime, graduationDate }) {
+const ENDED_SUCCESS_MODAL_COPY = Object.freeze({
+  Celebration: {
+    title: "Celebration wrapped up",
+    subtitle: "The registry is now closed. You can still look back at the gifts and coordination details.",
+  },
+  Graduation: {
+    title: "Graduation registry wrapped up",
+    subtitle: "The registry is now closed. Everyone's help is ready to look back on as the milestone wraps.",
+  },
+  Wedding: {
+    title: "Wedding registry wrapped up",
+    subtitle: "The registry is now closed. Gift coordination is complete and the details remain available.",
+  },
+  Birthday: {
+    title: "Birthday registry wrapped up",
+    subtitle: "The registry is now closed. The celebration details and gift activity remain available.",
+  },
+  "Baby shower": {
+    title: "Baby shower registry wrapped up",
+    subtitle: "The registry is now closed. Loved ones' prepared gifts and support are ready to review.",
+  },
+  Housewarming: {
+    title: "Housewarming registry wrapped up",
+    subtitle: "The registry is now closed. The home-starting gift coordination is complete.",
+  },
+  Retirement: {
+    title: "Retirement registry wrapped up",
+    subtitle: "The registry is now closed. The sendoff support and gift details remain available.",
+  },
+  Farewell: {
+    title: "Farewell registry wrapped up",
+    subtitle: "The registry is now closed. The farewell gift coordination is complete.",
+  },
+  Fundraiser: {
+    title: "Fundraiser registry wrapped up",
+    subtitle: "The registry is now closed. Contributions and coordination details remain available.",
+  },
+  Other: {
+    title: "Registry wrapped up",
+    subtitle: "The registry is now closed. Gift coordination is complete and the details remain available.",
+  },
+});
+
+function endedSuccessModalForCategory(eventCategory) {
+  const copy = ENDED_SUCCESS_MODAL_COPY[eventCategory] || ENDED_SUCCESS_MODAL_COPY.Other;
+  return { ...copy, ctaLabel: "Back to registry" };
+}
+
+function resolveRegistryRevealDatetime({ visibilityMode, revealDatetime }) {
   if (revealDatetime) return new Date(revealDatetime);
-  if (visibilityMode === "open_coordination") {
-    if (graduationDate) return new Date(graduationDate);
-    return new Date();
-  }
+  if (visibilityMode === "open_coordination") return new Date();
   throw httpError(400, "Reveal date and time is required for private surprise registries.");
+}
+
+function resolveRegistryCloseDatetime({ visibilityMode, revealDatetime, closeDatetime }) {
+  if (visibilityMode === "private_until_reveal") {
+    if (!revealDatetime) {
+      throw httpError(400, "Reveal date and time is required for private surprise registries.");
+    }
+    return new Date(revealDatetime);
+  }
+  if (!closeDatetime) throw httpError(400, "Closing date and time is required for open coordination registries.");
+  return new Date(closeDatetime);
 }
 
 function itemShownToMember(item, member, registry) {
@@ -63,8 +119,9 @@ const createRegistrySchema = z.object({
   message: z.string().max(600).optional().nullable(),
   coverImageUrl: z.string().url().optional().nullable(),
   eventCategory: registryEventCategorySchema.default("Celebration"),
-  graduationDate: z.string().datetime().optional().nullable(),
+  eventDate: z.string().datetime().optional().nullable(),
   revealDatetime: z.string().datetime().optional().nullable(),
+  closeDatetime: z.string().datetime().optional().nullable(),
   showPledgeTotalBeforeReveal: z.boolean().optional(),
   showConsideringItems: z.boolean().optional(),
   visibilityMode: z.enum(["private_until_reveal", "open_coordination"]).default("private_until_reveal"),
@@ -87,7 +144,11 @@ registriesRouter.post(
     const revealDt = resolveRegistryRevealDatetime({
       visibilityMode: req.body.visibilityMode,
       revealDatetime: req.body.revealDatetime,
-      graduationDate: req.body.graduationDate,
+    });
+    const closeDt = resolveRegistryCloseDatetime({
+      visibilityMode: req.body.visibilityMode,
+      revealDatetime: req.body.revealDatetime,
+      closeDatetime: req.body.closeDatetime,
     });
     const registry = await prisma.registry.create({
       data: {
@@ -98,8 +159,9 @@ registriesRouter.post(
         coverImageUrl: req.body.coverImageUrl ?? null,
         joinCode,
         eventCategory: req.body.eventCategory,
-        graduationDate: req.body.graduationDate ? new Date(req.body.graduationDate) : null,
+        eventDate: req.body.eventDate ? new Date(req.body.eventDate) : null,
         revealDatetime: revealDt,
+        closeDatetime: closeDt,
         isRevealed: new Date() >= revealDt,
         showPledgeTotalBeforeReveal: req.body.showPledgeTotalBeforeReveal ?? true,
         showConsideringItems: req.body.showConsideringItems ?? false,
@@ -117,6 +179,10 @@ registriesRouter.post(
         ownerDisplayName: registry.ownerDisplayName,
         joinCode: registry.joinCode,
         visibilityMode: registry.visibilityMode,
+        eventDate: registry.eventDate,
+        closeDatetime: registry.closeDatetime,
+        closed: new Date() >= new Date(registry.closeDatetime),
+        revealDatetime: registry.revealDatetime,
         shareLink: `${config.publicClientOrigin}/registry/join/${registry.joinCode}`,
       },
     });
@@ -134,8 +200,10 @@ registriesRouter.get("/", requireAuth, async (req, res) => {
           ownerDisplayName: true,
           joinCode: true,
           eventCategory: true,
+          eventDate: true,
           visibilityMode: true,
           finishedAt: true,
+          closeDatetime: true,
           revealDatetime: true,
           createdAt: true,
           archivedAt: true,
@@ -183,11 +251,14 @@ registriesRouter.get("/", requireAuth, async (req, res) => {
         ownerAvatarUrl: m.registry.owner?.avatarUrl ?? null,
         joinCode: m.registry.joinCode,
         eventCategory: m.registry.eventCategory,
+        eventDate: m.registry.eventDate,
         visibilityMode: m.registry.visibilityMode,
         attributionVisible: showAttribution,
         role: m.role,
         finishedAt: m.registry.finishedAt,
         finished: Boolean(m.registry.finishedAt),
+        closeDatetime: m.registry.closeDatetime,
+        closed: new Date() >= new Date(m.registry.closeDatetime),
         revealDatetime: m.registry.revealDatetime,
         revealed,
         viewerRoster,
@@ -235,6 +306,10 @@ registriesRouter.post("/join", joinLimiter, requireAuth, validateBody(joinSchema
   const publicDisplayName =
     typeof rawName === "string" && rawName.trim().length > 0 ? rawName.trim() : null;
   const hideAvatar = req.body.hideAvatar === true;
+  const existingMember = await prisma.registryMember.findUnique({
+    where: { registryId_userId: { registryId: registry.id, userId: req.user.id } },
+    select: { id: true, role: true },
+  });
 
   const membership = await prisma.registryMember.upsert({
     where: { registryId_userId: { registryId: registry.id, userId: req.user.id } },
@@ -252,6 +327,25 @@ registriesRouter.post("/join", joinLimiter, requireAuth, validateBody(joinSchema
       ...(typeof req.body.hideAvatar === "boolean" ? { hideAvatar } : {}),
     },
   });
+
+  if (
+    !existingMember &&
+    registry.visibilityMode === "open_coordination" &&
+    registry.ownerId !== req.user.id
+  ) {
+    await prisma.notification.create({
+      data: {
+        userId: registry.ownerId,
+        type: "registry_member_joined",
+        payloadJson: {
+          registryId: registry.id,
+          registryTitle: registry.title,
+          joinedUserId: req.user.id,
+          joinedDisplayName: publicDisplayName || req.user.name || "Someone",
+        },
+      },
+    });
+  }
 
   res.json({ ok: true, registryId: registry.id, role: membership.role });
 });
@@ -308,6 +402,28 @@ registriesRouter.get("/:registryId", requireAuth, async (req, res) => {
   if (!registry || registry.archivedAt) throw httpError(404, "Registry not found.");
 
   registry = await reconcileRegistryRevealFlag(registry);
+  const closed = new Date() >= new Date(registry.closeDatetime);
+  let endedSuccessModal = null;
+  let finishedAt = registry.finishedAt;
+
+  if (closed && !finishedAt) {
+    const updatedFinished = await prisma.registry.update({
+      where: { id: registryId },
+      data: { finishedAt: new Date() },
+      select: { finishedAt: true },
+    });
+    finishedAt = updatedFinished.finishedAt;
+    registry = { ...registry, finishedAt };
+  }
+
+  if (closed && !member.endedModalSeenAt) {
+    endedSuccessModal = endedSuccessModalForCategory(registry.eventCategory);
+    await prisma.registryMember.update({
+      where: { registryId_userId: { registryId, userId: req.user.id } },
+      data: { endedModalSeenAt: new Date() },
+      select: { id: true },
+    });
+  }
 
   const revealed = isRevealed(registry);
   const showAttribution = attributionVisible(registry);
@@ -539,14 +655,17 @@ registriesRouter.get("/:registryId", requireAuth, async (req, res) => {
       eventCategory: registry.eventCategory,
       visibilityMode: registry.visibilityMode,
       attributionVisible: showAttribution,
-      graduationDate: registry.graduationDate,
-      finishedAt: registry.finishedAt,
-      finished: Boolean(registry.finishedAt),
+      eventDate: registry.eventDate,
+      finishedAt,
+      finished: Boolean(finishedAt),
+      closeDatetime: registry.closeDatetime,
+      closed,
       revealDatetime: registry.revealDatetime,
       revealed,
       showPledgeTotalBeforeReveal: registry.showPledgeTotalBeforeReveal,
       showConsideringItems: registry.showConsideringItems,
       role: member.role,
+      endedSuccessModal,
     },
     items,
     cashFunds: await Promise.all(
@@ -575,8 +694,9 @@ const patchRegistrySchema = z
     message: z.string().max(600).optional().nullable(),
     coverImageUrl: z.string().url().optional().nullable(),
     eventCategory: registryEventCategorySchema.optional(),
-    graduationDate: z.string().datetime().optional().nullable(),
+    eventDate: z.string().datetime().optional().nullable(),
     revealDatetime: z.string().datetime().optional(),
+    closeDatetime: z.string().datetime().optional(),
     showPledgeTotalBeforeReveal: z.boolean().optional(),
     showConsideringItems: z.boolean().optional(),
     visibilityMode: z.never().optional(),
@@ -590,6 +710,19 @@ registriesRouter.patch(
   async (req, res) => {
     const { registryId } = req.params;
     await requireOwner(registryId, req.user.id);
+    const existing = await prisma.registry.findUnique({
+      where: { id: registryId },
+      select: { id: true, visibilityMode: true, revealDatetime: true, closeDatetime: true },
+    });
+    if (!existing) throw httpError(404, "Registry not found.");
+
+    const nextRevealDatetime = req.body.revealDatetime ? new Date(req.body.revealDatetime) : existing.revealDatetime;
+    const nextCloseDatetime =
+      existing.visibilityMode === "private_until_reveal"
+        ? nextRevealDatetime
+        : req.body.closeDatetime
+          ? new Date(req.body.closeDatetime)
+          : existing.closeDatetime;
 
     const updated = await prisma.registry.update({
       where: { id: registryId },
@@ -598,13 +731,14 @@ registriesRouter.patch(
         ...(req.body.ownerDisplayName ? { ownerDisplayName: req.body.ownerDisplayName } : {}),
         ...(Object.prototype.hasOwnProperty.call(req.body, "message") ? { message: req.body.message } : {}),
         ...(Object.prototype.hasOwnProperty.call(req.body, "coverImageUrl") ? { coverImageUrl: req.body.coverImageUrl } : {}),
-        ...(Object.prototype.hasOwnProperty.call(req.body, "graduationDate")
-          ? { graduationDate: req.body.graduationDate ? new Date(req.body.graduationDate) : null }
+        ...(Object.prototype.hasOwnProperty.call(req.body, "eventDate")
+          ? { eventDate: req.body.eventDate ? new Date(req.body.eventDate) : null }
           : {}),
         ...(Object.prototype.hasOwnProperty.call(req.body, "eventCategory")
           ? { eventCategory: req.body.eventCategory }
           : {}),
-        ...(req.body.revealDatetime ? { revealDatetime: new Date(req.body.revealDatetime) } : {}),
+        ...(req.body.revealDatetime ? { revealDatetime: nextRevealDatetime } : {}),
+        ...(req.body.revealDatetime || req.body.closeDatetime ? { closeDatetime: nextCloseDatetime } : {}),
         ...(typeof req.body.showPledgeTotalBeforeReveal === "boolean"
           ? { showPledgeTotalBeforeReveal: req.body.showPledgeTotalBeforeReveal }
           : {}),
@@ -618,7 +752,9 @@ registriesRouter.patch(
         ownerDisplayName: true,
         message: true,
         eventCategory: true,
+        eventDate: true,
         revealDatetime: true,
+        closeDatetime: true,
         isRevealed: true,
         showPledgeTotalBeforeReveal: true,
         showConsideringItems: true,
@@ -628,7 +764,7 @@ registriesRouter.patch(
 
     const synced = await reconcileRegistryRevealFlag(updated);
     const { isRevealed: _persistedReveal, ...rest } = synced;
-    res.json({ registry: rest });
+    res.json({ registry: { ...rest, closed: new Date() >= new Date(rest.closeDatetime) } });
   }
 );
 
@@ -650,13 +786,13 @@ registriesRouter.post("/:registryId/finish", requireAuth, async (req, res) => {
 
   const registry = await prisma.registry.findUnique({
     where: { id: registryId },
-    select: { id: true, revealDatetime: true, finishedAt: true, archivedAt: true },
+    select: { id: true, closeDatetime: true, finishedAt: true, archivedAt: true },
   });
   if (!registry || registry.archivedAt) throw httpError(404, "Registry not found.");
 
-  const revealed = new Date() >= new Date(registry.revealDatetime);
-  if (!revealed) {
-    throw httpError(400, "You can finish a registry after reveal.");
+  const closed = new Date() >= new Date(registry.closeDatetime);
+  if (!closed) {
+    throw httpError(400, "You can finish a registry after it closes.");
   }
 
   if (!registry.finishedAt) {
@@ -681,6 +817,7 @@ registriesRouter.get("/:registryId/reveal", requireAuth, async (req, res) => {
       title: true,
       ownerDisplayName: true,
       revealDatetime: true,
+      closeDatetime: true,
       isRevealed: true,
       visibilityMode: true,
       showPledgeTotalBeforeReveal: true,
@@ -696,6 +833,8 @@ registriesRouter.get("/:registryId/reveal", requireAuth, async (req, res) => {
     return res.json({
       revealed: false,
       revealDatetime: registry.revealDatetime,
+      closeDatetime: registry.closeDatetime,
+      closed: new Date() >= new Date(registry.closeDatetime),
       message: "Reveal is not available yet.",
     });
   }
@@ -772,8 +911,10 @@ registriesRouter.get("/:registryId/reveal", requireAuth, async (req, res) => {
 
   res.json({
     revealed,
+    closed: new Date() >= new Date(registry.closeDatetime),
     attributionVisible: showAttribution,
     revealDatetime: registry.revealDatetime,
+    closeDatetime: registry.closeDatetime,
     prepared: preparedReservations.map((r) => ({
       id: r.id,
       item: r.item,

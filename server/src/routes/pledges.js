@@ -6,7 +6,7 @@ const { prisma } = require("../prisma");
 const { requireAuth } = require("../middleware/auth");
 const { validateBody } = require("../middleware/validate");
 const { httpError } = require("../utils/httpErrors");
-const { requireMembership } = require("../utils/registryAccess");
+const { assertRegistryOpen, isClosed, requireMembership, requireRegistryOpen } = require("../utils/registryAccess");
 const { getItemQuantitySummary } = require("../utils/itemQuantities");
 const {
   resolveImageFormat,
@@ -63,6 +63,7 @@ async function getAvailableQuantityForItem(item) {
 
 /** Group pledges are for gifts that still have unclaimed quantity (no full reservation/preparation lock). */
 async function assertGroupPledgeAllowedForItem(item) {
+  assertRegistryOpen(item.registry, "This registry is closed. Group pledges can no longer be changed.");
   const available = await getAvailableQuantityForItem(item);
   if (available <= 0) {
     throw httpError(
@@ -201,7 +202,7 @@ pledgesRouter.get("/items/:itemId/pledge", requireAuth, async (req, res) => {
   const isInitiator = initiation?.initiatorUserId === req.user.id;
 
   const availableQuantity = await getAvailableQuantityForItem(item);
-  const groupPledgeAllowed = availableQuantity > 0;
+  const groupPledgeAllowed = availableQuantity > 0 && !isClosed(item.registry);
 
   let contributionsForInitiator = [];
   let myContributions = [];
@@ -390,6 +391,7 @@ pledgesRouter.post(
     }
 
     await requireMembership(contrib.registryId, req.user.id);
+    await requireRegistryOpen(contrib.registryId, "This registry is closed. Receipt uploads can no longer be changed.");
 
     const receiptImagePath = await uploadReceipt({
       registryId: contrib.registryId,

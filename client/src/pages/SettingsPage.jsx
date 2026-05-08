@@ -5,7 +5,7 @@ import { BottomSheet } from "../components/ui/BottomSheet.jsx";
 import { Card } from "../components/ui/Card.jsx";
 import { useToast } from "../components/ui/ToastProvider.jsx";
 import { PageSectionTitle } from "../components/ui/PageChrome.jsx";
-import { IconGift, IconLinkedIn, IconSettings, IconUsers, IconWallet } from "../components/ui/PageIcons.jsx";
+import { IconGift, IconLinkedIn, IconSettings, IconUsers } from "../components/ui/PageIcons.jsx";
 import { useAuth } from "../state/AuthProvider.jsx";
 import { apiFetch, apiFetchForm } from "../services/api";
 import { APP_VERSION } from "../version.js";
@@ -533,7 +533,7 @@ export function SettingsPage() {
                     <div className="min-w-0">
                       <div className="truncate text-base font-semibold text-[var(--text-primary)]">{r.title}</div>
                       <div className="mt-1 text-xs text-[var(--text-muted)]">
-                        {r.eventCategory || "Event"} · Reveal {formatRegistryDate(r.revealDatetime)}
+                        {r.eventCategory || "Event"} · Closes {formatRegistryDate(r.closeDatetime || r.revealDatetime)}
                       </div>
                     </div>
                     <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
@@ -592,7 +592,7 @@ export function SettingsPage() {
                           <div className="min-w-0">
                             <div className="truncate text-base font-semibold text-[var(--text-primary)]">{r.title}</div>
                             <div className="mt-1 text-xs text-[var(--text-muted)]">
-                              {r.eventCategory || "Event"} · Reveal {formatRegistryDate(r.revealDatetime)}
+                              {r.eventCategory || "Event"} · Closes {formatRegistryDate(r.closeDatetime || r.revealDatetime)}
                             </div>
                           </div>
                           <div className="shrink-0 rounded-full bg-[var(--success-bg)] px-2.5 py-1 text-xs font-semibold text-[var(--success-text)]">
@@ -665,10 +665,6 @@ export function SettingsPage() {
                 <li className="flex gap-3 text-sm text-[var(--text-secondary)]">
                   <IconUsers className="mt-0.5 h-4 w-4 shrink-0 text-[var(--text-muted)]" aria-hidden />
                   <span>Member access and your invite link or code will stop working</span>
-                </li>
-                <li className="flex gap-3 text-sm text-[var(--text-secondary)]">
-                  <IconWallet className="mt-0.5 h-4 w-4 shrink-0 text-[var(--text-muted)]" aria-hidden />
-                  <span>Thank-you letters tied to this registry</span>
                 </li>
               </ul>
             </div>

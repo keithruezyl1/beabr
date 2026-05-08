@@ -142,7 +142,6 @@ export default function App() {
             </Protected>
           }
         />
-        <Route path="/thank-you" element={<Navigate to="/notifications" replace />} />
         <Route
           path="/notifications"
           element={

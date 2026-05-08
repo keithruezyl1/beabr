@@ -5,7 +5,7 @@ const { prisma } = require("../prisma");
 const { requireAuth } = require("../middleware/auth");
 const { validateBody } = require("../middleware/validate");
 const { httpError } = require("../utils/httpErrors");
-const { requireOwner } = require("../utils/registryAccess");
+const { requireOwner, requireRegistryOpen } = require("../utils/registryAccess");
 const multer = require("multer");
 const { uploadItemImage, signUrl, removeStoragePaths } = require("../services/supabaseStorage");
 const { normalizeItemImagePaths, isValidImageOrder, MAX_ITEM_IMAGES } = require("../utils/itemImages");
@@ -60,6 +60,7 @@ itemsRouter.post(
   async (req, res) => {
     const { registryId } = req.params;
     await requireOwner(registryId, req.user.id);
+    await requireRegistryOpen(registryId, "This registry is closed. Items can no longer be added.");
 
     const item = await prisma.registryItem.create({
       data: {
@@ -116,6 +117,7 @@ itemsRouter.patch("/items/:itemId", requireAuth, validateBody(patchItemSchema), 
   if (!item || item.archivedAt) throw httpError(404, "Item not found.");
 
   await requireOwner(item.registryId, req.user.id);
+  await requireRegistryOpen(item.registryId, "This registry is closed. Items can no longer be changed.");
 
   if (Array.isArray(req.body.imageOrder)) {
     const paths = normalizeItemImagePaths(item);
@@ -215,6 +217,7 @@ itemsRouter.post("/items/:itemId/photo", requireAuth, upload.single("image"), as
   if (!item || item.archivedAt) throw httpError(404, "Item not found.");
 
   await requireOwner(item.registryId, req.user.id);
+  await requireRegistryOpen(item.registryId, "This registry is closed. Item photos can no longer be changed.");
   if (!req.file) throw httpError(400, "Missing image file.");
 
   const current = normalizeItemImagePaths(item);
@@ -242,6 +245,7 @@ itemsRouter.delete("/items/:itemId/photos/:index", requireAuth, async (req, res)
   const item = await prisma.registryItem.findUnique({ where: { id: itemId } });
   if (!item || item.archivedAt) throw httpError(404, "Item not found.");
   await requireOwner(item.registryId, req.user.id);
+  await requireRegistryOpen(item.registryId, "This registry is closed. Item photos can no longer be changed.");
 
   const paths = normalizeItemImagePaths(item);
   const removed = paths[idx];
@@ -263,6 +267,7 @@ itemsRouter.delete("/items/:itemId", requireAuth, async (req, res) => {
   if (!item || item.archivedAt) throw httpError(404, "Item not found.");
 
   await requireOwner(item.registryId, req.user.id);
+  await requireRegistryOpen(item.registryId, "This registry is closed. Items can no longer be archived.");
 
   const [activeReservationCount, pledgeInitiation] = await Promise.all([
     prisma.itemReservation.count({
@@ -297,6 +302,7 @@ itemsRouter.patch(
     const item = await prisma.registryItem.findUnique({ where: { id: itemId } });
     if (!item || item.archivedAt) throw httpError(404, "Item not found.");
     await requireOwner(item.registryId, req.user.id);
+    await requireRegistryOpen(item.registryId, "This registry is closed. Items can no longer be reordered.");
 
     const updated = await prisma.registryItem.update({
       where: { id: itemId },
@@ -309,4 +315,3 @@ itemsRouter.patch(
 );
 
 module.exports = { itemsRouter };
-

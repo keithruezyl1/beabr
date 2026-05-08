@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { useLocation, useNavigate } from "react-router-dom";
-import celebrate from "../../assets/celebrate.png";
 import talking1 from "../../assets/talking_1.png";
 import talking2 from "../../assets/talking_2.png";
 import { apiFetch } from "../../services/api";
@@ -17,27 +16,10 @@ const REGISTRY_FIELD_STEP_TARGETS = new Set([
   "registry-main-event-date",
   "registry-reveal-date",
 ]);
-const ADD_ITEM_STEP_TARGETS = new Set([
-  "registry-add-item",
-  "registry-item-photo",
-  "registry-item-name",
-  "registry-item-price",
-  "registry-item-category",
-  "registry-item-category-details",
-  "registry-item-submit",
-]);
-
-const ADD_ITEM_LOWER_BUBBLE_TARGETS = new Set([
-  "registry-item-price",
-  "registry-item-category",
-  "registry-item-category-details",
-]);
-
-const ADD_ITEM_GIFT_NAME_MOBILE_BUBBLE_CLASS = "mb-[18vh] sm:mb-[16vh]";
 
 const steps = [
   {
-    body: "I'm Beve, your gifting companion. I'll walk you through everything real quick.",
+    body: "Hello! I'm Beve, your gifting companion. I'll walk you through everything real quick.",
   },
   {
     kind: "name",
@@ -69,7 +51,7 @@ const steps = [
     cta: "Go to form",
   },
   {
-    body: "Add the display name that the people you invite will see on this registry.",
+    body: "Add the display name that participants will see on this registry.",
     targetId: "registry-display-name",
     route: "/registries/new",
     cta: "Go to form",
@@ -100,7 +82,6 @@ const steps = [
   },
   {
     body: "Quick note: making a registry doesn't mean anyone has to give you something. It's just a guide, and even in Open Coordination, private notes, payout details, receipts, and hidden system records stay protected.",
-    placement: "registry-visibility",
   },
   {
     body: "Alright, looks good. Accept the terms of use and click create registry when you're ready!",
@@ -117,39 +98,12 @@ const steps = [
     waitForClick: true,
   },
   {
-    body: "Let's add your first item on the registry!",
-    routeMatch: "/registry/",
-    dimGradient: true,
-    closeAddItemOnBack: true,
-    nextLabel: "Next",
-  },
-  {
-    body: "Start by adding a photo if you have one. A clear photo helps others recognize the exact item.",
-    targetId: "registry-item-photo",
+    body: "This is where you describe what you want. Add the name, price estimate, category, details, link, quantity, and any helpful notes.",
+    targetId: "registry-item-form",
     routeMatch: "/registry/",
   },
   {
-    body: "Now add the gift name so people know what to look for.",
-    targetId: "registry-item-name",
-    routeMatch: "/registry/",
-  },
-  {
-    body: "Add a price estimate. It helps people plan and compare options.",
-    targetId: "registry-item-price",
-    routeMatch: "/registry/",
-  },
-  {
-    body: "Choose the category that best fits this item.",
-    targetId: "registry-item-category",
-    routeMatch: "/registry/",
-  },
-  {
-    body: "Add the details that matter for this category, like size, color, or brand.",
-    targetId: "registry-item-category-details",
-    routeMatch: "/registry/",
-  },
-  {
-    body: "When everything looks good, click Add Item.",
+    body: "The clearer you are here, the easier it is for people to get it right. Click Add Item when you're done.",
     targetId: "registry-item-submit",
     routeMatch: "/registry/",
     waitForClick: true,
@@ -161,17 +115,13 @@ const steps = [
     waitForClick: true,
   },
   {
-    body: "This is how you can invite people in the registry. Copy the invite code, a direct link, or download your unique QR code and share it on social media!",
+    body: "This is your invite. Share it only with people you trust. Copy the invite link, or share the QR code if that is easier.",
     targetId: "share-copy-link",
-    highlightIds: ["share-invite-modal"],
     routeMatch: "/registry/",
-    closeShareInviteOnNext: true,
-    closeShareInviteOnBack: true,
-    noDim: true,
+    waitForClick: true,
   },
   {
-    body: "We're at the end of the tour! Now you've got your first registry, added your first item, and ready to share your list to anyone you'd like.\nIf you need me, I can always give you another tour! Just click Profile > Settings > Guided Tour whenever you need to.\n\nThank you for using Beabr, {name}!",
-    character: "celebrate",
+    body: "You've got your registry, your first item, and your invite ready. Private Surprise keeps names hidden until reveal; Open Coordination helps the group see who's helping earlier. Happy gifting, {name}.",
     finish: true,
   },
 ];
@@ -256,7 +206,7 @@ function restorePathForStep(step, savedPath) {
 }
 
 function renderDialogue(body, name) {
-  const tokens = body.split(/(\{name\}|Beve|Private Surprise|Open Coordination|download your unique QR code|first registry|share your list|Profile > Settings > Guided Tour)/g);
+  const tokens = body.split(/(\{name\}|Beve|Beabr|Private Surprise|Open Coordination)/g);
   return tokens.map((token, index) => {
     if (token === "{name}") {
       return (
@@ -272,21 +222,16 @@ function renderDialogue(body, name) {
         </span>
       );
     }
-    if (token === "Private Surprise" || token === "Open Coordination") {
+    if (token === "Beabr") {
       return (
-        <span key={`visibility-${index}`} className="font-semibold text-[var(--color-primary-700)]">
-          {token}
+        <span key={`beabr-${index}`} className="font-semibold text-[var(--color-primary-700)]">
+          Beabr
         </span>
       );
     }
-    if (
-      token === "download your unique QR code" ||
-      token === "first registry" ||
-      token === "share your list" ||
-      token === "Profile > Settings > Guided Tour"
-    ) {
+    if (token === "Private Surprise" || token === "Open Coordination") {
       return (
-        <span key={`highlight-${index}`} className="font-semibold text-[var(--color-primary-700)]">
+        <span key={`visibility-${index}`} className="font-semibold text-[var(--color-primary-700)]">
           {token}
         </span>
       );
@@ -308,7 +253,6 @@ export function GuidedTour() {
   const [nameDraft, setNameDraft] = useState("");
   const [nameDirty, setNameDirty] = useState(false);
   const [skipConfirmOpen, setSkipConfirmOpen] = useState(false);
-  const [successModalOpen, setSuccessModalOpen] = useState(false);
 
   const open = Boolean(user && user.hadTour === false && !dismissed);
   const step = steps[stepIndex] || steps[steps.length - 1];
@@ -318,44 +262,13 @@ export function GuidedTour() {
   const firstName = displayName.split(" ")?.[0] || "there";
   const isNameStep = step.kind === "name";
   const highlightTargetId = step.highlightId || step.targetId;
-  const highlightTargetIds = useMemo(() => {
-    if (step.targetId === "share-copy-link") {
-      return ["share-invite-qr-code", "share-download-qr-code"];
-    }
-    return step.highlightIds || (highlightTargetId ? [highlightTargetId] : []);
-  }, [highlightTargetId, step.highlightIds, step.targetId]);
+  const highlightTargetIds = useMemo(
+    () => step.highlightIds || (highlightTargetId ? [highlightTargetId] : []),
+    [highlightTargetId, step.highlightIds]
+  );
   const isRegistryCreateSubmitStep = step.targetId === "registry-create-submit";
-  const isCenteredPairStep = Boolean(step.dimGradient && highlightTargetIds.length === 0);
   const canSkip = stepIndex > 1;
-  const characterSrc = step.character === "celebrate" ? celebrate : stepIndex % 2 === 0 ? talking1 : talking2;
-
-  useEffect(() => {
-    function resetGuidedTour() {
-      clearTourProgress();
-      setStepIndex(0);
-      setTargetRect(null);
-      setTargetMissing(false);
-      setErr(null);
-      setDismissed(false);
-      setSkipConfirmOpen(false);
-    }
-
-    window.addEventListener("beabr:reset-guided-tour", resetGuidedTour);
-    return () => window.removeEventListener("beabr:reset-guided-tour", resetGuidedTour);
-  }, []);
-
-  useEffect(() => {
-    if (!open) return;
-
-    function syncSuccessModalState() {
-      setSuccessModalOpen(document.body.classList.contains("beabr-success-modal-open"));
-    }
-
-    syncSuccessModalState();
-    const observer = new MutationObserver(syncSuccessModalState);
-    observer.observe(document.body, { attributes: true, attributeFilter: ["class"] });
-    return () => observer.disconnect();
-  }, [open]);
+  const characterSrc = stepIndex % 2 === 0 ? talking1 : talking2;
 
   useEffect(() => {
     if (!open) return;
@@ -390,8 +303,6 @@ export function GuidedTour() {
     }
 
     let raf = 0;
-    let retryTimer = 0;
-    let observer = null;
     let restore = null;
 
     function elevateTargets(elements) {
@@ -426,8 +337,6 @@ export function GuidedTour() {
       if (elements.some((el) => !el)) {
         setTargetRect(null);
         setTargetMissing(true);
-        window.clearTimeout(retryTimer);
-        retryTimer = window.setTimeout(updateRect, 250);
         if (restore) {
           restore();
           restore = null;
@@ -459,15 +368,11 @@ export function GuidedTour() {
     }
 
     const timer = window.setTimeout(updateRect, 120);
-    observer = new MutationObserver(updateRect);
-    observer.observe(document.body, { childList: true, subtree: true });
     window.addEventListener("resize", updateRect);
     window.addEventListener("scroll", updateRect, true);
     return () => {
       window.clearTimeout(timer);
-      window.clearTimeout(retryTimer);
       window.cancelAnimationFrame(raf);
-      observer?.disconnect();
       window.removeEventListener("resize", updateRect);
       window.removeEventListener("scroll", updateRect, true);
       if (restore) restore();
@@ -498,46 +403,12 @@ export function GuidedTour() {
   }, [targetRect]);
 
   const bubblePlacementClass = useMemo(() => {
-    if (isCenteredPairStep) {
-      return `${ADD_ITEM_GIFT_NAME_MOBILE_BUBBLE_CLASS} sm:!w-[72%] md:!ml-auto md:!mr-[44%] md:mb-[12vh] md:!w-[34%] lg:!mr-[44%] lg:mb-[12vh] lg:!w-[34%]`;
-    }
-
-    if (step.targetId === "registry-create-submit") {
-      return "mb-[26vh] sm:mb-[26vh] md:mb-[18vh] md:ml-[5%] lg:mb-[16vh] lg:ml-[7%]";
-    }
-
-    if (step.targetId === "registry-visibility" || step.placement === "registry-visibility") {
+    if (step.targetId === "registry-visibility") {
       return "mb-[16vh] sm:mb-[16vh] md:mb-[2vh] lg:mb-[4vh]";
     }
 
     if (REGISTRY_FIELD_STEP_TARGETS.has(step.targetId)) {
       return "mb-[18vh] sm:mb-[18vh] md:mb-[8vh] lg:mb-[8vh]";
-    }
-
-    if (ADD_ITEM_LOWER_BUBBLE_TARGETS.has(step.targetId)) {
-      return `${ADD_ITEM_GIFT_NAME_MOBILE_BUBBLE_CLASS} md:mb-[18vh] md:ml-[5%] lg:mb-[16vh] lg:ml-[6%]`;
-    }
-
-    if (step.targetId === "registry-share") {
-      return "mb-[18vh] sm:mb-[16vh] md:mb-[8vh] md:ml-[5%] lg:ml-[6%]";
-    }
-
-    if (step.targetId === "share-copy-link") {
-      return "mb-[18vh] !mx-auto !w-[86%] sm:mb-[16vh] sm:!w-[82%] md:mb-[8vh] md:!ml-[5%] md:!w-[58%] lg:!ml-[6%] lg:!w-[60%]";
-    }
-
-    if (ADD_ITEM_STEP_TARGETS.has(step.targetId)) {
-      if (step.targetId === "registry-item-submit") {
-        return "mb-[19vh] sm:mb-[17vh] md:mb-[18vh] md:ml-[5%] lg:mb-[16vh] lg:ml-[6%]";
-      }
-
-      return targetRect?.top + targetRect?.height / 2 > (typeof window === "undefined" ? 800 : window.innerHeight) * 0.42
-        ? "mb-[34vh] sm:mb-[32vh] md:mb-[18vh] md:ml-[5%] lg:mb-[16vh] lg:ml-[6%]"
-        : "mb-[18vh] sm:mb-[16vh] md:mb-[8vh] md:ml-[5%] lg:ml-[6%]";
-    }
-
-    if (stepIndex < 4) {
-      return "mb-[18vh] sm:mb-[16vh] md:mb-[10vh]";
     }
 
     if (!targetRect) {
@@ -552,7 +423,7 @@ export function GuidedTour() {
     }
 
     return "mb-[18vh] sm:mb-[16vh] md:mb-[8vh]";
-  }, [isCenteredPairStep, step.placement, step.targetId, stepIndex, targetRect]);
+  }, [step.targetId, targetRect]);
 
   if (!open) return null;
 
@@ -594,9 +465,6 @@ export function GuidedTour() {
 
   function next() {
     setErr(null);
-    if (step.closeShareInviteOnNext) {
-      window.dispatchEvent(new CustomEvent("beabr:close-share-invite-modal"));
-    }
     setStepIndex((i) => Math.min(i + 1, steps.length - 1));
   }
 
@@ -627,32 +495,17 @@ export function GuidedTour() {
 
   function back() {
     setErr(null);
-    if (step.closeAddItemOnBack) {
-      window.dispatchEvent(new CustomEvent("beabr:close-add-item-modal"));
-    }
-    if (step.closeShareInviteOnBack) {
-      window.dispatchEvent(new CustomEvent("beabr:close-share-invite-modal"));
-    }
     setStepIndex((i) => Math.max(0, i - 1));
   }
 
   const body = renderDialogue(step.body, firstName);
   const canNavigate = Boolean(step.route && location.pathname !== step.route);
-  const waitingForRegistryTarget = Boolean(step.routeMatch === "/registry/" && targetMissing && !canNavigate);
+  const missingRegistryTarget = Boolean(step.routeMatch === "/registry/" && targetMissing);
+  const waitingForRegistryTarget = Boolean(missingRegistryTarget && !canNavigate);
   const autoAdvanceOnClick = Boolean(step.waitForClick && !canNavigate);
-  const waitingForCreatedRegistry = Boolean(step.routeMatch === "/registry/" && location.pathname === "/success-modal");
-  const shouldSuppressDim = Boolean(step.noDim && step.targetId !== "share-copy-link");
-  if (waitingForCreatedRegistry || successModalOpen) return null;
-
   return createPortal(
     <>
-      {!targetStyle && step.dimGradient ? (
-        <div
-          className="pointer-events-none fixed inset-0 z-[160] bg-[linear-gradient(to_top,rgba(29,33,26,0.58)_0%,rgba(29,33,26,0.38)_42%,rgba(29,33,26,0.12)_78%,rgba(29,33,26,0.04)_100%)]"
-          aria-hidden
-        />
-      ) : null}
-      {!targetStyle && !step.dimGradient && !shouldSuppressDim ? (
+      {!targetStyle ? (
         <div
           className="pointer-events-none fixed inset-0 z-[160] bg-[rgba(29,33,26,0.46)]"
           aria-hidden
@@ -660,11 +513,7 @@ export function GuidedTour() {
       ) : null}
       {targetStyle ? (
         <div
-          className={`pointer-events-none fixed z-[230] rounded-[22px] border-2 border-[var(--color-primary-500)] transition-all duration-200 ${
-            shouldSuppressDim
-              ? "shadow-[0_0_0_6px_rgba(255,255,255,0.75),0_10px_30px_rgba(29,33,26,0.18)]"
-              : "shadow-[0_0_0_6px_rgba(255,255,255,0.75),0_0_0_9999px_rgba(29,33,26,0.46),0_10px_30px_rgba(29,33,26,0.18)]"
-          }`}
+          className="pointer-events-none fixed z-[230] rounded-[22px] border-2 border-[var(--color-primary-500)] shadow-[0_0_0_6px_rgba(255,255,255,0.75),0_0_0_9999px_rgba(29,33,26,0.46),0_10px_30px_rgba(29,33,26,0.18)] transition-all duration-200"
           style={targetStyle}
           aria-hidden
         />
@@ -684,7 +533,7 @@ export function GuidedTour() {
               aria-hidden
             />
             <div className="relative z-[1]">
-              <p className="whitespace-pre-line text-sm leading-relaxed text-[var(--text-secondary)] sm:text-base">{body}</p>
+              <p className="text-sm leading-relaxed text-[var(--text-secondary)] sm:text-base">{body}</p>
               {isNameStep ? (
                 <form className="mt-4" onSubmit={saveNameAndNext}>
                   <label className="block text-left">
@@ -707,6 +556,11 @@ export function GuidedTour() {
               {targetMissing && !canNavigate ? (
                 <p className="mt-3 text-sm leading-relaxed text-[var(--warning-text)]">
                   I can't see that control yet. Finish the current screen action, then this step will highlight it.
+                </p>
+              ) : null}
+              {missingRegistryTarget ? (
+                <p className="mt-3 text-sm leading-relaxed text-[var(--warning-text)]">
+                  After creating a registry, continue from the success screen to the registry page.
                 </p>
               ) : null}
               {err ? <p className="mt-3 text-sm text-[var(--danger-text)]">{err.message}</p> : null}
@@ -750,7 +604,7 @@ export function GuidedTour() {
                   </Button>
                 ) : autoAdvanceOnClick ? null : (
                   <Button type="button" className="min-h-[44px]" onClick={next} disabled={saving || waitingForRegistryTarget}>
-                    {waitingForRegistryTarget ? "Waiting..." : step.nextLabel || "Continue"}
+                    {waitingForRegistryTarget ? "Waiting..." : "Continue"}
                   </Button>
                 )}
               </div>
@@ -759,9 +613,7 @@ export function GuidedTour() {
             <img
             src={characterSrc}
             alt=""
-            className={`pointer-events-none absolute bottom-[-12vh] left-[78%] z-[3] h-[25vh] max-h-[15rem] w-auto -translate-x-1/2 object-contain drop-shadow-[0_18px_28px_rgba(29,33,26,0.28)] sm:bottom-[-12vh] sm:left-[62%] sm:h-[30vh] sm:max-h-[17rem] md:bottom-[-16vh] md:left-auto md:h-[38vh] md:max-h-[25rem] md:translate-x-0 lg:h-[40vh] lg:max-h-[29rem] ${
-              isCenteredPairStep ? "md:right-[3%]" : "md:right-0"
-            } ${
+            className={`pointer-events-none absolute bottom-[-12vh] left-[78%] z-[3] h-[25vh] max-h-[15rem] w-auto -translate-x-1/2 object-contain drop-shadow-[0_18px_28px_rgba(29,33,26,0.28)] sm:bottom-[-12vh] sm:left-[62%] sm:h-[30vh] sm:max-h-[17rem] md:bottom-[-16vh] md:left-auto md:right-0 md:h-[38vh] md:max-h-[25rem] md:translate-x-0 lg:h-[40vh] lg:max-h-[29rem] ${
               isRegistryCreateSubmitStep ? "hidden md:block" : ""
             }`}
             aria-hidden

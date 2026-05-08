@@ -1,11 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { apiFetch } from "../services/api";
 import { Card } from "../components/ui/Card.jsx";
-import { Button } from "../components/ui/Button.jsx";
-import { BottomSheet } from "../components/ui/BottomSheet.jsx";
 import { PageHeader } from "../components/ui/PageChrome.jsx";
-import { IconBell, IconClock, IconHeart } from "../components/ui/PageIcons.jsx";
+import { IconBell, IconClock } from "../components/ui/PageIcons.jsx";
 import { NotificationsScreenSkeleton } from "../components/ui/ScreenSkeletons.jsx";
 import { formatPesoDots } from "../utils/numberFormat.js";
 
@@ -27,8 +25,6 @@ function timeAgo(iso) {
 export function NotificationsPage() {
   const nav = useNavigate();
   const [rows, setRows] = useState([]);
-  const [thankYous, setThankYous] = useState([]);
-  const [activeThankYou, setActiveThankYou] = useState(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
 
@@ -36,12 +32,8 @@ export function NotificationsPage() {
     setLoading(true);
     setErr(null);
     try {
-      const [n, ty] = await Promise.all([
-        apiFetch("/api/notifications"),
-        apiFetch("/api/thank-you/inbox"),
-      ]);
+      const n = await apiFetch("/api/notifications");
       setRows(n.notifications || []);
-      setThankYous(ty.messages || []);
     } catch (e) {
       setErr(e);
     } finally {
@@ -54,11 +46,6 @@ export function NotificationsPage() {
     await refresh();
   }
 
-  async function markThankYouSeen(messageId) {
-    await apiFetch(`/api/thank-you/${messageId}/seen`, { method: "PATCH" });
-    await refresh();
-  }
-
   useEffect(() => {
     refresh();
   }, []);
@@ -66,33 +53,22 @@ export function NotificationsPage() {
   const stream = useMemo(() => {
     const items = [];
 
-    for (const m of thankYous || []) {
-      const createdAt = m.sentAt || m.createdAt;
-      items.push({
-        kind: "thank_you",
-        id: m.id,
-        createdAt,
-        seenAt: m.seenAt,
-        title: m.registry?.ownerDisplayName ? `Thank-you from ${m.registry.ownerDisplayName}` : "Thank-you note",
-        subtitle: m.item ? `Gift: ${m.item.title}` : m.fund ? `Fund: ${m.fund.title}` : null,
-        icon: IconHeart,
-        raw: m,
-        link: null,
-      });
-    }
-
     for (const n of rows || []) {
       const payload = n.payload || {};
       const title =
         n.type === "pledge_receipt_uploaded"
-          ? `Receipt uploaded • ${formatPesoDots(payload.amount ?? 0, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
+          ? `Receipt uploaded - ${formatPesoDots(payload.amount ?? 0, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
           : n.type === "pledge_goal_not_reached"
-            ? `Pledge goal not reached — ${payload.itemTitle ?? "item"}`
-            : n.type;
+            ? `Pledge goal not reached - ${payload.itemTitle ?? "item"}`
+            : n.type === "registry_member_joined"
+              ? `${payload.joinedDisplayName ?? "Someone"} joined your registry`
+              : n.type;
       const subtitle =
         n.type === "pledge_goal_not_reached"
           ? `${formatPesoDots(payload.gatheredAmount ?? 0, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} of ${formatPesoDots(payload.goalAmount ?? 0, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} gathered`
-          : null;
+          : n.type === "registry_member_joined"
+            ? payload.registryTitle ?? "Open coordination registry"
+            : null;
       const link = payload.registryId ? `/registry/${payload.registryId}` : "/dashboard";
       items.push({
         kind: "update",
@@ -109,7 +85,7 @@ export function NotificationsPage() {
 
     items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     return items;
-  }, [rows, thankYous]);
+  }, [rows]);
 
   if (loading) return <NotificationsScreenSkeleton />;
   if (err)
@@ -124,7 +100,7 @@ export function NotificationsPage() {
       <PageHeader
         eyebrow="Inbox"
         title="Notifications"
-        description="Updates, receipts, and thank-you notes in one stream."
+        description="Updates and receipts in one stream."
       />
 
       {stream.length === 0 ? (
@@ -149,11 +125,6 @@ export function NotificationsPage() {
                   className="absolute inset-0 z-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary-500)]"
                   aria-label={it.title}
                   onClick={async () => {
-                    if (it.kind === "thank_you") {
-                      setActiveThankYou(it.raw);
-                      if (!it.seenAt) await markThankYouSeen(it.id);
-                      return;
-                    }
                     if (!it.seenAt) await markSeen(it.id);
                     if (it.link) nav(it.link);
                   }}
@@ -192,32 +163,6 @@ export function NotificationsPage() {
           })}
         </div>
       )}
-
-      <BottomSheet
-        open={Boolean(activeThankYou)}
-        title={
-          activeThankYou?.registry?.ownerDisplayName
-            ? `Thank-you from ${activeThankYou.registry.ownerDisplayName}`
-            : "Thank-you note"
-        }
-        onClose={() => setActiveThankYou(null)}
-      >
-        {activeThankYou ? (
-          <div className="space-y-4">
-            {activeThankYou.item ? (
-              <div className="text-xs font-medium text-[var(--text-muted)]">Gift: {activeThankYou.item.title}</div>
-            ) : activeThankYou.fund ? (
-              <div className="text-xs font-medium text-[var(--text-muted)]">Fund: {activeThankYou.fund.title}</div>
-            ) : null}
-            <div className="rounded-[16px] border border-[var(--border-subtle)] bg-[var(--surface-card-soft)] p-4 text-sm leading-relaxed text-[var(--text-secondary)]">
-              {activeThankYou.message}
-            </div>
-            <Button className="w-full" onClick={() => setActiveThankYou(null)}>
-              Close
-            </Button>
-          </div>
-        ) : null}
-      </BottomSheet>
     </div>
   );
 }

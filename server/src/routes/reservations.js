@@ -5,7 +5,7 @@ const { prisma } = require("../prisma");
 const { requireAuth } = require("../middleware/auth");
 const { validateBody } = require("../middleware/validate");
 const { httpError } = require("../utils/httpErrors");
-const { requireMembership } = require("../utils/registryAccess");
+const { requireMembership, requireRegistryOpen } = require("../utils/registryAccess");
 const { getItemQuantitySummary } = require("../utils/itemQuantities");
 
 const reservationsRouter = express.Router();
@@ -30,6 +30,7 @@ reservationsRouter.post(
 
     const member = await requireMembership(item.registryId, req.user.id);
     if (member.role !== "viewer") throw httpError(403, "Only viewers can reserve items.");
+    await requireRegistryOpen(item.registryId, "This registry is closed. Gifts can no longer be reserved.");
 
     const pledgeInitiation = await prisma.pledgeInitiation.findUnique({
       where: { itemId },
@@ -83,6 +84,7 @@ reservationsRouter.post("/reservations/:reservationId/prepare", requireAuth, asy
   const r = await prisma.itemReservation.findUnique({ where: { id: reservationId } });
   if (!r) throw httpError(404, "Reservation not found.");
   if (r.userId !== req.user.id) throw httpError(403, "You can only prepare your own reservation.");
+  await requireRegistryOpen(r.registryId, "This registry is closed. Gifts can no longer be marked prepared.");
   if (r.status !== "reserved") throw httpError(409, "Only reserved items can be marked as prepared.");
 
   const updated = await prisma.itemReservation.update({
@@ -98,6 +100,7 @@ reservationsRouter.post("/reservations/:reservationId/cancel", requireAuth, asyn
   const r = await prisma.itemReservation.findUnique({ where: { id: reservationId } });
   if (!r) throw httpError(404, "Reservation not found.");
   if (r.userId !== req.user.id) throw httpError(403, "You can only cancel your own reservation.");
+  await requireRegistryOpen(r.registryId, "This registry is closed. Reservations can no longer be changed.");
   if (r.status === "cancelled") return res.json({ reservation: r });
   if (r.status === "prepared") throw httpError(409, "Prepared reservations cannot be cancelled.");
 
@@ -114,6 +117,7 @@ reservationsRouter.post("/reservations/:reservationId/unprepare", requireAuth, a
   const r = await prisma.itemReservation.findUnique({ where: { id: reservationId } });
   if (!r) throw httpError(404, "Reservation not found.");
   if (r.userId !== req.user.id) throw httpError(403, "You can only change your own reservation.");
+  await requireRegistryOpen(r.registryId, "This registry is closed. Prepared gifts can no longer be changed.");
   if (r.status !== "prepared") throw httpError(409, "Only prepared reservations can be reverted.");
 
   const updated = await prisma.itemReservation.update({
@@ -125,4 +129,3 @@ reservationsRouter.post("/reservations/:reservationId/unprepare", requireAuth, a
 });
 
 module.exports = { reservationsRouter };
-

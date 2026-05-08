@@ -42,8 +42,9 @@ export function EditRegistryPage() {
   const [ownerDisplayName, setOwnerDisplayName] = useState("");
   const [message, setMessage] = useState("");
   const [eventCategory, setEventCategory] = useState("Celebration");
-  const [graduationDate, setGraduationDate] = useState("");
+  const [eventDate, setEventDate] = useState("");
   const [revealDatetime, setRevealDatetime] = useState("");
+  const [closeDatetime, setCloseDatetime] = useState("");
   const [showPledgeTotalBeforeReveal, setShowPledgeTotalBeforeReveal] = useState(true);
   const [showConsideringItems, setShowConsideringItems] = useState(false);
   const [visibilityMode, setVisibilityMode] = useState("private_until_reveal");
@@ -51,6 +52,7 @@ export function EditRegistryPage() {
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState(null);
   const needsRevealDatetime = visibilityMode !== "open_coordination";
+  const needsCloseDatetime = visibilityMode === "open_coordination";
 
   useEffect(() => {
     let cancelled = false;
@@ -74,8 +76,9 @@ export function EditRegistryPage() {
             ? r.eventCategory
             : "Celebration"
         );
-        setGraduationDate(isoToDateInputValue(r.graduationDate));
+        setEventDate(isoToDateInputValue(r.eventDate));
         setRevealDatetime(isoToDatetimeLocalValue(r.revealDatetime));
+        setCloseDatetime(isoToDatetimeLocalValue(r.closeDatetime));
         setShowPledgeTotalBeforeReveal(Boolean(r.showPledgeTotalBeforeReveal));
         setShowConsideringItems(Boolean(r.showConsideringItems));
         setVisibilityMode(r.visibilityMode || "private_until_reveal");
@@ -102,9 +105,12 @@ export function EditRegistryPage() {
           ownerDisplayName: ownerDisplayName.trim(),
           message: message.trim() ? message.trim() : null,
           eventCategory,
-          graduationDate: graduationDate ? new Date(graduationDate).toISOString() : null,
+          eventDate: eventDate ? new Date(eventDate).toISOString() : null,
           ...(needsRevealDatetime && revealDatetime
             ? { revealDatetime: new Date(revealDatetime).toISOString() }
+            : {}),
+          ...(needsCloseDatetime && closeDatetime
+            ? { closeDatetime: new Date(closeDatetime).toISOString() }
             : {}),
           showPledgeTotalBeforeReveal,
           showConsideringItems,
@@ -234,8 +240,8 @@ export function EditRegistryPage() {
               <input
                 type="date"
                 className="mt-1 w-full rounded-[14px] border border-[var(--border-default)] bg-white px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-[rgba(129,160,63,0.18)]"
-                value={graduationDate}
-                onChange={(e) => setGraduationDate(e.target.value)}
+                value={eventDate}
+                onChange={(e) => setEventDate(e.target.value)}
               />
             </label>
 
@@ -250,6 +256,21 @@ export function EditRegistryPage() {
                   className="mt-1 w-full rounded-[14px] border border-[var(--border-default)] bg-white px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-[rgba(129,160,63,0.18)]"
                   value={revealDatetime}
                   onChange={(e) => setRevealDatetime(e.target.value)}
+                  required
+                />
+              </label>
+            ) : null}
+            {needsCloseDatetime ? (
+              <label className="block text-left">
+                <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-secondary)]">
+                  <IconClock className="h-3.5 w-3.5 text-[var(--color-beaver-600)]" aria-hidden />
+                  Registry closes at
+                </div>
+                <input
+                  type="datetime-local"
+                  className="mt-1 w-full rounded-[14px] border border-[var(--border-default)] bg-white px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-[rgba(129,160,63,0.18)]"
+                  value={closeDatetime}
+                  onChange={(e) => setCloseDatetime(e.target.value)}
                   required
                 />
               </label>

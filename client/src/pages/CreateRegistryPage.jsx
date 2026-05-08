@@ -17,14 +17,16 @@ export function CreateRegistryPage() {
   const [ownerDisplayNameOverride, setOwnerDisplayNameOverride] = useState(null);
   const [message, setMessage] = useState("");
   const [eventCategory, setEventCategory] = useState("Celebration");
-  const [graduationDate, setGraduationDate] = useState("");
+  const [eventDate, setEventDate] = useState("");
   const [revealDatetime, setRevealDatetime] = useState("");
+  const [closeDatetime, setCloseDatetime] = useState("");
   const [visibilityMode, setVisibilityMode] = useState("private_until_reveal");
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState(null);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const ownerDisplayName = ownerDisplayNameOverride ?? user?.name?.trim() ?? "";
   const needsRevealDatetime = visibilityMode !== "open_coordination";
+  const needsCloseDatetime = visibilityMode === "open_coordination";
 
   async function onSubmit(e) {
     e.preventDefault();
@@ -38,8 +40,9 @@ export function CreateRegistryPage() {
           ownerDisplayName,
           message: message || null,
           eventCategory,
-          graduationDate: graduationDate ? new Date(graduationDate).toISOString() : null,
+          eventDate: eventDate ? new Date(eventDate).toISOString() : null,
           revealDatetime: needsRevealDatetime && revealDatetime ? new Date(revealDatetime).toISOString() : null,
+          closeDatetime: needsCloseDatetime && closeDatetime ? new Date(closeDatetime).toISOString() : null,
           visibilityMode,
         }),
       });
@@ -130,8 +133,8 @@ export function CreateRegistryPage() {
                 type="date"
                 data-tour-id="registry-main-event-date"
                 className="mt-1 w-full rounded-[14px] border border-[var(--border-default)] bg-white px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-[rgba(129,160,63,0.18)]"
-                value={graduationDate}
-                onChange={(e) => setGraduationDate(e.target.value)}
+                value={eventDate}
+                onChange={(e) => setEventDate(e.target.value)}
               />
             </label>
 
@@ -147,6 +150,21 @@ export function CreateRegistryPage() {
                   className="mt-1 w-full rounded-[14px] border border-[var(--border-default)] bg-white px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-[rgba(129,160,63,0.18)]"
                   value={revealDatetime}
                   onChange={(e) => setRevealDatetime(e.target.value)}
+                  required
+                />
+              </label>
+            ) : null}
+            {needsCloseDatetime ? (
+              <label className="block text-left">
+                <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-secondary)]">
+                  <IconClock className="h-3.5 w-3.5 text-[var(--color-beaver-600)]" aria-hidden />
+                  Registry closes at
+                </div>
+                <input
+                  type="datetime-local"
+                  className="mt-1 w-full rounded-[14px] border border-[var(--border-default)] bg-white px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-[rgba(129,160,63,0.18)]"
+                  value={closeDatetime}
+                  onChange={(e) => setCloseDatetime(e.target.value)}
                   required
                 />
               </label>

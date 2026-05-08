@@ -41,10 +41,11 @@ model Registry {
   joinCode                    String               @unique
   /// Occasion type (Celebration, Graduation, Wedding, …)—see REGISTRY_EVENT_CATEGORIES.
   eventCategory               String               @default("Graduation") @map("event_category") @db.VarChar(48)
-  graduationDate              DateTime?
+  eventDate                   DateTime?            @map("event_date")
   /// Owner-marked completion state. Finished registries remain viewable anytime.
   finishedAt                  DateTime?            @map("finished_at")
   revealDatetime              DateTime
+  closeDatetime               DateTime             @map("close_datetime")
   showPledgeTotalBeforeReveal Boolean              @default(true)
   showConsideringItems        Boolean              @default(false)
   visibilityMode              RegistryVisibilityMode @default(private_until_reveal) @map("visibility_mode")
@@ -76,6 +77,7 @@ model RegistryMember {
   publicDisplayName String?          @map("public_display_name") @db.VarChar(80)
   /// When true, roster shows initials only (no profile photo), including for anonymous-style names.
   hideAvatar      Boolean            @default(false) @map("hide_avatar")
+  endedModalSeenAt DateTime?         @map("ended_modal_seen_at")
   registry        Registry           @relation(fields: [registryId], references: [id])
   user            User               @relation(fields: [userId], references: [id])
 
@@ -319,4 +321,5 @@ enum PledgeContributionStatus {
 enum NotificationType {
   pledge_receipt_uploaded
   pledge_goal_not_reached
+  registry_member_joined
 }

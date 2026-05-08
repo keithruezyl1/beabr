@@ -13,7 +13,6 @@ const { registriesRouter } = require("./routes/registries");
 const { itemsRouter } = require("./routes/items");
 const { reservationsRouter } = require("./routes/reservations");
 const { cashFundsRouter } = require("./routes/cashFunds");
-const { thankYouRouter } = require("./routes/thankYou");
 const { pledgesRouter } = require("./routes/pledges");
 
 const apiLimiter = createApiLimiter();
@@ -79,7 +78,6 @@ function createApp() {
   app.use("/api", reservationsRouter);
   app.use("/api", cashFundsRouter);
   app.use("/api", pledgesRouter);
-  app.use("/api/thank-you", thankYouRouter);
 
   const isProd = config.env === "production";
 

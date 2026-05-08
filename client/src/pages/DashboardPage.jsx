@@ -33,8 +33,8 @@ function formatRevealLines(iso) {
 }
 
 /** Short countdown for upcoming reveal (client-side). */
-function formatRevealCountdown(iso, revealed) {
-  if (revealed) return null;
+function formatCloseCountdown(iso, closed) {
+  if (closed) return null;
   const end = new Date(iso);
   const ms = end.getTime() - Date.now();
   if (ms <= 0) return null;
@@ -79,15 +79,15 @@ function RegistryCardNavWrap({ registryId, ariaLabel, children }) {
 }
 
 function registryCardAriaLabel(registry) {
-  const { date, time } = formatRevealLines(registry.revealDatetime);
+  const { date, time } = formatRevealLines(registry.closeDatetime || registry.revealDatetime);
   const subtitle = registrySubtitle(registry);
   const roster = rosterAriaSnippet(registry);
   return [
     registry.title,
     subtitle,
     roster || null,
-    `Reveal ${date} at ${time}.`,
-    registry.revealed ? "Revealed." : "On-going.",
+    `Registry closes ${date} at ${time}.`,
+    registry.closed ? "Closed." : "Open.",
     "Open registry.",
   ]
     .filter(Boolean)
@@ -96,8 +96,8 @@ function registryCardAriaLabel(registry) {
 
 function RegistryCard({ registry }) {
   const [shareOpen, setShareOpen] = useState(false);
-  const { date, time } = formatRevealLines(registry.revealDatetime);
-  const countdown = formatRevealCountdown(registry.revealDatetime, registry.revealed);
+  const { date, time } = formatRevealLines(registry.closeDatetime || registry.revealDatetime);
+  const countdown = formatCloseCountdown(registry.closeDatetime || registry.revealDatetime, registry.closed);
   const subtitle = registrySubtitle(registry);
   const patterned = registry.role === "owner";
 
@@ -160,12 +160,12 @@ function RegistryCard({ registry }) {
           <div className="flex shrink-0 items-center gap-2">
             <div
               className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-                registry.revealed
+                registry.closed
                   ? "bg-[var(--success-bg)] text-[var(--success-text)]"
                   : "bg-[var(--warning-bg)] text-[var(--warning-text)]"
               }`}
             >
-              {registry.revealed ? "Revealed" : "On-going"}
+              {registry.closed ? "Closed" : "Open"}
             </div>
             <IconChevronRight
               className="h-5 w-5 shrink-0 text-[var(--color-primary-400)] transition-transform duration-200 group-hover/card:translate-x-0.5"
@@ -175,13 +175,13 @@ function RegistryCard({ registry }) {
         </div>
 
         <div className="mt-4 grid grid-cols-1 items-stretch gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(9rem,12.5rem)]">
-          <div className="flex min-h-[5.75rem] min-w-0 items-center gap-3 rounded-[var(--radius-md)] bg-[var(--surface-card-soft)] p-3 ring-1 ring-[var(--border-subtle)]">
+          <div className="flex h-[5.75rem] min-h-[5.75rem] min-w-0 items-center gap-3 overflow-hidden rounded-[var(--radius-md)] bg-[var(--surface-card-soft)] p-3 ring-1 ring-[var(--border-subtle)]">
             <div className="flex shrink-0 flex-col items-center justify-center text-[var(--color-primary-600)]">
               <IconCalendar className="h-5 w-5" aria-hidden />
             </div>
             <div className="min-w-0">
               <div className="text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">
-                {countdown ? `Reveal in ${countdown}` : "Reveal"}
+                {countdown ? `Closes in ${countdown}` : "Closes"}
               </div>
               <div className="mt-0.5 text-sm font-medium text-[var(--text-primary)]">{date}</div>
               <div className="mt-0.5 flex items-center gap-1.5 text-xs text-[var(--text-secondary)]">
@@ -190,7 +190,7 @@ function RegistryCard({ registry }) {
               </div>
             </div>
           </div>
-          <div className="min-h-0 min-w-0">
+          <div className="h-[5.75rem] min-h-[5.75rem] min-w-0">
             <ViewerFacepile
               roster={registry.viewerRoster}
               role={registry.role}

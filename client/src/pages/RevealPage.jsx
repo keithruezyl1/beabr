@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, Navigate, useParams } from "react-router-dom";
 import { apiFetch } from "../services/api";
 import { Card } from "../components/ui/Card.jsx";
 import { Button } from "../components/ui/Button.jsx";
-import { BottomSheet } from "../components/ui/BottomSheet.jsx";
 import { PageHeader, PageSectionTitle } from "../components/ui/PageChrome.jsx";
 import {
   IconArrowLeft,
@@ -53,12 +52,6 @@ export function RevealPage() {
   const [err, setErr] = useState(null);
   const [tick, setTick] = useState(() => Date.now());
 
-  const [composerOpen, setComposerOpen] = useState(false);
-  const [composerTarget, setComposerTarget] = useState(null);
-  const [message, setMessage] = useState("");
-  const [sendBusy, setSendBusy] = useState(false);
-  const [sendErr, setSendErr] = useState(null);
-
   async function refresh() {
     setLoading(true);
     setErr(null);
@@ -85,17 +78,18 @@ export function RevealPage() {
 
   const revealed = registry?.revealed;
   const attributionVisible = Boolean(registry?.attributionVisible);
+  const registryCloseDatetime = registry?.closeDatetime;
 
   useEffect(() => {
-    if (!registry?.revealDatetime || revealed) return undefined;
+    if (!registryCloseDatetime || revealed) return undefined;
     const id = setInterval(() => setTick(Date.now()), 1000);
     return () => clearInterval(id);
-  }, [registry?.revealDatetime, revealed]);
+  }, [registryCloseDatetime, revealed]);
 
   const revealTarget = useMemo(() => {
-    if (!registry?.revealDatetime) return null;
-    return new Date(registry.revealDatetime);
-  }, [registry?.revealDatetime]);
+    if (!registryCloseDatetime) return null;
+    return new Date(registryCloseDatetime);
+  }, [registryCloseDatetime]);
 
   const countdownParts = useMemo(() => {
     if (!revealTarget) return null;
@@ -110,6 +104,7 @@ export function RevealPage() {
       </Card>
     );
   if (!registry) return null;
+  if (registry.closed) return <Navigate to={`/registry/${registryId}`} replace />;
 
   return (
     <div className="space-y-6">
@@ -119,11 +114,11 @@ export function RevealPage() {
         description={
           revealed
             ? registry.role === "owner"
-              ? "Prepared-by names, notes, and pledges are visible. Send thank-you notes from each card when you are ready."
-              : "The registry owner can see who helped. They may send thank-you notes you'll see the next time you open Beabr."
+              ? "Prepared-by names, notes, and pledges are visible for review."
+              : "The registry owner can see who helped with gifts and pledges."
             : attributionVisible
-              ? "This registry uses open coordination, so loved ones can already see who is helping. The date below still marks the reveal moment."
-              : "Loved ones coordinate quietly until the reveal date and time below, then attribution unlocks for the registry owner."
+              ? "This registry uses open coordination, so loved ones can already see who is helping. The date below marks when the registry closes."
+              : "Loved ones coordinate quietly until the registry closes, then attribution unlocks for the registry owner."
         }
         actions={
           <Link to={`/registry/${registryId}`} className="w-full md:w-auto">
@@ -149,7 +144,7 @@ export function RevealPage() {
             </div>
             <p className="mt-2 max-w-prose text-sm text-[var(--text-secondary)]">
               {attributionVisible
-                ? "Names are already visible so everyone can coordinate thoughtful gifts. The countdown still marks the reveal moment."
+                ? "Names are already visible so everyone can coordinate thoughtful gifts. The countdown marks the close time."
                 : "Contributor identities stay hidden until the moment below, then the owner's reveal view updates with names and pledge details."}
             </p>
           </div>
@@ -158,7 +153,7 @@ export function RevealPage() {
               <div className="rounded-[19px] bg-[var(--surface-card)] px-3 py-6 sm:px-5">
                 {countdownParts?.expired ? (
                   <p className="text-center text-sm font-semibold text-[var(--text-primary)]">
-                    Reveal time reached—refresh if this screen did not update yet.
+                    Close time reached. Refresh if this screen did not update yet.
                   </p>
                 ) : (
                   <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-3">
@@ -191,13 +186,13 @@ export function RevealPage() {
               </div>
               <div className="min-w-0">
                 <div className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-beaver-800)]">
-                  Reveal opens
+                  Registry closes at
                 </div>
                 <div className="mt-0.5 text-base font-semibold text-[var(--text-primary)]">
-                  {formatScheduleDate(registry.revealDatetime)}
+                  {formatScheduleDate(registry.closeDatetime)}
                 </div>
                 <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-[var(--text-secondary)]">
-                  <span className="tabular-nums">{formatScheduleTime(registry.revealDatetime)}</span>
+                  <span className="tabular-nums">{formatScheduleTime(registry.closeDatetime)}</span>
                   <span className="text-xs text-[var(--text-muted)]">· Local Time</span>
                 </div>
               </div>
@@ -211,8 +206,7 @@ export function RevealPage() {
             Revealed
           </div>
           <p className="mt-2 text-sm leading-relaxed text-[var(--text-secondary)]">
-            The registry owner can see who helped with gifts and pledges. They may send thank-you notes you'll see when
-            you open Beabr again.
+            The registry owner can see who helped with gifts and pledges.
           </p>
         </Card>
       ) : (
@@ -223,9 +217,7 @@ export function RevealPage() {
               Reveal is ready
             </div>
             <p className="mt-2 text-sm leading-relaxed text-[var(--text-secondary)]">
-              See who prepared each gift and who pledged, including any private notes they left. Use{" "}
-              <span className="font-semibold text-[var(--text-primary)]">Send thank-you note</span> on a card to message
-              someone—notes open for them the next time they open Beabr.
+              See who prepared each gift and who pledged, including any private notes they left.
             </p>
           </Card>
 
@@ -250,24 +242,6 @@ export function RevealPage() {
                           {p.privateNote}
                         </div>
                       ) : null}
-                      <div className="mt-4">
-                        <Button
-                          className="w-full"
-                          onClick={() => {
-                            setComposerTarget({
-                              giverId: p.giver.id,
-                              itemReservationId: p.id,
-                              cashPledgeId: null,
-                              label: `${p.giver.name} • ${p.item.title}`,
-                            });
-                            setMessage("");
-                            setSendErr(null);
-                            setComposerOpen(true);
-                          }}
-                        >
-                          Send thank-you note
-                        </Button>
-                      </div>
                     </Card>
                   ))}
                 </div>
@@ -294,24 +268,6 @@ export function RevealPage() {
                           {p.privateNote}
                         </div>
                       ) : null}
-                      <div className="mt-4">
-                        <Button
-                          className="w-full"
-                          onClick={() => {
-                            setComposerTarget({
-                              giverId: p.giver.id,
-                              itemReservationId: null,
-                              cashPledgeId: p.id,
-                              label: `${p.giver.name} • ${p.fund.title}`,
-                            });
-                            setMessage("");
-                            setSendErr(null);
-                            setComposerOpen(true);
-                          }}
-                        >
-                          Send thank-you note
-                        </Button>
-                      </div>
                     </Card>
                   ))}
                 </div>
@@ -320,61 +276,6 @@ export function RevealPage() {
           </div>
         </div>
       )}
-
-      <BottomSheet
-        open={composerOpen}
-        title="Send thank-you note"
-        onClose={() => {
-          setComposerOpen(false);
-          setComposerTarget(null);
-          setSendErr(null);
-          setMessage("");
-        }}
-      >
-        {composerTarget ? (
-          <div className="space-y-4">
-            <div className="text-xs font-medium text-[var(--text-muted)]">{composerTarget.label}</div>
-            <textarea
-              rows={5}
-              className="w-full resize-none rounded-[14px] border border-[var(--border-default)] bg-white px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-[rgba(129,160,63,0.18)]"
-              placeholder="Thank you so much for…"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-            />
-            {sendErr ? <div className="text-sm text-[var(--danger-text)]">{sendErr.message}</div> : null}
-            <Button
-              className="w-full"
-              disabled={sendBusy || message.trim().length === 0}
-              onClick={async () => {
-                setSendBusy(true);
-                setSendErr(null);
-                try {
-                  await apiFetch("/api/thank-you", {
-                    method: "POST",
-                    body: JSON.stringify({
-                      registryId,
-                      giverId: composerTarget.giverId,
-                      itemReservationId: composerTarget.itemReservationId,
-                      cashPledgeId: composerTarget.cashPledgeId,
-                      message: message.trim(),
-                      status: "sent",
-                    }),
-                  });
-                  setComposerOpen(false);
-                  setComposerTarget(null);
-                  setMessage("");
-                } catch (e) {
-                  setSendErr(e);
-                } finally {
-                  setSendBusy(false);
-                }
-              }}
-            >
-              {sendBusy ? "Sending…" : "Send"}
-            </Button>
-          </div>
-        ) : null}
-      </BottomSheet>
     </div>
   );
 }

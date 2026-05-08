@@ -52,6 +52,15 @@ function IconClock({ className }) {
   );
 }
 
+function IconCheckCircle({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" width="1em" height="1em" fill="none" aria-hidden>
+      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
+      <path d="M8 12.5l2.5 2.5L16.5 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 function IconGift({ className }) {
   return (
     <svg className={className} viewBox="0 0 24 24" width="1em" height="1em" fill="none" aria-hidden>
@@ -1248,7 +1257,11 @@ export function RegistryPage() {
   const [err, setErr] = useState(null);
 
   const [successVariantKey, setSuccessVariantKey] = useState(null);
-  const successVariant = useMemo(() => resolveSuccessModalVariant(successVariantKey), [successVariantKey]);
+  const [endedSuccessModal, setEndedSuccessModal] = useState(null);
+  const successVariant = useMemo(
+    () => endedSuccessModal || resolveSuccessModalVariant(successVariantKey),
+    [endedSuccessModal, successVariantKey]
+  );
   const successModalOpen = Boolean(successVariant);
 
   const [activeItem, setActiveItem] = useState(null);
@@ -1346,6 +1359,7 @@ export function RegistryPage() {
     try {
       const d = await apiFetch(`/api/registries/${registryId}`);
       setData(d);
+      if (d?.registry?.endedSuccessModal) setEndedSuccessModal(d.registry.endedSuccessModal);
     } catch (e) {
       setErr(e);
     } finally {
@@ -1419,18 +1433,20 @@ export function RegistryPage() {
     return () => clearInterval(id);
   }, [countdownModalOpen]);
 
-  const revealTarget = useMemo(() => {
-    if (!data?.registry?.revealDatetime) return null;
-    return new Date(data.registry.revealDatetime);
-  }, [data?.registry?.revealDatetime]);
+  const registryCloseDatetime = data?.registry?.closeDatetime;
+  const closeTarget = useMemo(() => {
+    if (!registryCloseDatetime) return null;
+    return new Date(registryCloseDatetime);
+  }, [registryCloseDatetime]);
 
   const countdownParts = useMemo(() => {
-    if (!revealTarget) return null;
-    return getRemainingParts(revealTarget, countdownTick);
-  }, [revealTarget, countdownTick]);
+    if (!closeTarget) return null;
+    return getRemainingParts(closeTarget, countdownTick);
+  }, [closeTarget, countdownTick]);
 
   const role = data?.registry?.role;
   const revealed = data?.registry?.revealed;
+  const closed = Boolean(data?.registry?.closed);
 
   const title = data?.registry?.title || "Registry";
   const ownerName = data?.registry?.ownerDisplayName || "";
@@ -1440,7 +1456,7 @@ export function RegistryPage() {
     return `${n.split(/\s+/)[0]}'s message`;
   })();
 
-  const canReserve = role === "viewer";
+  const canReserve = role === "viewer" && !closed;
 
   const giftCategoryOptions = useMemo(() => {
     const items = data?.items;
@@ -1546,9 +1562,9 @@ export function RegistryPage() {
 
   /** Pooling money toward this gift only makes sense while quantity is still available to claim. */
   const canGroupPledge = useMemo(() => {
-    if (!activeItem || role !== "viewer") return false;
+    if (!activeItem || role !== "viewer" || closed) return false;
     return (activeItem.totals?.available ?? 0) > 0;
-  }, [activeItem, role]);
+  }, [activeItem, closed, role]);
 
   useEffect(() => {
     if (!canGroupPledge) setPledgeStep(null);
@@ -1832,7 +1848,6 @@ export function RegistryPage() {
         for (const photo of draftItemPhotos) {
           const fd = new FormData();
           fd.set("image", photo);
-          // eslint-disable-next-line no-await-in-loop -- uploads must stay in order per item (max 3)
           await apiFetchForm(`/api/items/${created.item.id}/photo`, fd, { method: "POST" });
         }
       }
@@ -1855,21 +1870,6 @@ export function RegistryPage() {
         document.body.classList.add("beabr-success-modal-open");
         setSuccessVariantKey("item_added");
       }
-    } catch (e) {
-      setActionErr(e);
-    } finally {
-      setActionBusy(false);
-    }
-  }
-
-  async function markPrepared() {
-    if (!activeItem?.myReservation?.id) return;
-    setActionBusy(true);
-    setActionErr(null);
-    try {
-      await apiFetch(`/api/reservations/${activeItem.myReservation.id}/prepare`, { method: "POST" });
-      setActiveItem(null);
-      await refresh();
     } catch (e) {
       setActionErr(e);
     } finally {
@@ -2195,7 +2195,7 @@ export function RegistryPage() {
               </h1>
             </div>
             <div className="flex w-full min-w-0 flex-shrink-0 flex-row flex-nowrap gap-1 sm:gap-2 md:w-auto md:justify-end">
-              {role === "owner" ? (
+              {role === "owner" && !closed ? (
                 <Button
                   data-tour-id="registry-add-item"
                   variant="secondary"
@@ -2214,7 +2214,12 @@ export function RegistryPage() {
                   </span>
                 </Button>
               ) : null}
-              {revealed ? (
+              {closed ? (
+                <div className="inline-flex min-h-[44px] min-w-0 flex-1 items-center justify-center gap-1 rounded-full border border-white/35 bg-white/15 px-2.5 py-2 text-xs font-semibold text-white backdrop-blur-[2px] sm:gap-2 sm:px-4 sm:py-3 sm:text-sm md:flex-initial md:w-auto">
+                  <IconCheckCircle className="h-3.5 w-3.5 shrink-0 text-white sm:h-4 sm:w-4" aria-hidden />
+                  <span>This registry is now closed</span>
+                </div>
+              ) : revealed ? (
                 <Link
                   className="min-w-0 flex-1 md:flex-initial md:w-auto"
                   to={`/registry/${registryId}/reveal`}
@@ -2286,7 +2291,7 @@ export function RegistryPage() {
                   </>
                 ) : null}
               </div>
-              {role === "owner" && data.registry.joinCode ? (
+              {role === "owner" && data.registry.joinCode && !closed ? (
                 <Button
                   data-tour-id="registry-share"
                   type="button"
@@ -2302,9 +2307,9 @@ export function RegistryPage() {
           ) : null}
 
           <div
-            className={`grid gap-3 ${data.registry.graduationDate ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}
+            className={`grid gap-3 ${data.registry.eventDate ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}
           >
-            {data.registry.graduationDate ? (
+            {data.registry.eventDate ? (
               <div className="flex gap-3 rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--surface-card-soft)] p-4">
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-primary-100)] text-[var(--color-primary-700)]">
                   <IconCalendar className="h-5 w-5" aria-hidden />
@@ -2314,7 +2319,7 @@ export function RegistryPage() {
                     {data.registry.eventCategory || "Event"}
                   </div>
                   <div className="mt-0.5 text-base font-semibold text-[var(--text-primary)]">
-                    {formatScheduleDate(data.registry.graduationDate)}
+                    {formatScheduleDate(data.registry.eventDate)}
                   </div>
                 </div>
               </div>
@@ -2340,14 +2345,14 @@ export function RegistryPage() {
               </div>
               <div className="min-w-0 flex-1">
                 <div className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-beaver-800)]">
-                  Reveal opens
+                  {closed ? "This registry is now closed" : "Registry closes at"}
                 </div>
                 <div className="mt-0.5 text-base font-semibold text-[var(--text-primary)]">
-                  {formatScheduleDate(data.registry.revealDatetime)}
+                  {formatScheduleDate(data.registry.closeDatetime)}
                 </div>
                 <div className="mt-1.5 flex items-center gap-2 text-sm text-[var(--text-secondary)]">
                   <IconClock className="h-4 w-4 shrink-0 text-[var(--text-muted)]" aria-hidden />
-                  <span className="tabular-nums">{formatScheduleTime(data.registry.revealDatetime)}</span>
+                  <span className="tabular-nums">{formatScheduleTime(data.registry.closeDatetime)}</span>
                   <span className="text-xs text-[var(--text-muted)]">Local Time</span>
                 </div>
               </div>
@@ -2535,7 +2540,7 @@ export function RegistryPage() {
                     </div>
                   </div>
                 </div>
-                {role === "owner" ? (
+                {role === "owner" && !closed ? (
                   <Button
                     data-tour-id="registry-add-item"
                     className="w-full shrink-0 sm:w-auto"
@@ -2590,8 +2595,9 @@ export function RegistryPage() {
                   "inline-flex max-w-full items-center rounded-full bg-[var(--color-primary-100)] px-3 py-1.5 text-xs font-medium leading-snug text-[var(--color-primary-800)] ring-1 ring-[rgba(129,160,63,0.22)]";
                 const showItemDetailPills = Boolean(categoryTrimmed) || attrRows.length > 0;
                 const cardPreviewImage = itemGalleryUrls(item)[0] ?? null;
-                const showExternal = Boolean(item.externalLink);
-                const showOwnerEdit = role === "owner";
+                const itemActionsDisabled = closed;
+                const showExternal = Boolean(item.externalLink) && !itemActionsDisabled;
+                const showOwnerEdit = role === "owner" && !itemActionsDisabled;
                 const ownerCoordinationStatus = showOwnerEdit
                   ? giftItemOpenCoordinationStatusMeta(item)
                   : null;
@@ -2805,9 +2811,10 @@ export function RegistryPage() {
                         </div>
                       ) : null}
                     </button>
-                    <div
-                      className={`flex gap-2 border-t border-[var(--border-subtle)] bg-[var(--surface-card-soft)]/90 px-4 py-3 ${footerOneAction ? "flex-col" : ownerEditWithLink || viewerReserveWithExternal ? "min-w-0 flex-row items-stretch" : "flex-wrap items-center"}`}
-                    >
+                    {footerActionCount > 0 ? (
+                      <div
+                        className={`flex gap-2 border-t border-[var(--border-subtle)] bg-[var(--surface-card-soft)]/90 px-4 py-3 ${footerOneAction ? "flex-col" : ownerEditWithLink || viewerReserveWithExternal ? "min-w-0 flex-row items-stretch" : "flex-wrap items-center"}`}
+                      >
                       {showOwnerEdit ? (
                         <Button
                           type="button"
@@ -3004,7 +3011,8 @@ export function RegistryPage() {
                           ) : null}
                         </>
                       ) : null}
-                    </div>
+                      </div>
+                    ) : null}
                   </Card>
                 );
               })}
@@ -3014,6 +3022,7 @@ export function RegistryPage() {
       </div>
 
       {role === "owner" &&
+      !closed &&
       !fabOpen &&
       !activeItem &&
       !countdownModalOpen &&
@@ -3155,7 +3164,7 @@ export function RegistryPage() {
               </div>
             ) : null}
 
-            {role === "owner" && editItem ? (
+            {role === "owner" && editItem && !closed ? (
               <Card className="p-4">
                 <div className="text-sm font-semibold">Edit item</div>
                 <div className="mt-3 space-y-3">
@@ -3169,7 +3178,7 @@ export function RegistryPage() {
                         type="file"
                         accept="image/*"
                         className="hidden"
-                        disabled={actionBusy}
+                        disabled={actionBusy || closed}
                         onChange={(e) => {
                           const f = e.target.files?.[0] || null;
                           e.target.value = "";
@@ -3181,7 +3190,7 @@ export function RegistryPage() {
                           compact
                           inputId={`edit-item-photo-add-${activeItem.id}`}
                           label="Add photo"
-                          disabled={actionBusy}
+                          disabled={actionBusy || closed}
                           onPick={(f) => {
                             if (f) void addOwnerItemPhotoFromFile(f);
                           }}
@@ -3202,7 +3211,7 @@ export function RegistryPage() {
                                 />
                                 <button
                                   type="button"
-                                  disabled={actionBusy}
+                                  disabled={actionBusy || closed}
                                   className="absolute inset-0 z-[1] rounded-[inherit] outline-none ring-inset hover:bg-transparent focus-visible:z-[2] focus-visible:ring-2 focus-visible:ring-[var(--color-primary-500)]"
                                   onClick={() =>
                                     setImageLightbox({ urls: sheetGalleryUrls, title: activeItem.title })
@@ -3216,7 +3225,7 @@ export function RegistryPage() {
                                 >
                                   <button
                                     type="button"
-                                    disabled={actionBusy}
+                                    disabled={actionBusy || closed}
                                     aria-label={`Remove photo ${idx + 1}`}
                                     className="pointer-events-auto mt-[-1px] flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--danger-bg)] text-xl font-semibold leading-none text-[var(--danger-text)] shadow-[var(--shadow-sm)] outline-none ring-2 ring-[rgba(155,28,28,0.35)] hover:bg-[rgba(253,232,232,0.92)] hover:scale-105 disabled:opacity-45 focus-visible:ring-4 focus-visible:ring-[rgba(155,28,28,0.38)] motion-safe:transition"
                                     title="Remove this photo"
@@ -3232,7 +3241,7 @@ export function RegistryPage() {
                                 {/* Touch-first: persistent corner remove (overlay block is hidden on hover:none) */}
                                 <button
                                   type="button"
-                                  disabled={actionBusy}
+                                  disabled={actionBusy || closed}
                                   aria-label={`Remove photo ${idx + 1}`}
                                   title="Remove this photo"
                                   className="[@media(hover:hover)]:hidden absolute right-1 top-1 z-[4] flex h-9 min-h-[36px] w-9 min-w-[36px] items-center justify-center rounded-full bg-[var(--danger-bg)] text-lg font-semibold leading-none text-[var(--danger-text)] shadow-[var(--shadow-sm)] outline-none ring-2 ring-[rgba(155,28,28,0.42)] disabled:opacity-45 focus-visible:z-[6] focus-visible:ring-[3px]"
@@ -3250,7 +3259,7 @@ export function RegistryPage() {
                                   {idx > 0 ? (
                                     <button
                                       type="button"
-                                      disabled={actionBusy}
+                                      disabled={actionBusy || closed}
                                       className="min-h-[32px] flex-1 rounded-md border border-[var(--border-default)] bg-white px-1 text-[11px] font-semibold text-[var(--text-secondary)]"
                                       onClick={() => void reorderOwnerItemPhoto(idx, -1)}
                                       aria-label="Move photo earlier"
@@ -3261,7 +3270,7 @@ export function RegistryPage() {
                                   {idx < sheetGalleryUrls.length - 1 ? (
                                     <button
                                       type="button"
-                                      disabled={actionBusy}
+                                      disabled={actionBusy || closed}
                                       className="min-h-[32px] flex-1 rounded-md border border-[var(--border-default)] bg-white px-1 text-[11px] font-semibold text-[var(--text-secondary)]"
                                       onClick={() => void reorderOwnerItemPhoto(idx, 1)}
                                       aria-label="Move photo later"
@@ -3279,7 +3288,7 @@ export function RegistryPage() {
                               squareThumb
                               inputId={`edit-item-photo-add-${activeItem.id}`}
                               label={`Add photo · ${sheetGalleryUrls.length}/${MAX_ITEM_PHOTOS}`}
-                              disabled={actionBusy}
+                              disabled={actionBusy || closed}
                               onPick={(f) => {
                                 if (f) void addOwnerItemPhotoFromFile(f);
                               }}
@@ -3372,11 +3381,16 @@ export function RegistryPage() {
                     </span>
                   </label>
                   {actionErr ? <div className="text-sm text-[var(--danger-text)]">{actionErr.message}</div> : null}
-                  <Button className="w-full" onClick={saveItemEdits} disabled={actionBusy}>
+                  {closed ? (
+                    <div className="rounded-[var(--radius-md)] bg-[var(--surface-card-soft)] px-3 py-2 text-center text-xs leading-relaxed text-[var(--text-muted)] ring-1 ring-[var(--border-subtle)]">
+                      This registry is closed. Gift items can no longer be changed.
+                    </div>
+                  ) : null}
+                  <Button className="w-full" onClick={saveItemEdits} disabled={actionBusy || closed}>
                     Save
                   </Button>
                   {(activeItem.totals?.claimed ?? 0) === 0 && !activeItem.hasPledge ? (
-                    <Button className="w-full" variant="danger" onClick={archiveActiveItem} disabled={actionBusy}>
+                    <Button className="w-full" variant="danger" onClick={archiveActiveItem} disabled={actionBusy || closed}>
                       Archive gift
                     </Button>
                   ) : (
@@ -3990,7 +4004,7 @@ export function RegistryPage() {
       </BottomSheet>
 
       <BottomSheet
-        open={fabOpen}
+        open={fabOpen && role === "owner" && !closed}
         title="Add gift item"
         variant="modal"
         showCloseIcon={false}
@@ -4191,7 +4205,12 @@ export function RegistryPage() {
             </span>
           </label>
           {actionErr ? <div className="text-sm text-[var(--danger-text)]">{actionErr.message}</div> : null}
-          <Button data-tour-id="registry-item-submit" type="submit" className="w-full" disabled={actionBusy}>
+          {closed ? (
+            <div className="rounded-[var(--radius-md)] bg-[var(--surface-card-soft)] px-3 py-2 text-center text-xs leading-relaxed text-[var(--text-muted)] ring-1 ring-[var(--border-subtle)]">
+              This registry is closed. Items can no longer be added.
+            </div>
+          ) : null}
+          <Button data-tour-id="registry-item-submit" type="submit" className="w-full" disabled={actionBusy || closed}>
             <span className="mr-1.5 text-lg font-light leading-none" aria-hidden>
               +
             </span>
@@ -4203,7 +4222,7 @@ export function RegistryPage() {
       <BottomSheet
         variant="modal"
         open={countdownModalOpen}
-        title="Countdown to reveal"
+        title="Countdown to close"
         onClose={() => setCountdownModalOpen(false)}
       >
         <div className="space-y-6">
@@ -4211,17 +4230,13 @@ export function RegistryPage() {
             <div className="rounded-[19px] bg-[var(--surface-card)] px-3 py-6 sm:px-5">
               {countdownParts?.expired ? (
                 <div className="space-y-3 text-center">
-                  <p className="text-sm font-semibold text-[var(--text-primary)]">Reveal time reached</p>
+                  <p className="text-sm font-semibold text-[var(--text-primary)]">This registry is now closed</p>
                   <p className="text-sm text-[var(--text-secondary)]">
-                    Open the reveal page to see contributor details (if your device clock matches the server).
+                    You can still view the registry items and details, but gift actions are no longer available.
                   </p>
-                  <Link
-                    to={`/registry/${registryId}/reveal`}
-                    className="block"
-                    onClick={() => setCountdownModalOpen(false)}
-                  >
-                    <Button className="w-full">Open reveal</Button>
-                  </Link>
+                  <Button className="w-full" onClick={() => setCountdownModalOpen(false)}>
+                    Back to registry
+                  </Button>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-3">
@@ -4252,15 +4267,15 @@ export function RegistryPage() {
             <IconCalendar className="mt-0.5 h-5 w-5 shrink-0 text-[var(--color-primary-600)]" aria-hidden />
             <div className="min-w-0">
               <div className="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">
-                Scheduled reveal
+                Scheduled close
               </div>
               <div className="mt-1 text-sm font-semibold leading-snug text-[var(--text-primary)]">
-                {formatScheduleDate(data.registry.revealDatetime)}
+                {formatScheduleDate(data.registry.closeDatetime)}
               </div>
               <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-[var(--text-secondary)]">
                 <span className="inline-flex items-center gap-1.5">
                   <IconClock className="h-4 w-4 text-[var(--text-muted)]" aria-hidden />
-                  <span className="tabular-nums">{formatScheduleTime(data.registry.revealDatetime)}</span>
+                  <span className="tabular-nums">{formatScheduleTime(data.registry.closeDatetime)}</span>
                 </span>
                 <span className="text-xs text-[var(--text-muted)]">· Local Timezone</span>
               </div>
@@ -4269,10 +4284,10 @@ export function RegistryPage() {
         </div>
       </BottomSheet>
 
-      {role === "owner" && data.registry.joinCode ? (
+      {role === "owner" && data.registry.joinCode && !closed ? (
         <ShareInviteModal
           joinCode={data.registry.joinCode}
-          open={shareInviteOpen}
+          open={shareInviteOpen && !closed}
           onClose={() => setShareInviteOpen(false)}
         />
       ) : null}
@@ -4290,8 +4305,14 @@ export function RegistryPage() {
         title={successVariant?.title || "Success"}
         subtitle={successVariant?.subtitle || ""}
         ctaLabel={successVariant?.ctaLabel || "Continue"}
-        onCta={() => setSuccessVariantKey(null)}
-        onClose={() => setSuccessVariantKey(null)}
+        onCta={() => {
+          setSuccessVariantKey(null);
+          setEndedSuccessModal(null);
+        }}
+        onClose={() => {
+          setSuccessVariantKey(null);
+          setEndedSuccessModal(null);
+        }}
       />
     </div>
   );
