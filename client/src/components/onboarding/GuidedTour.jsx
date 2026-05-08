@@ -137,15 +137,25 @@ function routeMatches(step, pathname) {
   return true;
 }
 
+function isVisibleTourTarget(el) {
+  if (!el) return false;
+  if (el.matches?.('input[type="hidden"], .hidden, [hidden]')) return false;
+  const style = window.getComputedStyle(el);
+  if (style.display === "none" || style.visibility === "hidden") return false;
+  const rect = el.getBoundingClientRect();
+  return rect.width > 0 && rect.height > 0;
+}
+
 function findTarget(targetId) {
   if (!targetId) return null;
   const el = document.querySelector(`[data-tour-id="${targetId}"]`);
   if (!el) return null;
   if (el.dataset.tourHighlight === "self") return el;
-  if (el.matches("input, select, textarea")) return el.closest("label") || el;
-  const control = el.querySelector("input, select, textarea");
+  if (el.matches("input, select, textarea")) return isVisibleTourTarget(el) ? el.closest("label") || el : null;
+  const control = Array.from(el.querySelectorAll("input, select, textarea")).find(isVisibleTourTarget);
   if (control) return control.closest("label") || control;
-  return el.querySelector("button, a, [role='button']") || el;
+  const action = Array.from(el.querySelectorAll("button, a, [role='button']")).find(isVisibleTourTarget);
+  return action || el;
 }
 
 function clampStepIndex(value) {
