@@ -10,40 +10,6 @@ import peek from "../assets/peek.png";
 const inputClassName =
   "mt-1 w-full rounded-[14px] border border-[var(--border-default)] bg-white px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-[rgba(129,160,63,0.18)]";
 
-function GoogleSignInButton({ href }) {
-  return (
-    <a href={href} className="block">
-      <button
-        type="button"
-        className="inline-flex w-full items-center justify-center gap-3 rounded-[999px] border border-[var(--border-default)] bg-white px-4 py-3 text-sm font-semibold text-[var(--text-primary)] shadow-[var(--shadow-xs)] transition hover:bg-[var(--color-neutral-100)] active:scale-[0.99]"
-      >
-        <span aria-hidden className="grid h-5 w-5 place-items-center">
-          <svg width="18" height="18" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-            <path
-              fill="#EA4335"
-              d="M24 9.5c3.2 0 6.1 1.1 8.4 3.1l6.3-6.3C34.8 2.6 29.7.5 24 .5 14.6.5 6.5 6 2.6 14.1l7.3 5.7C11.7 13.5 17.4 9.5 24 9.5z"
-            />
-            <path
-              fill="#4285F4"
-              d="M46.1 24.5c0-1.6-.1-2.8-.4-4.1H24v7.7h12.6c-.3 2-1.6 5-4.6 7.1l7.1 5.5c4.3-4 7-9.9 7-17.2z"
-            />
-            <path
-              fill="#FBBC05"
-              d="M9.9 28.7c-.5-1.5-.8-3.1-.8-4.7s.3-3.2.8-4.7l-7.3-5.7C1.2 16.6.5 20.1.5 24s.7 7.4 2.1 10.4l7.3-5.7z"
-            />
-            <path
-              fill="#34A853"
-              d="M24 47.5c5.7 0 10.5-1.9 14-5.2l-7.1-5.5c-1.9 1.3-4.5 2.2-6.9 2.2-6.6 0-12.2-4-14.1-9.6l-7.3 5.7C6.5 42 14.6 47.5 24 47.5z"
-            />
-            <path fill="none" d="M0 0h48v48H0z" />
-          </svg>
-        </span>
-        <span>Sign in with Google</span>
-      </button>
-    </a>
-  );
-}
-
 function normalizeLoginErrorMessage(error) {
   const message = String(error?.message || "").trim();
   const lower = message.toLowerCase();
@@ -66,19 +32,19 @@ export function LoginPage() {
   const toast = useToast();
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
-  const [step, setStep] = useState("email"); // email | otp
   const [busy, setBusy] = useState(false);
+  const [sendBusy, setSendBusy] = useState(false);
 
-  async function onEmailLogin(e) {
-    e.preventDefault();
-    setBusy(true);
+  async function onSendCode(e) {
+    e?.preventDefault?.();
+    setSendBusy(true);
     try {
       await sendEmailOtp(email);
-      setStep("otp");
+      toast.success(`We sent a sign-in code to ${email}.`);
     } catch (e2) {
       toast.caution(normalizeLoginErrorMessage(e2));
     } finally {
-      setBusy(false);
+      setSendBusy(false);
     }
   }
 
@@ -108,7 +74,7 @@ export function LoginPage() {
         <Card className="w-full p-5">
           <form
             className="space-y-3"
-            onSubmit={step === "email" ? onEmailLogin : onVerifyOtp}
+            onSubmit={onVerifyOtp}
           >
             <label className="block text-left">
               <div className="text-xs font-semibold text-[var(--text-secondary)]">Email</div>
@@ -120,29 +86,34 @@ export function LoginPage() {
                 autoComplete="email"
                 placeholder="you@example.com"
                 required
-                disabled={step !== "email"}
               />
             </label>
-            {step === "otp" ? (
-              <label className="block text-left">
-                <div className="text-xs font-semibold text-[var(--text-secondary)]">
-                  6-digit code
-                </div>
-                <input
-                  inputMode="numeric"
-                  className={inputClassName}
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
-                  placeholder="123456"
-                  required
-                />
-                <div className="mt-1 text-xs text-[var(--text-muted)]">
-                  We emailed a one-time code to {email}.
-                </div>
-              </label>
-            ) : null}
+            <label className="block text-left">
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-xs font-semibold text-[var(--text-secondary)]">6-digit code</div>
+                <button
+                  type="button"
+                  className="text-xs font-semibold text-[var(--color-primary-700)] transition hover:text-[var(--color-primary-800)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(129,160,63,0.35)]"
+                  onClick={onSendCode}
+                  disabled={sendBusy || busy}
+                >
+                  {sendBusy ? "Sending..." : "Send a new code"}
+                </button>
+              </div>
+              <input
+                inputMode="numeric"
+                className={inputClassName}
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                placeholder="123456"
+                required
+              />
+              <div className="mt-1 text-xs leading-relaxed text-[var(--text-muted)]">
+                Enter a code you already received, or send a new one to this email.
+              </div>
+            </label>
           <Button type="submit" className="w-full">
-            {busy ? "Working..." : step === "email" ? "Send code" : "Verify code"}
+            {busy ? "Verifying..." : "Verify code"}
           </Button>
 
           <div className="flex items-center gap-3 py-1">
