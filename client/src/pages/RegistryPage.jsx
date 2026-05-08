@@ -1349,7 +1349,6 @@ export function RegistryPage() {
   const [contribAmount, setContribAmount] = useState("");
   const [receiptFile, setReceiptFile] = useState(null);
   const [confirmContributionSent, setConfirmContributionSent] = useState(false);
-  const canShareInvite = role === "owner" && Boolean(data?.registry?.joinCode) && !closed;
   /** Object URL for decrypted pledge QR (`/pledge/qr-image`); revoked on cleanup. */
   const [pledgeQrBlobUrl, setPledgeQrBlobUrl] = useState(null);
   const [itemSheetScrollToPledge, setItemSheetScrollToPledge] = useState(false);
@@ -1449,6 +1448,7 @@ export function RegistryPage() {
   const role = data?.registry?.role;
   const revealed = data?.registry?.revealed;
   const closed = Boolean(data?.registry?.closed);
+  const canShareInvite = role === "owner" && Boolean(data?.registry?.joinCode) && !closed;
 
   const title = data?.registry?.title || "Registry";
   const ownerName = data?.registry?.ownerDisplayName || "";
