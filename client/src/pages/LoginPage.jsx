@@ -32,19 +32,20 @@ export function LoginPage() {
   const toast = useToast();
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
+  const [step, setStep] = useState("email"); // email | otp
   const [busy, setBusy] = useState(false);
-  const [sendBusy, setSendBusy] = useState(false);
 
   async function onSendCode(e) {
     e?.preventDefault?.();
-    setSendBusy(true);
+    setBusy(true);
+    setStep("otp");
     try {
       await sendEmailOtp(email);
       toast.success(`We sent a sign-in code to ${email}.`);
     } catch (e2) {
       toast.caution(normalizeLoginErrorMessage(e2));
     } finally {
-      setSendBusy(false);
+      setBusy(false);
     }
   }
 
@@ -74,7 +75,7 @@ export function LoginPage() {
         <Card className="w-full p-5">
           <form
             className="space-y-3"
-            onSubmit={onVerifyOtp}
+            onSubmit={step === "email" ? onSendCode : onVerifyOtp}
           >
             <label className="block text-left">
               <div className="text-xs font-semibold text-[var(--text-secondary)]">Email</div>
@@ -88,32 +89,23 @@ export function LoginPage() {
                 required
               />
             </label>
-            <label className="block text-left">
-              <div className="flex items-center justify-between gap-3">
-                <div className="text-xs font-semibold text-[var(--text-secondary)]">6-digit code</div>
-                <button
-                  type="button"
-                  className="text-xs font-semibold text-[var(--color-primary-700)] transition hover:text-[var(--color-primary-800)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(129,160,63,0.35)]"
-                  onClick={onSendCode}
-                  disabled={sendBusy || busy}
-                >
-                  {sendBusy ? "Sending..." : "Send a new code"}
-                </button>
-              </div>
-              <input
-                inputMode="numeric"
-                className={inputClassName}
-                value={otp}
-                onChange={(e) => setOtp(e.target.value)}
-                placeholder="123456"
-                required
-              />
-              <div className="mt-1 text-xs leading-relaxed text-[var(--text-muted)]">
-                Enter a code you already received, or send a new one to this email.
-              </div>
-            </label>
+            {step === "otp" ? (
+              <label className="block text-left">
+                <div className="text-xs font-semibold text-[var(--text-secondary)]">
+                  6-digit code
+                </div>
+                <input
+                  inputMode="numeric"
+                  className={inputClassName}
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  placeholder="123456"
+                  required
+                />
+              </label>
+            ) : null}
           <Button type="submit" className="w-full">
-            {busy ? "Verifying..." : "Verify code"}
+            {busy ? "Working..." : step === "email" ? "Send code" : "Verify code"}
           </Button>
 
           <div className="flex items-center gap-3 py-1">
