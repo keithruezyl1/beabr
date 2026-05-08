@@ -1,4 +1,4 @@
-import { useId, useState } from "react";
+﻿import { useId, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiFetch } from "../services/api";
 import { Button } from "../components/ui/Button.jsx";
@@ -27,6 +27,13 @@ export function CreateRegistryPage() {
   const ownerDisplayName = ownerDisplayNameOverride ?? user?.name?.trim() ?? "";
   const needsRevealDatetime = visibilityMode !== "open_coordination";
   const needsCloseDatetime = visibilityMode === "open_coordination";
+
+  function handleVisibilityModeChange(nextVisibilityMode) {
+    if (nextVisibilityMode === "open_coordination" && revealDatetime) {
+      setCloseDatetime(revealDatetime);
+    }
+    setVisibilityMode(nextVisibilityMode);
+  }
 
   async function onSubmit(e) {
     e.preventDefault();
@@ -118,7 +125,7 @@ export function CreateRegistryPage() {
               rows={3}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="Thank you for celebrating this milestone with me…"
+              placeholder="Thank you for celebrating this milestone with meâ€¦"
             />
             </label>
           </div>
@@ -127,7 +134,7 @@ export function CreateRegistryPage() {
             <label className="block text-left">
               <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-secondary)]">
                 <IconCalendar className="h-3.5 w-3.5 text-[var(--color-primary-600)]" aria-hidden />
-                Main event date (optional)
+                Main event date
               </div>
               <input
                 type="date"
@@ -215,7 +222,7 @@ export function CreateRegistryPage() {
                       name="visibilityMode"
                       value={option.value}
                       checked={checked}
-                      onChange={(e) => setVisibilityMode(e.target.value)}
+                      onChange={(e) => handleVisibilityModeChange(e.target.value)}
                       className="mt-1 h-4 w-4 shrink-0 text-[var(--color-primary-600)] focus:ring-[rgba(129,160,63,0.35)]"
                     />
                     <span className="min-w-0">
@@ -246,7 +253,7 @@ export function CreateRegistryPage() {
           {err ? <div className="text-sm text-[var(--danger-text)]">{err.message}</div> : null}
 
           <Button data-tour-id="registry-create-submit" className="w-full" type="submit" disabled={loading || !termsAccepted}>
-            {loading ? "Creating…" : "Create registry"}
+            {loading ? "Creatingâ€¦" : "Create registry"}
           </Button>
           </div>
         </form>
@@ -254,3 +261,4 @@ export function CreateRegistryPage() {
     </div>
   );
 }
+

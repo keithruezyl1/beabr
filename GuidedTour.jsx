@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { useLocation, useNavigate } from "react-router-dom";
 import celebrate from "../../assets/celebrate.png";
@@ -24,7 +24,6 @@ const ADD_ITEM_STEP_TARGETS = new Set([
   "registry-item-price",
   "registry-item-category",
   "registry-item-category-details",
-  "registry-item-url",
   "registry-item-submit",
 ]);
 
@@ -32,7 +31,6 @@ const ADD_ITEM_LOWER_BUBBLE_TARGETS = new Set([
   "registry-item-price",
   "registry-item-category",
   "registry-item-category-details",
-  "registry-item-url",
 ]);
 
 const ADD_ITEM_GIFT_NAME_MOBILE_BUBBLE_CLASS = "mb-[18vh] sm:mb-[16vh]";
@@ -119,8 +117,9 @@ const steps = [
     waitForClick: true,
   },
   {
-    body: "This is where you'll add your item's gift details.",
+    body: "Let's add your first item on the registry!",
     routeMatch: "/registry/",
+    dimGradient: true,
     closeAddItemOnBack: true,
     nextLabel: "Next",
   },
@@ -150,12 +149,7 @@ const steps = [
     routeMatch: "/registry/",
   },
   {
-    body: "If you want this item to be bought from somewhere specific, you can also attach a direct link to that gift!",
-    targetId: "registry-item-url",
-    routeMatch: "/registry/",
-  },
-  {
-    body: "Looks like you're ready! Click Add Item to finish.",
+    body: "When everything looks good, click Add Item.",
     targetId: "registry-item-submit",
     routeMatch: "/registry/",
     waitForClick: true,
@@ -173,7 +167,7 @@ const steps = [
     routeMatch: "/registry/",
     closeShareInviteOnNext: true,
     closeShareInviteOnBack: true,
-    blurBackdrop: true,
+    noDim: true,
   },
   {
     body: "We're at the end of the tour! Now you've got your first registry, added your first item, and ready to share your list to anyone you'd like.\nIf you need me, I can always give you another tour! Just click Profile > Settings > Guided Tour whenever you need to.\n\nThank you for using Beabr, {name}!",
@@ -331,7 +325,6 @@ export function GuidedTour() {
     return step.highlightIds || (highlightTargetId ? [highlightTargetId] : []);
   }, [highlightTargetId, step.highlightIds, step.targetId]);
   const isRegistryCreateSubmitStep = step.targetId === "registry-create-submit";
-  const isRegistryItemSubmitStep = step.targetId === "registry-item-submit";
   const isCenteredPairStep = Boolean(step.dimGradient && highlightTargetIds.length === 0);
   const canSkip = stepIndex > 1;
   const characterSrc = step.character === "celebrate" ? celebrate : stepIndex % 2 === 0 ? talking1 : talking2;
@@ -648,8 +641,7 @@ export function GuidedTour() {
   const waitingForRegistryTarget = Boolean(step.routeMatch === "/registry/" && targetMissing && !canNavigate);
   const autoAdvanceOnClick = Boolean(step.waitForClick && !canNavigate);
   const waitingForCreatedRegistry = Boolean(step.routeMatch === "/registry/" && location.pathname === "/success-modal");
-  const shouldSuppressDim = Boolean(step.noDim);
-  const shouldBlurBackdrop = Boolean(step.blurBackdrop);
+  const shouldSuppressDim = Boolean(step.noDim && step.targetId !== "share-copy-link");
   if (waitingForCreatedRegistry || successModalOpen) return null;
 
   return createPortal(
@@ -662,13 +654,7 @@ export function GuidedTour() {
       ) : null}
       {!targetStyle && !step.dimGradient && !shouldSuppressDim ? (
         <div
-          className={`pointer-events-none fixed inset-0 z-[160] bg-[rgba(29,33,26,0.46)] ${shouldBlurBackdrop ? "backdrop-blur-[3px]" : ""}`}
-          aria-hidden
-        />
-      ) : null}
-      {targetStyle && shouldBlurBackdrop ? (
-        <div
-          className="pointer-events-none fixed inset-0 z-[160] bg-[rgba(29,33,26,0.32)] backdrop-blur-[3px]"
+          className="pointer-events-none fixed inset-0 z-[160] bg-[rgba(29,33,26,0.46)]"
           aria-hidden
         />
       ) : null}
@@ -693,7 +679,7 @@ export function GuidedTour() {
           <div className={`pointer-events-auto relative z-[4] order-1 mx-auto w-[90%] min-w-0 rounded-[20px] bg-white px-4 py-3.5 text-left shadow-[var(--shadow-lg)] ring-1 ring-[var(--border-subtle)] sm:w-[86%] sm:px-5 sm:py-5 md:ml-0 md:mr-auto md:w-[58%] md:rounded-[26px] lg:w-[60%] ${bubblePlacementClass}`}>
             <span
               className={`absolute bottom-[-0.72rem] right-10 h-6 w-6 rotate-45 rounded-br-[6px] bg-white md:bottom-8 md:right-[-0.65rem] md:h-8 md:w-8 ${
-                isRegistryItemSubmitStep ? "hidden" : isRegistryCreateSubmitStep ? "hidden md:block" : ""
+                isRegistryCreateSubmitStep ? "hidden md:block" : ""
               }`}
               aria-hidden
             />
@@ -776,7 +762,7 @@ export function GuidedTour() {
             className={`pointer-events-none absolute bottom-[-12vh] left-[78%] z-[3] h-[25vh] max-h-[15rem] w-auto -translate-x-1/2 object-contain drop-shadow-[0_18px_28px_rgba(29,33,26,0.28)] sm:bottom-[-12vh] sm:left-[62%] sm:h-[30vh] sm:max-h-[17rem] md:bottom-[-16vh] md:left-auto md:h-[38vh] md:max-h-[25rem] md:translate-x-0 lg:h-[40vh] lg:max-h-[29rem] ${
               isCenteredPairStep ? "md:right-[3%]" : "md:right-0"
             } ${
-              isRegistryItemSubmitStep ? "hidden" : isRegistryCreateSubmitStep ? "hidden md:block" : ""
+              isRegistryCreateSubmitStep ? "hidden md:block" : ""
             }`}
             aria-hidden
           />
@@ -819,6 +805,3 @@ export function GuidedTour() {
     document.body
   );
 }
-
-
-

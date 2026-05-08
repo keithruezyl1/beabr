@@ -4160,7 +4160,7 @@ export function RegistryPage() {
               ))}
             </div>
           ) : null}
-          <label className="block">
+          <label data-tour-id="registry-item-url" className="block">
             <div className="text-xs font-semibold text-[var(--text-secondary)]">Link/URL to item</div>
             <input
               type="text"

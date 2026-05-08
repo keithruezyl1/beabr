@@ -235,7 +235,7 @@ export function EditRegistryPage() {
             <label className="block text-left">
               <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-secondary)]">
                 <IconCalendar className="h-3.5 w-3.5 text-[var(--color-primary-600)]" aria-hidden />
-                Main event date (optional)
+                Main event date
               </div>
               <input
                 type="date"
