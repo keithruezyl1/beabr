@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "../components/ui/Button.jsx";
 import { BottomSheet } from "../components/ui/BottomSheet.jsx";
@@ -10,9 +10,10 @@ import { useAuth } from "../state/AuthProvider.jsx";
 import { apiFetch, apiFetchForm } from "../services/api";
 import { APP_VERSION } from "../version.js";
 import peekDecoration from "../assets/peek.png";
+import { getDisplayAvatarUrl } from "../utils/avatar.js";
 
 function formatRegistryDate(iso) {
-  if (!iso) return "—";
+  if (!iso) return "â€”";
   try {
     return new Date(iso).toLocaleDateString(undefined, {
       year: "numeric",
@@ -20,7 +21,7 @@ function formatRegistryDate(iso) {
       day: "numeric",
     });
   } catch {
-    return "—";
+    return "â€”";
   }
 }
 
@@ -391,13 +392,7 @@ export function SettingsPage() {
                 aria-label="Change profile photo"
                 title="Change profile photo"
               >
-                {user?.avatarUrl ? (
-                  <img src={user.avatarUrl} alt="" aria-hidden="true" className="h-full w-full object-cover" />
-                ) : (
-                  <div className="text-lg font-bold text-[var(--text-secondary)]">
-                    {user?.name?.[0]?.toUpperCase() || "U"}
-                  </div>
-                )}
+                <img src={getDisplayAvatarUrl(user?.avatarUrl)} alt="" aria-hidden="true" className="h-full w-full object-cover" />
                 <div className="pointer-events-none absolute inset-0 bg-[rgba(29,33,26,0.0)] transition group-hover:bg-[rgba(29,33,26,0.12)]" />
               </button>
               <input
@@ -422,7 +417,7 @@ export function SettingsPage() {
             </div>
           </div>
           {uploadingAvatar ? (
-            <div className="mt-3 text-xs font-medium text-[var(--text-muted)]">Uploading photo…</div>
+            <div className="mt-3 text-xs font-medium text-[var(--text-muted)]">Uploading photoâ€¦</div>
           ) : null}
         </div>
 
@@ -460,7 +455,7 @@ export function SettingsPage() {
                   Cancel
                 </Button>
                 <Button className="flex-1" onClick={save} disabled={saving || !name.trim()}>
-                  {saving ? "Saving…" : "Save changes"}
+                  {saving ? "Savingâ€¦" : "Save changes"}
                 </Button>
               </div>
             </div>
@@ -479,7 +474,7 @@ export function SettingsPage() {
 
         {registriesLoading ? (
           <Card className="p-6 shadow-[var(--shadow-xs)] ring-1 ring-[var(--border-subtle)]">
-            <div className="text-sm text-[var(--text-muted)]">Loading your registries…</div>
+            <div className="text-sm text-[var(--text-muted)]">Loading your registriesâ€¦</div>
           </Card>
         ) : ownedRegistries.length === 0 ? (
           <Card className="p-6 shadow-[var(--shadow-xs)] ring-1 ring-[var(--border-subtle)]">
@@ -533,7 +528,7 @@ export function SettingsPage() {
                     <div className="min-w-0">
                       <div className="truncate text-base font-semibold text-[var(--text-primary)]">{r.title}</div>
                       <div className="mt-1 text-xs text-[var(--text-muted)]">
-                        {r.eventCategory || "Event"} · Closes {formatRegistryDate(r.closeDatetime || r.revealDatetime)}
+                        {r.eventCategory || "Event"} Â· Closes {formatRegistryDate(r.closeDatetime || r.revealDatetime)}
                       </div>
                     </div>
                     <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
@@ -592,7 +587,7 @@ export function SettingsPage() {
                           <div className="min-w-0">
                             <div className="truncate text-base font-semibold text-[var(--text-primary)]">{r.title}</div>
                             <div className="mt-1 text-xs text-[var(--text-muted)]">
-                              {r.eventCategory || "Event"} · Closes {formatRegistryDate(r.closeDatetime || r.revealDatetime)}
+                              {r.eventCategory || "Event"} Â· Closes {formatRegistryDate(r.closeDatetime || r.revealDatetime)}
                             </div>
                           </div>
                           <div className="shrink-0 rounded-full bg-[var(--success-bg)] px-2.5 py-1 text-xs font-semibold text-[var(--success-text)]">
@@ -688,7 +683,7 @@ export function SettingsPage() {
                 onClick={confirmDeleteRegistry}
                 disabled={deleteBusy}
               >
-                {deleteBusy ? "Deleting…" : "Delete permanently"}
+                {deleteBusy ? "Deletingâ€¦" : "Delete permanently"}
               </Button>
             </div>
           </div>
@@ -707,7 +702,7 @@ export function SettingsPage() {
             <div className="min-w-0">
               <h2 className="text-base font-semibold text-[var(--text-primary)]">Logout?</h2>
               <p className="mt-1.5 text-sm leading-relaxed text-[var(--text-secondary)]">
-                You’ll need to sign in again to open your registries and notifications.
+                Youâ€™ll need to sign in again to open your registries and notifications.
               </p>
             </div>
           </div>
@@ -773,3 +768,4 @@ export function SettingsPage() {
     </div>
   );
 }
+

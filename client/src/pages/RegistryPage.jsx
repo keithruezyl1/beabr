@@ -830,7 +830,7 @@ function PhotoDropzoneInner({
           <div className="max-w-full text-[10px] font-semibold leading-tight text-[var(--text-primary)] [overflow-wrap:anywhere] line-clamp-3">
             {label}
           </div>
-          <div className="text-[9px] leading-tight text-[var(--text-muted)]">PNG, JPGâ€¦ Â· max 8MB</div>
+          <div className="text-[9px] leading-tight text-[var(--text-muted)]">PNG, JPG... · max 8MB</div>
         </div>
       ) : compact ? (
         <div className="flex items-center gap-2.5">
@@ -856,7 +856,7 @@ function PhotoDropzoneInner({
           </div>
           <div className="min-w-0 flex-1 text-left">
             <div className="text-xs font-semibold text-[var(--text-primary)]">{label}</div>
-            <div className="text-[10px] leading-snug text-[var(--text-muted)]">Drop or tap Â· PNG, JPGâ€¦ Â· max 8MB</div>
+            <div className="text-[10px] leading-snug text-[var(--text-muted)]">Drop or tap · PNG, JPG... · max 8MB</div>
           </div>
         </div>
       ) : (
@@ -2150,6 +2150,7 @@ export function RegistryPage() {
     if (c === "Tech") return ["brand", "model", "compatibility"];
     if (c === "Clothing") return ["size", "color", "brand"];
     if (c === "Dorm / Apartment") return ["size", "color", "brand", "dimensions", "material"];
+    if (c === "Appliance") return ["brand", "model", "dimensions", "wattage"];
     if (c === "Accessories") return ["color", "brand"];
     if (c === "School / Work Supplies") return ["brand", "model"];
     if (c === "Self-Care") return ["brand", "scent"];
@@ -3310,7 +3311,7 @@ export function RegistryPage() {
                         className="flex shrink-0 items-center border-r border-[var(--border-default)] bg-[var(--surface-card-soft)] px-3 py-3 text-sm font-medium text-[var(--text-secondary)] select-none tabular-nums"
                         aria-hidden
                       >
-                        â‚±
+                        ₱
                       </span>
                       <input
                         type="number"
@@ -4088,13 +4089,12 @@ export function RegistryPage() {
           <label className="block">
             <div className="text-xs font-semibold text-[var(--text-secondary)]">
               How much does it cost? <span className="text-[var(--text-muted)]">(estimate)</span>
-            </div>
             <div className="mt-1 flex w-full min-w-0 overflow-hidden rounded-[14px] border border-[var(--border-default)] bg-white focus-within:ring-2 focus-within:ring-[rgba(129,160,63,0.18)]">
               <span
                 className="flex shrink-0 items-center border-r border-[var(--border-default)] bg-[var(--surface-card-soft)] px-3 py-3 text-sm font-medium text-[var(--text-secondary)] select-none tabular-nums"
                 aria-hidden
               >
-                â‚±
+                ₱
               </span>
               <input
                 data-tour-id="registry-item-price"
@@ -4108,6 +4108,7 @@ export function RegistryPage() {
                 placeholder="e.g. 1299"
               />
             </div>
+            </div>
           </label>
           <label className="block">
             <div className="text-xs font-semibold text-[var(--text-secondary)]">Category</div>
@@ -4119,6 +4120,7 @@ export function RegistryPage() {
             >
               {[
                 "Dorm / Apartment",
+                "Appliance",
                 "Tech",
                 "Clothing",
                 "Accessories",

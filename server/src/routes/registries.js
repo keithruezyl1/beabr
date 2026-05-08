@@ -1,4 +1,4 @@
-const express = require("express");
+﻿const express = require("express");
 const { z } = require("zod");
 
 const { config } = require("../config");
@@ -20,10 +20,10 @@ const joinLimiter = createJoinLimiter();
 const { buildViewerRoster } = require("../utils/viewerRoster");
 const { getItemDisplayStatus, getItemQuantitySummary } = require("../utils/itemQuantities");
 const { signUrl } = require("../services/supabaseStorage");
-const { normalizeItemImagePaths } = require("../utils/itemImages");
+const { publicGiverUser } = require("../utils/publicUser");
+const { resolveAvatarUrl } = require("../utils/avatar");
 const { registryEventCategorySchema } = require("../constants/registryEventCategories");
 const { deleteRegistryCompletely } = require("../utils/deleteRegistry");
-const { publicGiverUser } = require("../utils/publicUser");
 
 const registriesRouter = express.Router();
 
@@ -109,7 +109,7 @@ function publicRegistryMemberUser(memberRow) {
   return {
     id: memberRow.user.id,
     name: displayName,
-    avatarUrl: memberRow.hideAvatar ? null : memberRow.user.avatarUrl ?? null,
+    avatarUrl: memberRow.hideAvatar ? null : resolveAvatarUrl(memberRow.user.avatarUrl),
   };
 }
 
@@ -248,7 +248,7 @@ registriesRouter.get("/", requireAuth, async (req, res) => {
         id: m.registry.id,
         title: m.registry.title,
         ownerDisplayName: m.registry.ownerDisplayName,
-        ownerAvatarUrl: m.registry.owner?.avatarUrl ?? null,
+        ownerAvatarUrl: resolveAvatarUrl(m.registry.owner?.avatarUrl),
         joinCode: m.registry.joinCode,
         eventCategory: m.registry.eventCategory,
         eventDate: m.registry.eventDate,
@@ -558,7 +558,7 @@ registriesRouter.get("/:registryId", requireAuth, async (req, res) => {
     const storagePaths = normalizeItemImagePaths(item);
     let imageUrls = [];
     if (storagePaths.length > 0) {
-      // eslint-disable-next-line no-await-in-loop -- bounded to ≤3 paths per item
+      // eslint-disable-next-line no-await-in-loop -- bounded to â‰¤3 paths per item
       imageUrls = (await Promise.all(storagePaths.map((p) => signUrl(p)))).filter(Boolean);
     } else if (item.imageUrl) {
       imageUrls = [item.imageUrl];
@@ -857,7 +857,7 @@ registriesRouter.get("/:registryId/reveal", requireAuth, async (req, res) => {
     orderBy: [{ createdAt: "desc" }],
   });
 
-  // Fire pledge shortfall notifications (idempotent — skips if already sent)
+  // Fire pledge shortfall notifications (idempotent â€” skips if already sent)
   const pledgeInits = await prisma.pledgeInitiation.findMany({
     where: { registryId },
     include: { item: { select: { id: true, title: true, priceReference: true } } },
@@ -935,3 +935,4 @@ registriesRouter.get("/:registryId/reveal", requireAuth, async (req, res) => {
 });
 
 module.exports = { registriesRouter };
+

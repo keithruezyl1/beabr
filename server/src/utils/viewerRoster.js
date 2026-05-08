@@ -1,3 +1,5 @@
+﻿const { resolveAvatarUrl } = require("./avatar");
+
 /**
  * Build dashboard roster payload for gift givers (viewers) on a registry.
  * When the current user is the owner and the registry is not yet revealed,
@@ -51,7 +53,7 @@ function buildViewerRoster(viewerRows, perspective) {
     return {
       userId: row.user.id,
       displayName: dn,
-      photoUrl: hidePhoto ? null : row.user.avatarUrl || null,
+      photoUrl: hidePhoto ? null : resolveAvatarUrl(row.user.avatarUrl),
       initials: initialsFromName(dn),
       accentHue: accentHueFromId(row.user.id),
       isYou: row.user.id === currentUserId,

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { apiFetch } from "../services/api";
 import { Card } from "../components/ui/Card.jsx";
@@ -18,6 +18,7 @@ import {
 import { useAuth } from "../state/AuthProvider.jsx";
 import { DashboardRegistriesSkeleton } from "../components/ui/ScreenSkeletons.jsx";
 import wavingDash from "../assets/waving_dash.png";
+import { getDisplayAvatarUrl } from "../utils/avatar.js";
 
 function formatRevealLines(iso) {
   const d = new Date(iso);
@@ -138,20 +139,11 @@ function RegistryCard({ registry }) {
             {subtitle ? (
               <div className="mt-1 flex min-w-0 items-center gap-2">
                 {registry.role !== "owner" ? (
-                  registry.ownerAvatarUrl ? (
-                    <img
-                      src={registry.ownerAvatarUrl}
-                      alt=""
-                      className="h-8 w-8 shrink-0 rounded-full object-cover ring-2 ring-[var(--border-subtle)]"
-                    />
-                  ) : (
-                    <div
-                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary-100)] text-xs font-bold text-[var(--color-primary-800)] ring-2 ring-[var(--border-subtle)]"
-                      aria-hidden
-                    >
-                      {(registry.ownerDisplayName?.trim()?.[0] || "?").toUpperCase()}
-                    </div>
-                  )
+                  <img
+                    src={getDisplayAvatarUrl(registry.ownerAvatarUrl)}
+                    alt=""
+                    className="h-8 w-8 shrink-0 rounded-full object-cover ring-2 ring-[var(--border-subtle)]"
+                  />
                 ) : null}
                 <p className="min-w-0 text-sm text-[var(--text-secondary)]">{subtitle}</p>
               </div>
@@ -397,3 +389,4 @@ export function DashboardPage() {
     </div>
   );
 }
+

@@ -1,10 +1,11 @@
-const express = require("express");
+﻿const express = require("express");
 const cors = require("cors");
 const morgan = require("morgan");
 const helmet = require("helmet");
 const path = require("path");
 
 const { config } = require("./config");
+const { DEFAULT_AVATAR_FILE, DEFAULT_AVATAR_PATH } = require("./utils/avatar");
 const { getSessionUser } = require("./middleware/auth");
 const { createApiLimiter } = require("./middleware/rateLimits");
 
@@ -54,6 +55,7 @@ function createApp() {
 
   // Serve uploaded assets (e.g., user avatars)
   app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+  app.get(DEFAULT_AVATAR_PATH, (_req, res) => res.sendFile(DEFAULT_AVATAR_FILE));
 
   // attach session user if present
   app.use(async (req, _res, next) => {
@@ -137,3 +139,4 @@ function createApp() {
 }
 
 module.exports = { createApp };
+

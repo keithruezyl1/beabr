@@ -1,7 +1,8 @@
-const { config } = require("../config");
+﻿const { config } = require("../config");
 const { httpError } = require("../utils/httpErrors");
 const { createClient } = require("@supabase/supabase-js");
 const { prisma } = require("../prisma");
+const { extractSupabaseAvatarUrl, resolveAvatarUrl } = require("../utils/avatar");
 
 function getBearerToken(req) {
   const h = req.headers.authorization || "";
@@ -33,8 +34,7 @@ async function getSessionUser(req) {
 
   const sUser = data.user;
   const email = sUser.email;
-  const avatarUrl =
-    sUser.user_metadata?.avatar_url || sUser.user_metadata?.picture || null;
+  const avatarUrl = extractSupabaseAvatarUrl(sUser);
 
   /** Google OAuth subject (`sub`), not Supabase Auth user UUID. */
   const googleIdentity = Array.isArray(sUser.identities)
@@ -47,7 +47,7 @@ async function getSessionUser(req) {
     supabaseId: sUser.id,
     name: "",
     email: email || `${sUser.id}@users.local`,
-    avatarUrl,
+    avatarUrl: resolveAvatarUrl(avatarUrl),
     authProvider: googleIdResolved ? "google" : "email",
   };
 
@@ -66,13 +66,12 @@ async function getSessionUser(req) {
         email: email || `${sUser.id}@users.local`,
         lastLoginAt: new Date(),
         ...(googleIdResolved ? { googleId: googleIdResolved } : {}),
+        ...(avatarUrl ? { avatarUrl } : {}),
       },
     });
 
     return { id: appUser.id, supabaseId: sUser.id, profile, dbOk: true };
   } catch (_e) {
-    // If DB is unreachable/migrations not applied, still allow the frontend to consider
-    // the user "logged in" based on Supabase session, but block DB-backed operations elsewhere.
     return { id: null, supabaseId: sUser.id, profile, dbOk: false };
   }
 }
@@ -80,7 +79,6 @@ async function getSessionUser(req) {
 async function requireAuth(req, _res, next) {
   const user = await getSessionUser(req);
   if (!user) return next(httpError(401, "Not authenticated."));
-  // DB-backed routes must have an app User row — never authorize with Bearer-only hydration.
   if (!user.id || user.dbOk === false) {
     return next(
       httpError(

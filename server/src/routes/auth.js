@@ -1,4 +1,4 @@
-const express = require("express");
+﻿const express = require("express");
 const { z } = require("zod");
 const multer = require("multer");
 const crypto = require("crypto");
@@ -9,6 +9,7 @@ const { prisma } = require("../prisma");
 const { requireAuth } = require("../middleware/auth");
 const { validateBody } = require("../middleware/validate");
 const { config } = require("../config");
+const { normalizeAvatarInput, resolveAvatarUrl } = require("../utils/avatar");
 
 const authRouter = express.Router();
 
@@ -27,7 +28,7 @@ function mapUserRow(row) {
     id: row.id,
     name: row.name,
     email: row.email,
-    avatarUrl: row.avatarUrl,
+    avatarUrl: resolveAvatarUrl(row.avatarUrl),
     authProvider: row.googleId ? "google" : "email",
     hadTour: Boolean(row.hadTour),
     createdAt: row.createdAt,
@@ -93,7 +94,7 @@ authRouter.patch(
           .url()
           .optional()
           .or(z.literal(""))
-          .transform((v) => (v ? v : null)),
+          .transform((v) => normalizeAvatarInput(v)),
       })
       .strict()
   ),
@@ -184,3 +185,4 @@ authRouter.get("/whoami", requireAuth, async (req, res) => {
 });
 
 module.exports = { authRouter };
+
