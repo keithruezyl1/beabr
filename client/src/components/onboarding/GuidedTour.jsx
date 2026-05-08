@@ -16,6 +16,7 @@ const REGISTRY_FIELD_STEP_TARGETS = new Set([
   "registry-main-event-date",
   "registry-reveal-date",
 ]);
+const MOBILE_TOUR_QUERY = "(max-width: 767px)";
 
 const steps = [
   {
@@ -205,6 +206,29 @@ function restorePathForStep(step, savedPath) {
   return null;
 }
 
+function appHeaderBottomOffset() {
+  const header = document.querySelector("header");
+  if (!header) return 0;
+  const rect = header.getBoundingClientRect();
+  return Math.max(0, rect.bottom);
+}
+
+function scrollTargetIntoTourView(target, step) {
+  const isMobile = window.matchMedia(MOBILE_TOUR_QUERY).matches;
+  if (step.targetId === "registry-visibility" && isMobile) {
+    const headerOffset = appHeaderBottomOffset();
+    const visualGap = 16;
+    const targetTop = target.getBoundingClientRect().top + window.scrollY;
+    window.scrollTo({
+      top: Math.max(0, targetTop - headerOffset - visualGap),
+      behavior: "auto",
+    });
+    return;
+  }
+
+  target.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+}
+
 function renderDialogue(body, name) {
   const tokens = body.split(/(\{name\}|Beve|Beabr|Private Surprise|Open Coordination)/g);
   return tokens.map((token, index) => {
@@ -347,11 +371,7 @@ export function GuidedTour() {
       const scrollTarget = targets[targets.length - 1];
       setTargetMissing(false);
       elevateTargets(targets);
-      if (step.targetId === "registry-visibility" && window.matchMedia("(max-width: 767px)").matches) {
-        window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" });
-      } else {
-        scrollTarget.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
-      }
+      scrollTargetIntoTourView(scrollTarget, step);
       raf = window.requestAnimationFrame(() => {
         const rects = targets.map((target) => target.getBoundingClientRect());
         const left = Math.min(...rects.map((rect) => rect.left));
@@ -403,6 +423,10 @@ export function GuidedTour() {
   }, [targetRect]);
 
   const bubblePlacementClass = useMemo(() => {
+    if (step.targetId === "registry-form-basics") {
+      return "mb-[18vh] sm:mb-[18vh] md:mb-[8vh] lg:mb-[8vh]";
+    }
+
     if (step.targetId === "registry-visibility") {
       return "mb-[16vh] sm:mb-[16vh] md:mb-[2vh] lg:mb-[4vh]";
     }
