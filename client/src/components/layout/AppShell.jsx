@@ -628,11 +628,11 @@ export function AppShell({ children }) {
       {confirmLogoutOpen
         ? createPortal(
             <div className="fixed inset-0 z-[100]" role="presentation">
-              <button
-                type="button"
-                aria-label="Close"
+              <div
                 className="absolute inset-0 bg-[var(--surface-overlay)] backdrop-blur-md"
-                onClick={() => setConfirmLogoutOpen(false)}
+                onMouseDown={() => setConfirmLogoutOpen(false)}
+                role="presentation"
+                aria-hidden="true"
               />
               <div className="absolute inset-0 flex items-center justify-center p-5">
                 <Card className="w-full max-w-md p-5">

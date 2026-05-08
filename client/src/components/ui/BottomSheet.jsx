@@ -48,11 +48,11 @@ export function BottomSheet({
 
   return createPortal(
     <div className="fixed inset-0 z-[100]" role="presentation">
-      <button
-        type="button"
-        aria-label="Close"
-        className={`absolute inset-0 z-0 bg-[rgba(29,33,26,0.55)] focus:outline-none ${isModal ? "backdrop-blur-md" : "backdrop-blur-sm"}`}
-        onClick={onClose}
+      <div
+        className={`absolute inset-0 z-0 bg-[rgba(29,33,26,0.55)] ${isModal ? "backdrop-blur-md" : "backdrop-blur-sm"}`}
+        onMouseDown={onClose}
+        role="presentation"
+        aria-hidden="true"
       />
       {isModal ? (
         <div className="absolute inset-0 z-[1] flex items-center justify-center p-4 pointer-events-none">
