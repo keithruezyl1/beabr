@@ -1,4 +1,4 @@
-import { Navigate, Outlet, Route, Routes, useLocation, useParams } from "react-router-dom";
+﻿import { Navigate, Outlet, Route, Routes, useLocation, useParams } from "react-router-dom";
 import { AppShell } from "./components/layout/AppShell.jsx";
 import { AuthRouteSkeleton } from "./components/ui/ScreenSkeletons.jsx";
 import { useAuth } from "./state/AuthProvider.jsx";
@@ -16,6 +16,7 @@ import { SettingsPage } from "./pages/SettingsPage.jsx";
 import { DocumentationPage } from "./pages/DocumentationPage.jsx";
 import { NotificationsPage } from "./pages/NotificationsPage.jsx";
 import { SuccessModalPage } from "./pages/SuccessModalPage.jsx";
+import { InAppBrowserPreviewPage } from "./pages/InAppBrowserPreviewPage.jsx";
 import { NotFoundPage } from "./pages/NotFoundPage.jsx";
 import { safeInternalPath } from "./utils/navigation.js";
 
@@ -70,6 +71,7 @@ export default function App() {
       <Route element={<ShellLayout />}>
         <Route path="/" element={<LandingPage />} />
         <Route path="/success-modal" element={<SuccessModalPage />} />
+        <Route path="/preview/in-app-browser" element={<InAppBrowserPreviewPage />} />
         <Route
           path="/login"
           element={
@@ -168,3 +170,4 @@ export default function App() {
     </Routes>
   );
 }
+

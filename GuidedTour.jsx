@@ -684,6 +684,7 @@ export function GuidedTour() {
               aria-hidden
             />
             <div className="relative z-[1]">
+              <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-[#5a8a2e]">BEVE</span>
               <p className="whitespace-pre-line text-sm leading-relaxed text-[var(--text-secondary)] sm:text-base">{body}</p>
               {isNameStep ? (
                 <form className="mt-4" onSubmit={saveNameAndNext}>

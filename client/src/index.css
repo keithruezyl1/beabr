@@ -1,3 +1,5 @@
+﻿@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -73,11 +75,11 @@
   --motion-base: 180ms;
   --motion-slow: 280ms;
   --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-premium: cubic-bezier(0.32, 0.72, 0, 1);
 
   --skeleton-base: var(--color-neutral-200);
   --skeleton-highlight: rgba(255, 255, 255, 0.72);
 
-  /* App page hero (PageHeader): soft greens → white, diagonal — see DESIGN_GUIDELINES §16.4 */
   --gradient-page-header: linear-gradient(
     to bottom right,
     var(--color-primary-100) 0%,
@@ -88,12 +90,8 @@
 }
 
 @keyframes beabr-skeleton-shimmer {
-  0% {
-    transform: translateX(-120%);
-  }
-  100% {
-    transform: translateX(120%);
-  }
+  0%   { transform: translateX(-120%); }
+  100% { transform: translateX(120%); }
 }
 
 .beabr-skeleton {
@@ -120,25 +118,13 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .beabr-skeleton::after {
-    animation: none;
-  }
-
-  .beabr-skeleton {
-    background: var(--color-neutral-300);
-  }
+  .beabr-skeleton::after { animation: none; }
+  .beabr-skeleton { background: var(--color-neutral-300); }
 }
 
-/* Toast / notification chips — DESIGN_GUIDELINES §17.6 */
 @keyframes beabr-toast-enter {
-  from {
-    transform: translateX(calc(100% + var(--space-4, 16px)));
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
+  from { transform: translateX(calc(100% + var(--space-4, 16px))); opacity: 0; }
+  to   { transform: translateX(0); opacity: 1; }
 }
 
 .beabr-toast-chip {
@@ -153,40 +139,28 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .beabr-toast-chip {
-    animation: none;
-    opacity: 1;
-  }
-
-  .beabr-toast-chip--exit {
-    transition: opacity var(--motion-fast) var(--ease-standard);
-  }
+  .beabr-toast-chip { animation: none; opacity: 1; }
+  .beabr-toast-chip--exit { transition: opacity var(--motion-fast) var(--ease-standard); }
 }
 
-html,
-body {
-  height: 100%;
-}
+html, body { height: 100%; }
 
 body {
   margin: 0;
-  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   background: var(--surface-page);
   color: var(--text-primary);
 }
 
-/* Form controls: enforce Beabr green accent for native checkboxes/radios. */
 input[type="checkbox"],
 input[type="radio"] {
   accent-color: var(--color-primary-600);
 }
 
-/* Dashboard / settings / etc. — PageChrome hero band */
 .beabr-page-header-gradient {
   background-image: var(--gradient-page-header);
 }
 
-/* Landing page texture utility (subtle, lightweight, no extra assets). */
 .beabr-texture {
   background-color: var(--surface-page);
   background-image:
@@ -199,47 +173,103 @@ input[type="radio"] {
   background-blend-mode: normal, normal, normal, multiply;
 }
 
-/* ── Landing page: hero entrance ──────────────────────────────────────────── */
-@keyframes lp-fade-right {
-  from { opacity: 0; transform: translateX(24px); }
-  to   { opacity: 1; transform: none; }
+/* ── Landing page: hero entrance ─────────────────────────────────────────── */
+@keyframes lp-fade-up {
+  from { opacity: 0; transform: translateY(18px); filter: blur(4px); }
+  to   { opacity: 1; transform: none;              filter: blur(0);   }
 }
 .lp-hero-in {
-  animation: lp-fade-right 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation: lp-fade-up 480ms cubic-bezier(0.32, 0.72, 0, 1) both;
 }
 @media (prefers-reduced-motion: reduce) {
-  .lp-hero-in { animation: none; opacity: 1; transform: none; }
+  .lp-hero-in { animation: none; opacity: 1; transform: none; filter: none; }
 }
 
-/* ── Landing page: feature icon animations ────────────────────────────────── */
+/* ── Landing page: tagline pill float ────────────────────────────────────── */
+@keyframes lp-float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-3px); }
+}
+.lp-pill-float {
+  animation: lp-float 3.2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lp-pill-float { animation: none; }
+}
+
+/* ── Landing page: marquee ───────────────────────────────────────────────── */
+@keyframes lp-marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.lp-marquee-track {
+  animation: lp-marquee 30s linear infinite;
+  display: flex;
+  width: max-content;
+  will-change: transform;
+}
+.lp-marquee-track:hover { animation-play-state: paused; cursor: default; }
+@media (prefers-reduced-motion: reduce) {
+  .lp-marquee-track { animation: none; }
+}
+
+/* ── Landing page: bento card hover lift ─────────────────────────────────── */
+.lp-bento-card {
+  transition:
+    box-shadow 320ms cubic-bezier(0.32, 0.72, 0, 1),
+    transform  320ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+.lp-bento-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 20px 48px rgba(29, 33, 26, 0.10), 0 4px 12px rgba(29, 33, 26, 0.06);
+}
+
+/* ── Landing page: directional hover button ──────────────────────────────── */
+.lp-cta-btn {
+  position: relative;
+  overflow: hidden;
+}
+.lp-cta-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.09);
+  transform: translateX(-100%);
+  transition: transform 460ms cubic-bezier(0.32, 0.72, 0, 1);
+  border-radius: inherit;
+}
+.lp-cta-btn:hover::before { transform: translateX(0); }
+.lp-cta-btn:active { transform: scale(0.98); }
+
+/* ── Landing page: feature icon animations ───────────────────────────────── */
 @keyframes lp-wobble {
   0%, 100% { transform: rotate(0deg); }
   25%       { transform: rotate(-10deg); }
   75%       { transform: rotate(10deg); }
 }
 @keyframes lp-unlock {
-  0%, 100% { transform: rotate(0deg); }
-  35%, 65% { transform: rotate(-32deg); }
+  0%, 100% { transform: translateY(0); }
+  40%, 55% { transform: translateY(-4px); }
 }
 @keyframes lp-blink {
   0%, 100% { transform: scaleY(1); }
   35%       { transform: scaleY(0.08); }
 }
-.lp-feature-row:hover .lp-icon-gift {
+
+.lp-bento-card:hover .lp-icon-gift {
   animation: lp-wobble 420ms ease-in-out;
 }
-.lp-feature-row:hover .lp-icon-shackle {
+.lp-bento-card:hover .lp-icon-shackle {
   animation: lp-unlock 460ms ease-in-out;
-  transform-box: fill-box;
-  transform-origin: bottom right;
 }
-.lp-feature-row:hover .lp-icon-iris {
+.lp-bento-card:hover .lp-icon-iris {
   animation: lp-blink 420ms ease-in-out;
   transform-box: fill-box;
   transform-origin: center;
 }
+
 @media (prefers-reduced-motion: reduce) {
-  .lp-feature-row:hover .lp-icon-gift,
-  .lp-feature-row:hover .lp-icon-shackle,
-  .lp-feature-row:hover .lp-icon-iris { animation: none; }
+  .lp-bento-card:hover .lp-icon-gift,
+  .lp-bento-card:hover .lp-icon-shackle,
+  .lp-bento-card:hover .lp-icon-iris { animation: none; }
 }

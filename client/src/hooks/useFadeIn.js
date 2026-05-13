@@ -25,14 +25,19 @@ export function useFadeIn({ delay = 0, direction = "up", threshold = 0.12 } = {}
     return () => observer.disconnect();
   }, [threshold]);
 
-  const offsets = { up: "translateY(24px)", left: "translateX(-28px)", right: "translateX(28px)" };
+  const offsets = { up: "translateY(20px)", left: "translateX(-24px)", right: "translateX(24px)" };
 
   return {
     ref,
     style: {
       opacity: visible ? 1 : 0,
       transform: visible ? "none" : (offsets[direction] ?? offsets.up),
-      transition: `opacity 280ms cubic-bezier(0.2,0.8,0.2,1) ${delay}ms, transform 280ms cubic-bezier(0.2,0.8,0.2,1) ${delay}ms`,
+      filter: visible ? "blur(0px)" : "blur(3px)",
+      transition: [
+        `opacity 520ms cubic-bezier(0.32,0.72,0,1) ${delay}ms`,
+        `transform 520ms cubic-bezier(0.32,0.72,0,1) ${delay}ms`,
+        `filter 520ms cubic-bezier(0.32,0.72,0,1) ${delay}ms`,
+      ].join(", "),
     },
   };
 }
