@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx skills *)",
+      "Bash(python -m pytest hub/tests/test_publish_gate.py -v)",
+      "Bash(findstr /i \"querylog\\\\|query_log\")",
+      "Bash(python -m pytest hub/tests/test_query_log_schema.py -v)",
+      "Bash(python -m unittest hub.tests.test_query_log_schema -v)",
+      "Bash(python -m unittest hub.tests.test_pipeline_order hub.tests.test_clarification_response hub.tests.test_metadata_validation hub.tests.test_publish_gate -v)",
+      "Bash(python -m unittest hub.tests.test_query_log_schema hub.tests.test_pipeline_order hub.tests.test_clarification_response hub.tests.test_metadata_validation hub.tests.test_publish_gate -v)",
+      "Bash(python -m unittest hub.tests.test_query_log_schema hub.tests.test_pipeline_order hub.tests.test_clarification_response hub.tests.test_metadata_validation hub.tests.test_publish_gate)",
+      "Bash(python -c \"import hub.tests.test_clarification_response\")",
+      "Bash(python -m unittest hub.tests.test_query_log_schema hub.tests.test_pipeline_order hub.tests.test_metadata_validation hub.tests.test_publish_gate -v)",
+      "Bash(python -m unittest hub.tests.test_query_log_schema hub.tests.test_pipeline_order hub.tests.test_metadata_validation hub.tests.test_publish_gate)",
+      "Bash(python -c \"from hub.api import routes_query; from hub.db import schema; ql = schema.QueryLog\\(kiosk_id='t', transcript_original='x', language='en', kb_version=1, answer_type='X', latency_ms=0.0, created_at=0, intent_label='food', intent_confidence=0.9\\); print\\('OK', ql.intent_label, ql.intent_confidence\\)\")",
+      "Bash(python -c \"from hub.db import schema; cols = [c.name for c in schema.QueryLog.__table__.columns]; print\\(f'Total columns: {len\\(cols\\)}'\\); print\\(f'Unique columns: {len\\(set\\(cols\\)\\)}'\\); dupes = [c for c in cols if cols.count\\(c\\) > 1]; print\\(f'Duplicates: {dupes if dupes else \\\\\"NONE\\\\\"}'\\)\")"
+    ]
+  },
+  "enabledPlugins": {
+    "superpowers@superpowers-dev": true,
+    "claude-mem@thedotmack": true,
+    "ui-ux-pro-max@ui-ux-pro-max-skill": true
+  }
+}

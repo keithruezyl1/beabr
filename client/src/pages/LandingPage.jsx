@@ -16,6 +16,10 @@ import avatar1 from "../assets/avatar1.jpg";
 import avatar2 from "../assets/avatar2.jpg";
 import avatar4 from "../assets/avatar4.jpg";
 import avatar3 from "../assets/avatar3.jpg";
+import imgSony       from "../assets/Sony WH-1000XM5.jpg";
+import imgKitchenAid from "../assets/KitchenAid Artisan Mixer.jpg";
+import imgKindle     from "../assets/Kindle Paperwhite.jpg";
+import imgLeCreuset  from "../assets/Le Creuset Dutch Oven.png";
 
 // -- Spotlight card (DOM-mutation only, zero re-renders) ----------------------
 function SpotlightCard({ children, className = "" }) {
@@ -147,6 +151,13 @@ function CheckMini() {
     </svg>
   );
 }
+function BookmarkIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+    </svg>
+  );
+}
 
 // -- Data ---------------------------------------------------------------------
 const OWNER_BULLETS = [
@@ -227,16 +238,34 @@ function HeroSection({ user }) {
     </section>
   );
 }
+// -- Mini gift item preview --------------------------------------------------
+function MiniGiftItem({ title, price, pills = [], status, imgSrc }) {
+  return (
+    <div className="flex items-center gap-3 rounded-[10px] border border-[var(--border-subtle)] bg-white p-2.5">
+      <div className="flex h-[52px] w-[52px] shrink-0 items-center justify-center overflow-hidden rounded-[8px] bg-[var(--color-neutral-100)] text-[var(--color-neutral-400)]">
+        {imgSrc
+          ? <img src={imgSrc} alt={title} className="h-full w-full object-cover" />
+          : <GiftIcon />}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="line-clamp-1 text-[12px] font-semibold text-[var(--text-primary)]">{title}</p>
+        <p className="mt-0.5 text-[11px] tabular-nums text-[var(--text-muted)]">{price}</p>
+        <div className="mt-1 flex flex-wrap gap-1">
+          {pills.map((p, i) => (
+            <span key={i} className={`inline-flex items-center rounded-full bg-[var(--color-primary-100)] px-2 py-0.5 text-[10px] leading-snug text-[var(--color-primary-800)] ring-1 ring-[rgba(129,160,63,0.22)] ${i === 0 ? "font-semibold" : "font-medium"}`}>{p}</span>
+          ))}
+        </div>
+      </div>
+      <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${status === "Reserved" ? "bg-[var(--color-primary-100)] text-[var(--color-primary-700)]" : "bg-[var(--color-neutral-200)] text-[var(--text-muted)]"}`}>
+        {status}
+      </span>
+    </div>
+  );
+}
+
 // -- 2. Features interactive tab panel ----------------------------------------
 function FeaturesSection() {
   const [activeTab, setActiveTab] = useState(0);
-
-  const giftItems = [
-    { name: "Wooden Photo Frame", status: "claimed",   by: "2 givers" },
-    { name: "Silk Throw Blanket", status: "available" },
-    { name: "Scented Candle Set", status: "claimed",   by: "1 giver"  },
-    { name: "Personalised Mug",   status: "available" },
-  ];
 
   const FEATURES = [
     {
@@ -245,24 +274,15 @@ function FeaturesSection() {
       heading: "Build your registry",
       body: "Add gift ideas, links, and details for any life event. Graduations, weddings, celebrations — all in one place.",
       visual: (
-        <div className="mt-6 space-y-4">
-          <div className="flex flex-wrap gap-2">
-            {["Weddings", "Graduations", "Birthdays", "Anniversaries"].map((tag) => (
-              <span key={tag} className="rounded-full bg-[var(--color-primary-100)] px-3 py-1 text-[11px] font-semibold text-[var(--color-primary-700)]">{tag}</span>
-            ))}
-          </div>
-          <div className="space-y-2">
-            {[
-              { name: "Leather Journal",    hint: "From Amazon" },
-              { name: "Wooden Photo Frame", hint: "Any store"   },
-              { name: "Scented Candle Set", hint: "From Etsy"   },
-            ].map((item) => (
-              <div key={item.name} className="flex items-center justify-between rounded-[10px] border border-[var(--border-subtle)] bg-[var(--color-neutral-50)] px-4 py-2.5">
-                <span className="text-[13px] font-medium text-[var(--text-primary)]">{item.name}</span>
-                <span className="text-[12px] text-[var(--text-muted)]">{item.hint}</span>
-              </div>
-            ))}
-          </div>
+        <div className="mt-5 space-y-2">
+          {[
+            { title: "Sony WH-1000XM5 Wireless Headphones",  price: "₱19,990", pills: ["Tech", "Sony", "WH-1000XM5", "White"],              status: "Available", imgSrc: imgSony       },
+            { title: "KitchenAid Artisan 5Qt Stand Mixer",   price: "₱28,500", pills: ["Appliance", "KitchenAid", "Empire Red"],              status: "Reserved",  imgSrc: imgKitchenAid },
+            { title: "Kindle Paperwhite 16GB Wi-Fi",         price: "₱8,490",  pills: ["Tech", "Amazon", "16 GB"],                            status: "Available", imgSrc: imgKindle     },
+            { title: "Le Creuset Signature Dutch Oven 5.5Qt",price: "₱14,800", pills: ["Dorm / Apartment", "Le Creuset", "Flame", "Cast Iron"],status: "Available", imgSrc: imgLeCreuset  },
+          ].map((item) => (
+            <MiniGiftItem key={item.title} {...item} />
+          ))}
         </div>
       ),
     },
@@ -273,15 +293,15 @@ function FeaturesSection() {
       body: "Private surprise or open coordination. Set it once and let givers work their magic naturally.",
       visual: (
         <div className="mt-6 grid grid-cols-2 gap-3">
-          <div className="rounded-[12px] border-2 border-[var(--color-primary-300)] bg-[var(--color-primary-50)] p-4">
-            <div className="mb-2 text-[var(--color-primary-700)]"><LockIcon /></div>
-            <p className="text-[13px] font-bold text-[var(--text-primary)]">Private</p>
-            <p className="mt-1 text-[12px] leading-snug text-[var(--text-muted)]">Givers stay anonymous until reveal day</p>
+          <div className="rounded-[14px] border-2 border-[var(--color-primary-300)] bg-[var(--color-primary-50)] p-5">
+            <div className="mb-3 text-[var(--color-primary-700)]"><LockIcon /></div>
+            <p className="text-[15px] font-bold text-[var(--text-primary)]">Private Surprise</p>
+            <p className="mt-1.5 text-[12px] leading-relaxed text-[var(--text-muted)]">Givers coordinate quietly among themselves. You see everyone on reveal day.</p>
           </div>
-          <div className="rounded-[12px] border border-[var(--border-default)] bg-[var(--color-neutral-50)] p-4">
-            <div className="mb-2 text-[var(--color-primary-700)]"><EyeIcon /></div>
-            <p className="text-[13px] font-bold text-[var(--text-primary)]">Open</p>
-            <p className="mt-1 text-[12px] leading-snug text-[var(--text-muted)]">Everyone sees who claimed what</p>
+          <div className="rounded-[14px] border border-[var(--border-default)] bg-[var(--color-neutral-50)] p-5">
+            <div className="mb-3 text-[var(--color-primary-700)]"><EyeIcon /></div>
+            <p className="text-[15px] font-bold text-[var(--text-primary)]">Open Coordination</p>
+            <p className="mt-1.5 text-[12px] leading-relaxed text-[var(--text-muted)]">Everyone sees who claimed what in real time, making group gifts easier to split.</p>
           </div>
         </div>
       ),
@@ -293,21 +313,21 @@ function FeaturesSection() {
       body: "Pick a date and time. Givers stay anonymous until you are ready to see who made your moment special.",
       visual: (
         <div className="mt-6 space-y-3">
-          <div className="flex items-center justify-between rounded-[12px] border border-[var(--border-subtle)] bg-[var(--color-neutral-50)] px-5 py-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-primary-100)] text-[var(--color-primary-700)]">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <div className="flex items-center justify-between rounded-[12px] border border-[var(--border-subtle)] bg-[var(--color-neutral-50)] px-5 py-5">
+            <div className="flex items-center gap-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary-100)] text-[var(--color-primary-700)]">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
                 </svg>
               </div>
               <div>
-                <p className="text-[13px] font-semibold text-[var(--text-primary)]">Reveal unlocks</p>
-                <p className="text-[12px] text-[var(--text-muted)]">Jun 14 at 12:00 PM</p>
+                <p className="text-[15px] font-semibold text-[var(--text-primary)]">Reveal unlocks</p>
+                <p className="mt-0.5 text-[13px] text-[var(--text-muted)]">Jun 14 at 12:00 PM</p>
               </div>
             </div>
-            <span className="rounded-full bg-[var(--color-primary-100)] px-3 py-1 text-[11px] font-bold text-[var(--color-primary-700)]">Scheduled</span>
+            <span className="shrink-0 rounded-full bg-[var(--color-primary-100)] px-3.5 py-1.5 text-[12px] font-bold text-[var(--color-primary-700)]">Scheduled</span>
           </div>
-          <p className="text-center text-[12px] text-[var(--text-muted)]">Until then, givers only see that others have joined.</p>
+          <p className="text-center text-[13px] text-[var(--text-muted)]">Until then, givers only see that others have joined.</p>
         </div>
       ),
     },
@@ -317,38 +337,75 @@ function FeaturesSection() {
       heading: "One click to join",
       body: "Givers join the registry in seconds. No account needed, no friction, no confusion.",
       visual: (
-        <div className="mt-6 space-y-4">
-          <div className="flex flex-wrap gap-2">
-            {["Invite link", "Join code", "QR code"].map((m) => (
-              <span key={m} className="rounded-full bg-[var(--color-primary-50)] px-4 py-2 text-[12px] font-semibold text-[var(--color-primary-700)] ring-1 ring-[var(--color-primary-200)]">{m}</span>
-            ))}
+        <div className="mt-6 space-y-3">
+          <div className="grid grid-cols-2 overflow-hidden rounded-[12px] border border-[var(--border-default)] bg-[var(--color-neutral-50)]">
+            <div className="flex items-center gap-3 px-4 py-4">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-neutral-200)] text-[var(--text-muted)]">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
+              </span>
+              <div className="min-w-0">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">Invite link</p>
+                <p className="mt-0.5 min-w-0 truncate font-mono text-[13px] text-[var(--text-secondary)]">beabr.app/j/kx8vp2</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 border-l border-[var(--border-subtle)] px-4 py-4">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-neutral-200)] text-[var(--text-muted)]">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="4" y1="9" x2="20" y2="9" /><line x1="4" y1="15" x2="20" y2="15" /><line x1="10" y1="3" x2="8" y2="21" /><line x1="16" y1="3" x2="14" y2="21" /></svg>
+              </span>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">Join code</p>
+                <p className="mt-0.5 font-mono text-[15px] font-bold tracking-[0.18em] text-[var(--text-primary)]">XR4921</p>
+              </div>
+            </div>
           </div>
-          <div className="flex items-center gap-3 rounded-[12px] border border-[var(--color-primary-200)] bg-[var(--color-primary-50)] px-4 py-3">
-            <div className="flex items-center">
+          <div className="flex items-center gap-4 rounded-[12px] border border-[var(--color-primary-200)] bg-[var(--color-primary-50)] px-5 py-4">
+            <div className="flex shrink-0 items-center">
               {[avatar1, avatar2, avatar4, avatar3].map((src, i) => (
-                <img key={i} src={src} alt="" aria-hidden="true" className="h-8 w-8 rounded-full border-2 border-[var(--color-primary-400)] object-cover object-center" style={{ marginLeft: i === 0 ? 0 : "-10px", zIndex: i + 1 }} />
+                <img key={i} src={src} alt="" aria-hidden="true" className="h-10 w-10 rounded-full border-2 border-[var(--color-primary-400)] object-cover object-center" style={{ marginLeft: i === 0 ? 0 : "-12px", zIndex: i + 1 }} />
               ))}
             </div>
-            <p className="text-[13px] font-semibold text-[var(--color-primary-700)]">4 givers have joined your registry</p>
+            <p className="text-[14px] font-semibold text-[var(--color-primary-700)]">4 givers have joined your registry</p>
           </div>
         </div>
       ),
     },
     {
-      icon: <UsersIcon />,
-      label: "No double gifting",
-      heading: "No double gifting",
-      body: "Givers see what is available and claim silently. No duplicates, no awkward overlaps, no wasted money.",
+      icon: <BookmarkIcon />,
+      label: "Reserve and pledge",
+      heading: "Reserve, prepare, or pledge",
+      body: "Givers can reserve a gift just for themselves, mark something as already prepared, or pool funds with others toward something bigger.",
       visual: (
-        <div className="mt-6 space-y-2">
-          {giftItems.map((item) => (
-            <div key={item.name} className="flex items-center justify-between rounded-[10px] border border-[var(--border-subtle)] bg-[var(--color-neutral-50)] px-4 py-2.5">
-              <span className="text-[13px] font-medium text-[var(--text-primary)]">{item.name}</span>
-              <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${item.status === "claimed" ? "bg-[var(--color-primary-100)] text-[var(--color-primary-700)]" : "bg-[var(--color-neutral-200)] text-[var(--text-muted)]"}`}>
-                {item.status === "claimed" ? item.by : "Available"}
-              </span>
+        <div className="mt-6 space-y-2.5">
+          <div className="flex items-center gap-3 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--color-neutral-50)] px-4 py-3">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary-100)] text-[var(--color-primary-700)]">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" /></svg>
             </div>
-          ))}
+            <div className="min-w-0 flex-1">
+              <p className="text-[13px] font-semibold text-[var(--text-primary)]">Reserve</p>
+              <p className="text-[11px] text-[var(--text-muted)]">Claim this gift before anyone else gets it</p>
+            </div>
+            <span className="shrink-0 rounded-full bg-[var(--color-primary-100)] px-2.5 py-0.5 text-[10px] font-semibold text-[var(--color-primary-700)]">Reserved by you</span>
+          </div>
+          <div className="flex items-center gap-3 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--color-neutral-50)] px-4 py-3">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[13px] font-semibold text-[var(--text-primary)]">Mark as Prepared</p>
+              <p className="text-[11px] text-[var(--text-muted)]">Let others know you have already bought it</p>
+            </div>
+            <span className="shrink-0 rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-700">Prepared</span>
+          </div>
+          <div className="flex items-center gap-3 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--color-neutral-50)] px-4 py-3">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-700">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[13px] font-semibold text-[var(--text-primary)]">Start a Pledge</p>
+              <p className="text-[11px] text-[var(--text-muted)]">Pool funds with others toward something bigger</p>
+            </div>
+            <span className="shrink-0 rounded-full bg-blue-100 px-2.5 py-0.5 text-[10px] font-semibold text-blue-700">3 pledging</span>
+          </div>
         </div>
       ),
     },
@@ -409,17 +466,18 @@ function FeaturesSection() {
           ))}
         </div>
 
-        <div className="flex-1">
+        <div className="flex-1 h-[460px]">
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={activeTab}
-              initial={{ opacity: 0, y: 10, filter: "blur(3px)" }}
+              className="h-full"
+              initial={{ opacity: 0, y: 6, filter: "blur(2px)" }}
               animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-              exit={{ opacity: 0, y: -8, filter: "blur(2px)" }}
-              transition={SPRING_SOFT}
+              exit={{ opacity: 0, y: -4, filter: "blur(1px)" }}
+              transition={{ duration: 0.16, ease: [0.32, 0.72, 0, 1] }}
             >
-              <SpotlightCard className="rounded-[22px] bg-white/70 p-1.5 ring-1 ring-black/[0.06]">
-                <div className="min-h-[360px] rounded-[16px] bg-white p-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
+              <SpotlightCard className="h-full rounded-[22px] bg-white/70 p-1.5 ring-1 ring-black/[0.06]">
+                <div className="h-full overflow-y-auto rounded-[16px] bg-white p-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
                   <div className="flex h-12 w-12 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-primary-100)] text-[var(--color-primary-700)]">
                     {active.icon}
                   </div>
@@ -455,10 +513,10 @@ function FeaturesSection() {
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={activeTab}
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={SPRING_SOFT}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.16, ease: [0.32, 0.72, 0, 1] }}
           >
             <SpotlightCard className="rounded-[22px] bg-white/70 p-1.5 ring-1 ring-black/[0.06]">
               <div className="rounded-[16px] bg-white p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
