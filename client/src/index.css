@@ -198,3 +198,48 @@ input[type="radio"] {
   background-repeat: no-repeat, no-repeat, no-repeat, repeat;
   background-blend-mode: normal, normal, normal, multiply;
 }
+
+/* ── Landing page: hero entrance ──────────────────────────────────────────── */
+@keyframes lp-fade-right {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: none; }
+}
+.lp-hero-in {
+  animation: lp-fade-right 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lp-hero-in { animation: none; opacity: 1; transform: none; }
+}
+
+/* ── Landing page: feature icon animations ────────────────────────────────── */
+@keyframes lp-wobble {
+  0%, 100% { transform: rotate(0deg); }
+  25%       { transform: rotate(-10deg); }
+  75%       { transform: rotate(10deg); }
+}
+@keyframes lp-unlock {
+  0%, 100% { transform: rotate(0deg); }
+  35%, 65% { transform: rotate(-32deg); }
+}
+@keyframes lp-blink {
+  0%, 100% { transform: scaleY(1); }
+  35%       { transform: scaleY(0.08); }
+}
+.lp-feature-row:hover .lp-icon-gift {
+  animation: lp-wobble 420ms ease-in-out;
+}
+.lp-feature-row:hover .lp-icon-shackle {
+  animation: lp-unlock 460ms ease-in-out;
+  transform-box: fill-box;
+  transform-origin: bottom right;
+}
+.lp-feature-row:hover .lp-icon-iris {
+  animation: lp-blink 420ms ease-in-out;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lp-feature-row:hover .lp-icon-gift,
+  .lp-feature-row:hover .lp-icon-shackle,
+  .lp-feature-row:hover .lp-icon-iris { animation: none; }
+}
